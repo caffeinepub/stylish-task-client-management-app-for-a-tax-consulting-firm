@@ -1,93 +1,92 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T10:45:34.516Z",
+  "generatedAt": "2026-02-15T10:58:18.419Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 6,
+    "total": 7,
     "implemented": 4,
     "items": [
       {
-        "id": "REQ-11",
-        "summary": "Update the backend Task data model and APIs to support the Task fields specified by the user: required fields Client Name, Task Category, Sub Category; optional fields Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, Payment Status. Ensure Tasks remain scoped per signed-in principal and maintain existing access control behavior (trap when unauthenticated).",
+        "id": "REQ-17",
+        "summary": "Update the backend Client data model and CRUD APIs to use the following fields: Client Name (required), GSTIN (optional), PAN (optional), Notes (optional), replacing the current contactInfo/projects-based client encoding.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
-        "id": "REQ-12",
-        "summary": "Add backend support for bulk task operations: (1) bulk create tasks for an authenticated user from a list of task inputs, and (2) bulk delete tasks by a list of task IDs, and (3) bulk update multiple tasks by IDs with a partial 'patch' payload where omitted fields are not changed.",
+        "id": "REQ-18",
+        "summary": "Add backend support for bulk Client operations required by the UI: (1) bulk create clients for the authenticated user from a list of client inputs, and (2) bulk delete clients by a list of client IDs.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
-        "id": "REQ-13",
-        "summary": "Add a Tasks bulk upload flow in the frontend: provide a downloadable CSV template that includes columns for all supported task fields, and allow uploading a filled CSV to create tasks in batch. Show a preview and validation errors before committing the upload.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/utils/taskCsv.ts",
-          "frontend/src/components/tasks/TaskBulkUploadDialog.tsx",
-          "frontend/src/pages/TasksPage.tsx",
-          "frontend/src/hooks/tasks.ts"
-        ],
-        "matchedFiles": [
-          "frontend/src/utils/taskCsv.ts",
-          "frontend/src/components/tasks/TaskBulkUploadDialog.tsx",
-          "frontend/src/pages/TasksPage.tsx",
-          "frontend/src/hooks/tasks.ts"
-        ]
+        "id": "REQ-19",
+        "summary": "Add a conditional Motoko state migration to preserve existing client records by mapping legacy stored client data into the new Client fields (at minimum: map legacy client.name -> new name; set gstin/pan to null; map any legacy notes (currently encoded in contactInfo) into new notes when present).",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       },
       {
-        "id": "REQ-14",
-        "summary": "Update the Tasks UI to match the new Task field set: (1) update the task create/edit form to include required fields Client Name, Task Category, Sub Category and optional fields Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, Payment Status; (2) update the Tasks list table to show the user-specified task components as columns (with sensible responsive behavior, e.g., column hiding on small screens).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/tasks/TaskFormDialog.tsx",
-          "frontend/src/components/tasks/TaskQuickStatus.tsx",
-          "frontend/src/pages/TasksPage.tsx",
-          "frontend/src/lib/dataParser.ts"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/tasks/TaskFormDialog.tsx",
-          "frontend/src/components/tasks/TaskQuickStatus.tsx",
-          "frontend/src/pages/TasksPage.tsx",
-          "frontend/src/lib/dataParser.ts"
-        ]
-      },
-      {
-        "id": "REQ-15",
-        "summary": "Implement bulk selection on the Tasks list and provide bulk actions to edit or delete multiple tasks at once. Bulk edit must allow setting one or more optional fields across selected tasks without overwriting fields the user did not explicitly set in the bulk edit form.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
-          "frontend/src/pages/TasksPage.tsx",
-          "frontend/src/hooks/tasks.ts"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
-          "frontend/src/pages/TasksPage.tsx",
-          "frontend/src/hooks/tasks.ts"
-        ]
-      },
-      {
-        "id": "REQ-16",
-        "summary": "Update frontend parsing/encoding and React Query hooks to align with the new Task model and the new bulk APIs, removing any legacy encoding that stored task metadata inside the description field.",
+        "id": "REQ-20",
+        "summary": "Update the frontend client parsing/encoding utilities and all client UI surfaces to reflect the new Client fields: Client Name (required), GSTIN (optional), PAN (optional), Notes (optional). Remove reliance on email/phone/taxYears/status derived from contactInfo/projects.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/lib/dataParser.ts",
-          "frontend/src/hooks/tasks.ts",
-          "frontend/src/components/tasks/TaskFormDialog.tsx",
-          "frontend/src/pages/TasksPage.tsx"
+          "frontend/src/components/clients/ClientFormDialog.tsx",
+          "frontend/src/pages/ClientsPage.tsx",
+          "frontend/src/pages/ClientDetailPage.tsx"
         ],
         "matchedFiles": [
           "frontend/src/lib/dataParser.ts",
-          "frontend/src/hooks/tasks.ts",
-          "frontend/src/components/tasks/TaskFormDialog.tsx",
-          "frontend/src/pages/TasksPage.tsx"
+          "frontend/src/components/clients/ClientFormDialog.tsx",
+          "frontend/src/pages/ClientsPage.tsx",
+          "frontend/src/pages/ClientDetailPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-21",
+        "summary": "Implement Clients bulk selection in the Clients list, including: row checkboxes, select-all checkbox, a visible 'X clients selected' bulk action bar, and a bulk delete flow with confirmation dialog.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/ClientsPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/ClientsPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-22",
+        "summary": "Add a Clients bulk upload flow (CSV) that allows downloading a template, uploading a filled CSV, previewing parsed rows, showing validation errors, and committing the upload to create clients in batch.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/utils/clientCsv.ts",
+          "frontend/src/components/clients/ClientBulkUploadDialog.tsx",
+          "frontend/src/pages/ClientsPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/utils/clientCsv.ts",
+          "frontend/src/components/clients/ClientBulkUploadDialog.tsx",
+          "frontend/src/pages/ClientsPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-23",
+        "summary": "Add React Query hooks for the new client bulk APIs (bulk create and bulk delete) and wire them into the Clients bulk upload and bulk selection UIs.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/clients.ts",
+          "frontend/src/pages/ClientsPage.tsx",
+          "frontend/src/components/clients/ClientBulkUploadDialog.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/clients.ts",
+          "frontend/src/pages/ClientsPage.tsx",
+          "frontend/src/components/clients/ClientBulkUploadDialog.tsx"
         ]
       }
     ]
@@ -101,17 +100,17 @@
     "frontend-implementation-plan.json",
     "frontend/src/backend.d.ts",
     "frontend/src/backend.ts",
-    "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
-    "frontend/src/components/tasks/TaskBulkUploadDialog.tsx",
-    "frontend/src/components/tasks/TaskFormDialog.tsx",
-    "frontend/src/components/tasks/TaskQuickStatus.tsx",
+    "frontend/src/components/clients/ClientBulkUploadDialog.tsx",
+    "frontend/src/components/clients/ClientFormDialog.tsx",
     "frontend/src/declarations/backend.did.d.ts",
     "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/clients.ts",
     "frontend/src/hooks/tasks.ts",
     "frontend/src/lib/dataParser.ts",
     "frontend/src/pages/ClientDetailPage.tsx",
+    "frontend/src/pages/ClientsPage.tsx",
     "frontend/src/pages/DashboardPage.tsx",
-    "frontend/src/pages/TasksPage.tsx",
+    "frontend/src/utils/clientCsv.ts",
     "frontend/src/utils/taskCsv.ts",
     "project_state.json",
     "scratch/component-selection.json",

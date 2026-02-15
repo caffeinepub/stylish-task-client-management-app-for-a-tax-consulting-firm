@@ -1,20 +1,31 @@
 import Map "mo:core/Map";
 import Nat "mo:core/Nat";
+import Array "mo:core/Array";
 import Principal "mo:core/Principal";
 
 module {
-  type OldTask = {
-    id : Nat;
-    title : Text;
-    description : Text;
-    status : Text;
-    clientId : Nat;
-    createdAt : Int;
-    deadline : ?Int;
+  public type ClientId = Nat;
+  public type TaskId = Nat;
+
+  public type OldClient = {
+    id : ClientId;
+    name : Text;
+    contactInfo : Text;
+    projects : [Text];
+    timestamp : Int;
   };
 
-  type NewTask = {
-    id : Nat;
+  public type NewClient = {
+    id : ClientId;
+    name : Text;
+    gstin : ?Text;
+    pan : ?Text;
+    notes : ?Text;
+    timestamp : Int;
+  };
+
+  public type OldTask = {
+    id : TaskId;
     clientName : Text;
     taskCategory : Text;
     subCategory : Text;
@@ -31,40 +42,44 @@ module {
     createdAt : Int;
   };
 
-  type OldActor = {
-    tasks : Map.Map<Principal, Map.Map<Nat, OldTask>>;
+  public type OldUserProfile = {
+    name : Text;
   };
 
-  type NewActor = {
-    tasks : Map.Map<Principal, Map.Map<Nat, NewTask>>;
+  public type OldActor = {
+    clients : Map.Map<Principal, Map.Map<ClientId, OldClient>>;
+    tasks : Map.Map<Principal, Map.Map<TaskId, OldTask>>;
+    userProfiles : Map.Map<Principal, OldUserProfile>;
+    nextClientId : Nat;
+    nextTaskId : Nat;
+  };
+
+  public type NewActor = {
+    clients : Map.Map<Principal, Map.Map<ClientId, NewClient>>;
+    tasks : Map.Map<Principal, Map.Map<TaskId, OldTask>>;
+    userProfiles : Map.Map<Principal, OldUserProfile>;
+    nextClientId : Nat;
+    nextTaskId : Nat;
   };
 
   public func run(old : OldActor) : NewActor {
-    let newTasks = old.tasks.map<Principal, Map.Map<Nat, OldTask>, Map.Map<Nat, NewTask>>(
-      func(_principal, oldTaskMap) {
-        oldTaskMap.map<Nat, OldTask, NewTask>(
-          func(_taskId, oldTask) {
+    let newClients = old.clients.map<Principal, Map.Map<ClientId, OldClient>, Map.Map<ClientId, NewClient>>(
+      func(_principal, clientMap) {
+        clientMap.map<ClientId, OldClient, NewClient>(
+          func(_id, oldClient) {
             {
-              id = oldTask.id;
-              clientName = "";
-              taskCategory = "";
-              subCategory = "";
-              status = null;
-              comment = null;
-              assignedName = null;
-              dueDate = null;
-              assignmentDate = null;
-              completionDate = null;
-              bill = null;
-              advanceReceived = null;
-              outstandingAmount = null;
-              paymentStatus = null;
-              createdAt = oldTask.createdAt;
+              oldClient with
+              gstin = null;
+              pan = null;
+              notes = ?oldClient.contactInfo;
             };
           }
         );
       }
     );
-    { tasks = newTasks };
+    {
+      old with
+      clients = newClients
+    };
   };
 };

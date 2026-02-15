@@ -149,6 +149,14 @@ export function parseCsvFile(csvContent: string): { rows: CsvTaskRow[]; errors: 
   return { rows, errors };
 }
 
-export function convertRowsToBackendFormat(rows: CsvTaskRow[]): Array<[string, string, string]> {
-  return rows.map(row => [row.clientName, row.taskCategory, row.subCategory]);
+export function convertRowsToBackendFormat(rows: CsvTaskRow[]): Array<{
+  clientName: string;
+  taskCategory: string;
+  subCategory: string;
+}> {
+  return rows.map(row => ({
+    clientName: row.clientName,
+    taskCategory: row.taskCategory,
+    subCategory: row.subCategory,
+  }));
 }

@@ -3,46 +3,72 @@ import { useNavigate } from '@tanstack/react-router';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Search, AlertCircle, Users } from 'lucide-react';
-import { useGetAllClients } from '../hooks/clients';
-import { parseClientData } from '../lib/dataParser';
+import { Checkbox } from '@/components/ui/checkbox';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Plus, Search, AlertCircle, Users, Upload, Trash2 } from 'lucide-react';
+import { useGetAllClients, useBulkDeleteClients } from '../hooks/clients';
 import ClientFormDialog from '../components/clients/ClientFormDialog';
+import ClientBulkUploadDialog from '../components/clients/ClientBulkUploadDialog';
 
 export default function ClientsPage() {
   const navigate = useNavigate();
   const { data: clients, isLoading, error, refetch } = useGetAllClients();
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
+  const [selectedClientIds, setSelectedClientIds] = useState<Set<string>>(new Set());
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  // Parse URL params for pre-filtering
-  const urlParams = new URLSearchParams(window.location.search);
-  const urlStatus = urlParams.get('status');
-  
-  // Apply URL filter on mount
-  useMemo(() => {
-    if (urlStatus && statusFilter === 'all') {
-      setStatusFilter(urlStatus);
-    }
-  }, [urlStatus]);
-
-  const parsedClients = useMemo(() => {
-    return clients?.map(parseClientData) || [];
-  }, [clients]);
+  const { mutate: bulkDeleteClients, isPending: isDeleting } = useBulkDeleteClients();
 
   const filteredClients = useMemo(() => {
-    return parsedClients.filter((client) => {
-      const matchesSearch = client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        client.email.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || client.status === statusFilter;
-      return matchesSearch && matchesStatus;
+    if (!clients) return [];
+    
+    return clients.filter((client) => {
+      const matchesSearch = 
+        client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (client.gstin && client.gstin.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (client.pan && client.pan.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      return matchesSearch;
     });
-  }, [parsedClients, searchQuery, statusFilter]);
+  }, [clients, searchQuery]);
+
+  const selectedClients = useMemo(() => {
+    return filteredClients.filter(client => selectedClientIds.has(client.id.toString()));
+  }, [filteredClients, selectedClientIds]);
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = new Set(filteredClients.map(client => client.id.toString()));
+      setSelectedClientIds(allIds);
+    } else {
+      setSelectedClientIds(new Set());
+    }
+  };
+
+  const handleSelectClient = (clientId: string, checked: boolean) => {
+    const newSelection = new Set(selectedClientIds);
+    if (checked) {
+      newSelection.add(clientId);
+    } else {
+      newSelection.delete(clientId);
+    }
+    setSelectedClientIds(newSelection);
+  };
+
+  const handleBulkDelete = () => {
+    const clientIds = Array.from(selectedClientIds).map(id => BigInt(id));
+    bulkDeleteClients(clientIds, {
+      onSuccess: () => {
+        setSelectedClientIds(new Set());
+        setDeleteDialogOpen(false);
+      },
+    });
+  };
 
   if (error) {
     return (
@@ -92,11 +118,49 @@ export default function ClientsPage() {
           <h1 className="text-3xl font-bold">Clients</h1>
           <p className="text-muted-foreground">Manage your client relationships</p>
         </div>
-        <Button onClick={() => setDialogOpen(true)} className="bg-[oklch(0.50_0.08_130)] hover:bg-[oklch(0.45_0.08_130)] dark:bg-[oklch(0.65_0.08_130)] dark:hover:bg-[oklch(0.70_0.08_130)]">
-          <Plus className="mr-2 h-4 w-4" />
-          Add Client
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => setBulkUploadOpen(true)}
+            variant="outline"
+          >
+            <Upload className="mr-2 h-4 w-4" />
+            Bulk Upload
+          </Button>
+          <Button onClick={() => setDialogOpen(true)} className="bg-[oklch(0.50_0.08_130)] hover:bg-[oklch(0.45_0.08_130)] dark:bg-[oklch(0.65_0.08_130)] dark:hover:bg-[oklch(0.70_0.08_130)]">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Client
+          </Button>
+        </div>
       </div>
+
+      {selectedClientIds.size > 0 && (
+        <Card className="border-[oklch(0.50_0.08_130)] bg-[oklch(0.50_0.08_130)]/5 dark:bg-[oklch(0.65_0.08_130)]/10">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={selectedClientIds.size === filteredClients.length}
+                  onCheckedChange={handleSelectAll}
+                />
+                <span className="font-medium">
+                  {selectedClientIds.size} client{selectedClientIds.size !== 1 ? 's' : ''} selected
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setDeleteDialogOpen(true)}
+                  disabled={isDeleting}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Selected
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)]">
         <CardHeader>
@@ -110,36 +174,26 @@ export default function ClientsPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by name or email..."
+                placeholder="Search by name, GSTIN, or PAN..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
               />
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="Active">Active</SelectItem>
-                <SelectItem value="Inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           {filteredClients.length === 0 ? (
             <div className="text-center py-12">
               <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">
-                {parsedClients.length === 0 ? 'No clients yet' : 'No clients found'}
+                {clients?.length === 0 ? 'No clients yet' : 'No clients found'}
               </h3>
               <p className="text-muted-foreground mb-4">
-                {parsedClients.length === 0
+                {clients?.length === 0
                   ? 'Get started by adding your first client'
-                  : 'Try adjusting your search or filters'}
+                  : 'Try adjusting your search'}
               </p>
-              {parsedClients.length === 0 && (
+              {clients?.length === 0 && (
                 <Button onClick={() => setDialogOpen(true)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add Your First Client
@@ -151,10 +205,15 @@ export default function ClientsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectedClientIds.size === filteredClients.length && filteredClients.length > 0}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
                     <TableHead>Name</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Tax Years</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>GSTIN</TableHead>
+                    <TableHead>PAN</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -165,35 +224,15 @@ export default function ClientsPage() {
                       className="cursor-pointer hover:bg-muted/50"
                       onClick={() => navigate({ to: `/clients/${client.id.toString()}` })}
                     >
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={selectedClientIds.has(client.id.toString())}
+                          onCheckedChange={(checked) => handleSelectClient(client.id.toString(), checked as boolean)}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">{client.name}</TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          {client.email && <div>{client.email}</div>}
-                          {client.phone && <div className="text-muted-foreground">{client.phone}</div>}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {client.taxYears.slice(0, 2).map((year) => (
-                            <Badge key={year} variant="secondary" className="text-xs">
-                              {year}
-                            </Badge>
-                          ))}
-                          {client.taxYears.length > 2 && (
-                            <Badge variant="secondary" className="text-xs">
-                              +{client.taxYears.length - 2}
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={client.status === 'Active' ? 'default' : 'secondary'}
-                          className={client.status === 'Active' ? 'bg-[oklch(0.50_0.08_130)] dark:bg-[oklch(0.65_0.08_130)]' : ''}
-                        >
-                          {client.status}
-                        </Badge>
-                      </TableCell>
+                      <TableCell>{client.gstin || '-'}</TableCell>
+                      <TableCell>{client.pan || '-'}</TableCell>
                       <TableCell className="text-right">
                         <Button 
                           variant="ghost" 
@@ -216,6 +255,28 @@ export default function ClientsPage() {
       </Card>
 
       <ClientFormDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <ClientBulkUploadDialog open={bulkUploadOpen} onOpenChange={setBulkUploadOpen} />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Clients</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedClientIds.size} client{selectedClientIds.size !== 1 ? 's' : ''}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleBulkDelete} 
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

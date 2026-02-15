@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 7,
+  "projectStateVersion": 9,
   "summary": "Build a stylish Task/Client Management app for a tax consulting firm.",
   "architectural_notes": [],
   "known_issues": [],
@@ -109,6 +109,38 @@
         "REQ-16"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-update-the-frontend-client-parsing-encoding-utilities-and-all-client-ui-surfaces-to-reflect-the-new-client-fields-client-name-required-gstin-optional-pan-optional-notes-optional-remove-reliance-on-email-phone-taxyears-status-derived-from-contactinfo-projects",
+      "title": "Update the frontend client parsing/encoding utilities and all client UI surfaces to reflect the new Client fields: Client Name (required), GSTIN (optional), PAN (optional), Notes (optional). Remove reliance on email/phone/taxYears/status derived from contactInfo/projects.",
+      "reqIds": [
+        "REQ-20"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-clients-bulk-selection-in-the-clients-list-including-row-checkboxes-select-all-checkbox-a-visible-x-clients-selected-bulk-action-bar-and-a-bulk-delete-flow-with-confirmation-dialog",
+      "title": "Implement Clients bulk selection in the Clients list, including: row checkboxes, select-all checkbox, a visible 'X clients selected' bulk action bar, and a bulk delete flow with confirmation dialog.",
+      "reqIds": [
+        "REQ-21"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-clients-bulk-upload-flow-csv-that-allows-downloading-a-template-uploading-a-filled-csv-previewing-parsed-rows-showing-validation-errors-and-committing-the-upload-to-create-clients-in-batch",
+      "title": "Add a Clients bulk upload flow (CSV) that allows downloading a template, uploading a filled CSV, previewing parsed rows, showing validation errors, and committing the upload to create clients in batch.",
+      "reqIds": [
+        "REQ-22"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-react-query-hooks-for-the-new-client-bulk-apis-bulk-create-and-bulk-delete-and-wire-them-into-the-clients-bulk-upload-and-bulk-selection-uis",
+      "title": "Add React Query hooks for the new client bulk APIs (bulk create and bulk delete) and wire them into the Clients bulk upload and bulk selection UIs.",
+      "reqIds": [
+        "REQ-23"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -157,6 +189,42 @@
       "summary": "Add backend support for bulk task operations: (1) bulk create tasks for an authenticated user from a list of task inputs, and (2) bulk delete tasks by a list of task IDs, and (3) bulk update multiple tasks by IDs with a partial 'patch' payload where omitted fields are not changed.",
       "reqIds": [
         "REQ-12"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-9",
+      "summary": "Update Clients UI/data model to include fields: Client Name (required), GSTIN (optional), PAN (optional), Notes (optional).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-10",
+      "summary": "Add bulk upload and bulk selection (with bulk actions) for Clients.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-11",
+      "summary": "Update the backend Client data model and CRUD APIs to use the following fields: Client Name (required), GSTIN (optional), PAN (optional), Notes (optional), replacing the current contactInfo/projects-based client encoding.",
+      "reqIds": [
+        "REQ-17"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-12",
+      "summary": "Add backend support for bulk Client operations required by the UI: (1) bulk create clients for the authenticated user from a list of client inputs, and (2) bulk delete clients by a list of client IDs.",
+      "reqIds": [
+        "REQ-18"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-13",
+      "summary": "Add a conditional Motoko state migration to preserve existing client records by mapping legacy stored client data into the new Client fields (at minimum: map legacy client.name -> new name; set gstin/pan to null; map any legacy notes (currently encoded in contactInfo) into new notes when present).",
+      "reqIds": [
+        "REQ-19"
       ],
       "status": "pending"
     }

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import type { Task, TaskId, PartialTaskUpdate } from '../backend';
+import type { Task, TaskId, TaskInput, PartialTaskUpdate } from '../backend';
 
 export function useGetAllTasks() {
   const { actor, isFetching: actorFetching } = useActor();
@@ -113,7 +113,7 @@ export function useBulkCreateTasks() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (taskInputs: Array<[string, string, string]>) => {
+    mutationFn: async (taskInputs: TaskInput[]) => {
       if (!actor) throw new Error('Actor not available');
       return actor.bulkCreateTasks(taskInputs);
     },

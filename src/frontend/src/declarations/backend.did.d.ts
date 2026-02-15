@@ -12,12 +12,19 @@ import type { Principal } from '@icp-sdk/core/principal';
 
 export interface Client {
   'id' : ClientId,
-  'contactInfo' : string,
-  'projects' : Array<string>,
+  'pan' : [] | [string],
   'name' : string,
+  'gstin' : [] | [string],
+  'notes' : [] | [string],
   'timestamp' : bigint,
 }
 export type ClientId = bigint;
+export interface PartialClientInput {
+  'pan' : [] | [string],
+  'name' : string,
+  'gstin' : [] | [string],
+  'notes' : [] | [string],
+}
 export interface PartialTaskUpdate {
   'status' : [] | [string],
   'subCategory' : [] | [string],
@@ -51,6 +58,11 @@ export interface Task {
   'assignedName' : [] | [string],
 }
 export type TaskId = bigint;
+export interface TaskInput {
+  'subCategory' : string,
+  'clientName' : string,
+  'taskCategory' : string,
+}
 export interface UserProfile { 'name' : string }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
@@ -58,16 +70,18 @@ export type UserRole = { 'admin' : null } |
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
-  'bulkCreateTasks' : ActorMethod<
-    [Array<[string, string, string]>],
-    Array<TaskId>
+  'bulkCreateClients' : ActorMethod<
+    [Array<PartialClientInput>],
+    Array<ClientId>
   >,
+  'bulkCreateTasks' : ActorMethod<[Array<TaskInput>], Array<TaskId>>,
+  'bulkDeleteClients' : ActorMethod<[Array<ClientId>], undefined>,
   'bulkDeleteTasks' : ActorMethod<[Array<TaskId>], undefined>,
   'bulkUpdateTasks' : ActorMethod<
     [Array<[TaskId, PartialTaskUpdate]>],
     undefined
   >,
-  'createClient' : ActorMethod<[string, string, Array<string>], ClientId>,
+  'createClient' : ActorMethod<[PartialClientInput], ClientId>,
   'createTask' : ActorMethod<[string, string, string], TaskId>,
   'deleteClient' : ActorMethod<[ClientId], undefined>,
   'deleteTask' : ActorMethod<[TaskId], undefined>,
@@ -80,10 +94,7 @@ export interface _SERVICE {
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
-  'updateClient' : ActorMethod<
-    [ClientId, string, string, Array<string>],
-    undefined
-  >,
+  'updateClient' : ActorMethod<[ClientId, PartialClientInput], undefined>,
   'updateTask' : ActorMethod<
     [
       TaskId,

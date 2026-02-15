@@ -4,10 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useCreateClient, useUpdateClient, useDeleteClient } from '../../hooks/clients';
-import { parseClientData, encodeClientData } from '../../lib/dataParser';
 import type { Client } from '../../backend';
 
 interface ClientFormDialogProps {
@@ -19,16 +17,13 @@ interface ClientFormDialogProps {
 
 export default function ClientFormDialog({ open, onOpenChange, client, trigger }: ClientFormDialogProps) {
   const isEdit = !!client;
-  const parsedClient = client ? parseClientData(client) : null;
 
   const [internalOpen, setInternalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [taxYears, setTaxYears] = useState('');
-  const [status, setStatus] = useState<'Active' | 'Inactive'>('Active');
+  const [gstin, setGstin] = useState('');
+  const [pan, setPan] = useState('');
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -41,24 +36,20 @@ export default function ClientFormDialog({ open, onOpenChange, client, trigger }
   const setDialogOpen = onOpenChange || setInternalOpen;
 
   useEffect(() => {
-    if (parsedClient) {
-      setName(parsedClient.name);
-      setEmail(parsedClient.email);
-      setPhone(parsedClient.phone);
-      setTaxYears(parsedClient.taxYears.join(', '));
-      setStatus(parsedClient.status);
-      setNotes(parsedClient.notes);
+    if (client) {
+      setName(client.name);
+      setGstin(client.gstin || '');
+      setPan(client.pan || '');
+      setNotes(client.notes || '');
     } else {
       resetForm();
     }
-  }, [parsedClient, dialogOpen]);
+  }, [client, dialogOpen]);
 
   const resetForm = () => {
     setName('');
-    setEmail('');
-    setPhone('');
-    setTaxYears('');
-    setStatus('Active');
+    setGstin('');
+    setPan('');
     setNotes('');
     setErrors({});
   };
@@ -68,10 +59,6 @@ export default function ClientFormDialog({ open, onOpenChange, client, trigger }
     
     if (!name.trim()) {
       newErrors.name = 'Name is required';
-    }
-    
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = 'Invalid email format';
     }
 
     setErrors(newErrors);
@@ -83,26 +70,18 @@ export default function ClientFormDialog({ open, onOpenChange, client, trigger }
     
     if (!validate()) return;
 
-    const taxYearsArray = taxYears
-      .split(',')
-      .map((y) => y.trim())
-      .filter((y) => y.length > 0);
-
-    const { contactInfo, projects } = encodeClientData({
-      email,
-      phone,
-      notes,
-      status,
-      taxYears: taxYearsArray,
-    });
+    const clientData = {
+      name: name.trim(),
+      gstin: gstin.trim() || undefined,
+      pan: pan.trim() || undefined,
+      notes: notes.trim() || undefined,
+    };
 
     if (isEdit && client) {
       updateClient(
         {
           clientId: client.id,
-          name: name.trim(),
-          contactInfo,
-          projects,
+          ...clientData,
         },
         {
           onSuccess: () => {
@@ -113,11 +92,7 @@ export default function ClientFormDialog({ open, onOpenChange, client, trigger }
       );
     } else {
       createClient(
-        {
-          name: name.trim(),
-          contactInfo,
-          projects,
-        },
+        clientData,
         {
           onSuccess: () => {
             setDialogOpen(false);
@@ -151,7 +126,7 @@ export default function ClientFormDialog({ open, onOpenChange, client, trigger }
       <form onSubmit={handleSubmit}>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Name *</Label>
+            <Label htmlFor="name">Client Name *</Label>
             <Input
               id="name"
               value={name}
@@ -163,56 +138,29 @@ export default function ClientFormDialog({ open, onOpenChange, client, trigger }
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="gstin">GSTIN (Optional)</Label>
             <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="client@example.com"
-              disabled={isPending}
-            />
-            {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone</Label>
-            <Input
-              id="phone"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="(555) 123-4567"
+              id="gstin"
+              value={gstin}
+              onChange={(e) => setGstin(e.target.value)}
+              placeholder="GSTIN number"
               disabled={isPending}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="taxYears">Tax Years</Label>
+            <Label htmlFor="pan">PAN (Optional)</Label>
             <Input
-              id="taxYears"
-              value={taxYears}
-              onChange={(e) => setTaxYears(e.target.value)}
-              placeholder="2024, 2023, 2022"
+              id="pan"
+              value={pan}
+              onChange={(e) => setPan(e.target.value)}
+              placeholder="PAN number"
               disabled={isPending}
             />
-            <p className="text-xs text-muted-foreground">Separate multiple years with commas</p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Select value={status} onValueChange={(v) => setStatus(v as 'Active' | 'Inactive')} disabled={isPending}>
-              <SelectTrigger id="status">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Active">Active</SelectItem>
-                <SelectItem value="Inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
+            <Label htmlFor="notes">Notes (Optional)</Label>
             <Textarea
               id="notes"
               value={notes}

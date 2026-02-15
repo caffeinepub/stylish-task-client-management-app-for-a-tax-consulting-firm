@@ -1,14 +1,15 @@
 # Specification
 
 ## Summary
-**Goal:** Expand Tasks to use the full user-specified field set and add bulk upload plus bulk edit/delete capabilities.
+**Goal:** Update Clients to use the new fields (Name, GSTIN, PAN, Notes) and add bulk upload plus bulk selection/delete for Clients.
 
 **Planned changes:**
-- Update backend Task data model and CRUD APIs to include required fields (Client Name, Task Category, Sub Category) and optional fields (Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, Payment Status), while keeping tasks scoped to the signed-in principal and preserving existing auth behavior.
-- Add backend bulk APIs for tasks: bulk create from a list of task inputs, bulk delete by task ID list, and bulk update by ID list using a partial patch payload (only provided fields change).
-- Update Tasks UI create/edit form and Tasks table to match the expanded Task field set, with responsive handling for many columns.
-- Add a frontend bulk upload flow: downloadable CSV template with all task field headers, CSV upload with client-side parsing, preview, and validation errors before submitting to bulk create.
-- Add bulk selection in the Tasks list plus bulk actions (Edit Selected, Delete Selected), with bulk edit applying only fields explicitly set by the user.
-- Update frontend task parsing/encoding and React Query hooks to align with the new Task model and new bulk APIs, removing any legacy encoding of metadata inside the description field.
+- Update backend Client model and Client CRUD APIs to store/return: name (required), gstin (optional), pan (optional), notes (optional), replacing the legacy contactInfo/projects encoding.
+- Add backend bulk client APIs: bulk create from a list of client inputs, and bulk delete by a list of client IDs, enforcing the same auth rules as existing client APIs.
+- Add conditional backend state migration to map legacy client records into the new model (preserve name; map any legacy notes when present; default gstin/pan to null), and do nothing on fresh deployments.
+- Update frontend client parsing/encoding utilities and all client UI surfaces (form, list, detail) to reflect the new fields and remove reliance on legacy derived fields.
+- Implement Clients list bulk selection UI (row checkboxes, select-all, selected count bar) and a confirmed bulk delete flow, consistent with the existing Tasks bulk selection behavior.
+- Add a Clients bulk upload (CSV) dialog flow: download template, upload CSV, preview parsed rows, show validation errors in English, and submit to create clients in batch.
+- Add React Query hooks for client bulk create and bulk delete and wire the UI to use hooks (with clients list invalidation/refetch on success).
 
-**User-visible outcome:** Users can create and manage tasks with the expanded set of fields, upload many tasks at once via a CSV template with preview/validation, and select multiple tasks to bulk edit optional fields or bulk delete.
+**User-visible outcome:** Users can create/edit/view clients using Name/GSTIN/PAN/Notes, select multiple clients in the Clients list to delete in bulk, and upload a CSV to create many clients at once with preview and validation.

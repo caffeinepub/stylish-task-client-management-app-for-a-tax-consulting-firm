@@ -1,12 +1,13 @@
 import Map "mo:core/Map";
 import List "mo:core/List";
 import Array "mo:core/Array";
-import Time "mo:core/Time";
 import Runtime "mo:core/Runtime";
+import Time "mo:core/Time";
 import Principal "mo:core/Principal";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 import Migration "migration";
+import Iter "mo:core/Iter";
 
 (with migration = Migration.run)
 actor {
@@ -19,8 +20,9 @@ actor {
   public type Client = {
     id : ClientId;
     name : Text;
-    contactInfo : Text;
-    projects : [Text];
+    gstin : ?Text;
+    pan : ?Text;
+    notes : ?Text;
     timestamp : Int;
   };
 
@@ -62,13 +64,25 @@ actor {
     name : Text;
   };
 
+  public type TaskInput = {
+    clientName : Text;
+    taskCategory : Text;
+    subCategory : Text;
+  };
+
+  public type PartialClientInput = {
+    name : Text;
+    gstin : ?Text;
+    pan : ?Text;
+    notes : ?Text;
+  };
+
   let clients = Map.empty<Principal, Map.Map<ClientId, Client>>();
   let tasks = Map.empty<Principal, Map.Map<TaskId, Task>>();
   let userProfiles = Map.empty<Principal, UserProfile>();
   var nextClientId = 0;
   var nextTaskId = 0;
 
-  // User Profile Functions
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Only users can view profiles");
@@ -112,7 +126,7 @@ actor {
     };
   };
 
-  public shared ({ caller }) func createClient(name : Text, contactInfo : Text, projects : [Text]) : async ClientId {
+  public shared ({ caller }) func createClient(client : PartialClientInput) : async ClientId {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Please sign in to continue");
     };
@@ -122,9 +136,10 @@ actor {
 
     let newClient : Client = {
       id = clientId;
-      name;
-      contactInfo;
-      projects;
+      name = client.name;
+      gstin = client.gstin;
+      pan = client.pan;
+      notes = client.notes;
       timestamp = Time.now();
     };
 
@@ -133,7 +148,7 @@ actor {
     clientId;
   };
 
-  public shared ({ caller }) func updateClient(clientId : ClientId, name : Text, contactInfo : Text, projects : [Text]) : async () {
+  public shared ({ caller }) func updateClient(clientId : ClientId, client : PartialClientInput) : async () {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Please sign in to continue");
     };
@@ -144,9 +159,10 @@ actor {
       case (?_) {
         let updatedClient : Client = {
           id = clientId;
-          name;
-          contactInfo;
-          projects;
+          name = client.name;
+          gstin = client.gstin;
+          pan = client.pan;
+          notes = client.notes;
           timestamp = Time.now();
         };
         clientStorage.add(clientId, updatedClient);
@@ -170,7 +186,6 @@ actor {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Please sign in to continue");
     };
-
     let clientStorage = getClientStorage(caller);
     clientStorage.get(clientId);
   };
@@ -179,9 +194,49 @@ actor {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Please sign in to continue");
     };
-
     let clientStorage = getClientStorage(caller);
     clientStorage.values().toArray();
+  };
+
+  public shared ({ caller }) func bulkCreateClients(clientInputs : [PartialClientInput]) : async [ClientId] {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can create clients");
+    };
+
+    let clientStorage = getClientStorage(caller);
+    let createdClientIds = List.empty<ClientId>();
+
+    for (input in clientInputs.values()) {
+      let clientId = nextClientId;
+      nextClientId += 1;
+
+      let newClient : Client = {
+        id = clientId;
+        name = input.name;
+        gstin = input.gstin;
+        pan = input.pan;
+        notes = input.notes;
+        timestamp = Time.now();
+      };
+
+      clientStorage.add(clientId, newClient);
+      createdClientIds.add(clientId);
+    };
+
+    createdClientIds.toArray();
+  };
+
+  public shared ({ caller }) func bulkDeleteClients(clientIds : [ClientId]) : async () {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Please sign in to continue");
+    };
+
+    let clientStorage = getClientStorage(caller);
+    for (clientId in clientIds.values()) {
+      if (clientStorage.containsKey(clientId)) {
+        clientStorage.remove(clientId);
+      };
+    };
   };
 
   public shared ({ caller }) func createTask(
@@ -281,7 +336,6 @@ actor {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Please sign in to continue");
     };
-
     let taskStorage = getTaskStorage(caller);
     taskStorage.get(taskId);
   };
@@ -290,12 +344,11 @@ actor {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Please sign in to continue");
     };
-
     let taskStorage = getTaskStorage(caller);
     taskStorage.values().toArray();
   };
 
-  public shared ({ caller }) func bulkCreateTasks(taskInputs : [(Text, Text, Text)]) : async [TaskId] {
+  public shared ({ caller }) func bulkCreateTasks(taskInputs : [TaskInput]) : async [TaskId] {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Please sign in to continue");
     };
@@ -303,15 +356,15 @@ actor {
     let taskStorage = getTaskStorage(caller);
     let createdTaskIds = List.empty<TaskId>();
 
-    for ((clientName, taskCategory, subCategory) in taskInputs.values()) {
+    for (taskInput in taskInputs.values()) {
       let taskId = nextTaskId;
       nextTaskId += 1;
 
       let newTask : Task = {
         id = taskId;
-        clientName;
-        taskCategory;
-        subCategory;
+        clientName = taskInput.clientName;
+        taskCategory = taskInput.taskCategory;
+        subCategory = taskInput.subCategory;
         status = null;
         comment = null;
         assignedName = null;

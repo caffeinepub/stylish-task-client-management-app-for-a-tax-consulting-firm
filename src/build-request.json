@@ -1,132 +1,146 @@
 {
   "kind": "build_request",
-  "title": "Expand Task fields + add bulk upload and bulk edit/delete",
+  "title": "Update Client fields to Name/GSTIN/PAN/Notes and add Clients bulk upload + bulk selection",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-11",
-      "text": "Update the backend Task data model and APIs to support the Task fields specified by the user: required fields Client Name, Task Category, Sub Category; optional fields Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, Payment Status. Ensure Tasks remain scoped per signed-in principal and maintain existing access control behavior (trap when unauthenticated).",
+      "id": "REQ-17",
+      "text": "Update the backend Client data model and CRUD APIs to use the following fields: Client Name (required), GSTIN (optional), PAN (optional), Notes (optional), replacing the current contactInfo/projects-based client encoding.",
       "target": "backend",
       "source": {
         "messageIds": [
           "msg-5"
         ],
         "quotes": [
-          "Task compnents are\nClient Name ,Task Category ,Sub Category, Status, Comment, Assigned Name ,Due Date, Assignment Date, Completion Date ,Bill, Advance Received, Outstanding Amount, Payment Status\n\nall field are optional except client name and Task Catogory,Sub Catogory"
+          "In clients Components\nClient Name, GSTIN(Optional(  ,PAN(Optional),Notes(Optional)"
         ]
       },
       "acceptanceCriteria": [
-        "Backend Task type includes fields covering: clientName (required), taskCategory (required), subCategory (required), status (optional), comment (optional), assignedName (optional), dueDate (optional), assignmentDate (optional), completionDate (optional), bill (optional), advanceReceived (optional), outstandingAmount (optional), paymentStatus (optional).",
-        "Create/update task backend methods validate that required fields are non-empty (or trap with a clear error) and allow optional fields to be absent/null.",
-        "Existing task listing/query APIs return the new Task shape for all tasks.",
-        "All task CRUD remains scoped by caller Principal as it is today (no cross-user data leakage)."
+        "Client type in backend/main.mo includes fields for name (Text), gstin (?Text), pan (?Text), notes (?Text) (or equivalent optional representation).",
+        "createClient and updateClient accept the new fields and persist them per-caller, preserving existing access control behavior (trap when unauthenticated).",
+        "getClient and getAllClients return the new Client shape."
       ]
     },
     {
-      "id": "REQ-12",
-      "text": "Add backend support for bulk task operations: (1) bulk create tasks for an authenticated user from a list of task inputs, and (2) bulk delete tasks by a list of task IDs, and (3) bulk update multiple tasks by IDs with a partial 'patch' payload where omitted fields are not changed.",
+      "id": "REQ-18",
+      "text": "Add backend support for bulk Client operations required by the UI: (1) bulk create clients for the authenticated user from a list of client inputs, and (2) bulk delete clients by a list of client IDs.",
       "target": "backend",
       "source": {
         "messageIds": [
           "msg-5"
         ],
         "quotes": [
-          "also add bulk upload using template and bulk seletion to edit or delete"
+          "add bulk uploand and selection"
         ]
       },
       "acceptanceCriteria": [
-        "Backend exposes a bulk create API that accepts an array of task inputs and creates tasks in a single call (returns created IDs and/or per-row success/failure information).",
-        "Backend exposes a bulk delete API that accepts an array of task IDs and deletes tasks owned by the caller; attempting to delete a non-existent task returns an error that clearly identifies the failure.",
-        "Backend exposes a bulk update API that accepts an array of task IDs and a patch object; only fields present in the patch are updated for each task (required fields are not forced unless being changed).",
-        "All bulk operations enforce the same authentication/authorization checks as single-task operations."
+        "Backend exposes a bulkCreateClients API that accepts a list of client inputs (name, gstin?, pan?, notes?) and returns created ClientIds.",
+        "Backend exposes a bulkDeleteClients API that accepts a list of ClientIds and deletes those clients for the authenticated user (ignoring missing IDs is acceptable, consistent with bulkDeleteTasks behavior).",
+        "All bulk client APIs enforce the same authentication/authorization checks as existing client APIs."
       ]
     },
     {
-      "id": "REQ-13",
-      "text": "Add a Tasks bulk upload flow in the frontend: provide a downloadable CSV template that includes columns for all supported task fields, and allow uploading a filled CSV to create tasks in batch. Show a preview and validation errors before committing the upload.",
+      "id": "REQ-19",
+      "text": "Add a conditional Motoko state migration to preserve existing client records by mapping legacy stored client data into the new Client fields (at minimum: map legacy client.name -> new name; set gstin/pan to null; map any legacy notes (currently encoded in contactInfo) into new notes when present).",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-5"
+        ],
+        "quotes": [
+          "Client Name, GSTIN(Optional(  ,PAN(Optional),Notes(Optional)"
+        ]
+      },
+      "acceptanceCriteria": [
+        "backend/migration.mo is updated/added per the platform’s conditional migration policy to transform existing stable client state into the new model without data loss for client name.",
+        "After upgrade, previously created clients still appear in the Clients list.",
+        "No migration is performed for fresh deployments without prior state."
+      ]
+    },
+    {
+      "id": "REQ-20",
+      "text": "Update the frontend client parsing/encoding utilities and all client UI surfaces to reflect the new Client fields: Client Name (required), GSTIN (optional), PAN (optional), Notes (optional). Remove reliance on email/phone/taxYears/status derived from contactInfo/projects.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-5"
         ],
         "quotes": [
-          "also add bulk upload using template"
+          "Client Name, GSTIN(Optional(  ,PAN(Optional),Notes(Optional)"
         ]
       },
       "acceptanceCriteria": [
-        "Tasks page includes an action to download a CSV template with headers matching the task fields (Client Name, Task Category, Sub Category, Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, Payment Status).",
-        "User can upload a CSV file; the UI parses it client-side and shows a preview table with row count and any validation errors (at minimum: missing required fields).",
-        "Submitting the upload calls the backend bulk create API and refreshes the task list on success.",
-        "User-facing text is in English, and error messages clearly indicate which row/column is invalid."
+        "frontend/src/lib/dataParser.ts is updated so client parsing no longer expects contactInfo/projects to encode email/phone/taxYears/status; it instead maps to name, gstin, pan, notes.",
+        "Client create/edit dialog (frontend/src/components/clients/ClientFormDialog.tsx) shows inputs for Name (required), GSTIN (optional), PAN (optional), Notes (optional), and validation error text is in English.",
+        "Clients list page (frontend/src/pages/ClientsPage.tsx) displays sensible columns for the new client fields (at minimum Name, GSTIN, PAN; Notes can be hidden/truncated) and search filters operate on Name and optionally GSTIN/PAN.",
+        "Client detail page (frontend/src/pages/ClientDetailPage.tsx) displays GSTIN, PAN, and Notes sections when present."
       ]
     },
     {
-      "id": "REQ-14",
-      "text": "Update the Tasks UI to match the new Task field set: (1) update the task create/edit form to include required fields Client Name, Task Category, Sub Category and optional fields Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, Payment Status; (2) update the Tasks list table to show the user-specified task components as columns (with sensible responsive behavior, e.g., column hiding on small screens).",
+      "id": "REQ-21",
+      "text": "Implement Clients bulk selection in the Clients list, including: row checkboxes, select-all checkbox, a visible 'X clients selected' bulk action bar, and a bulk delete flow with confirmation dialog.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-5"
         ],
         "quotes": [
-          "Task compnents are\nClient Name ,Task Category ,Sub Category, Status, Comment, Assigned Name ,Due Date, Assignment Date, Completion Date ,Bill, Advance Received, Outstanding Amount, Payment Status"
+          "add bulk uploand and selection"
         ]
       },
       "acceptanceCriteria": [
-        "Task create/edit dialog enforces required fields: Client Name, Task Category, Sub Category (cannot submit if missing).",
-        "All other fields are optional and can be left blank without blocking save.",
-        "Tasks table includes columns for the specified fields; on small screens, less critical columns may be hidden or moved into an 'Details' row/expander, but the data remains accessible.",
-        "Existing task quick status editing continues to work with the new data model (or is replaced with an equivalent control) without breaking the page."
+        "Clients list table includes a checkbox column and a select-all checkbox with behavior consistent with the existing Tasks bulk selection UI (frontend/src/pages/TasksPage.tsx).",
+        "When one or more clients are selected, a bulk action card/bar appears showing the count selected and at least a 'Delete Selected' action.",
+        "Bulk delete prompts for confirmation and, on success, clears selection and refreshes the clients query."
       ]
     },
     {
-      "id": "REQ-15",
-      "text": "Implement bulk selection on the Tasks list and provide bulk actions to edit or delete multiple tasks at once. Bulk edit must allow setting one or more optional fields across selected tasks without overwriting fields the user did not explicitly set in the bulk edit form.",
+      "id": "REQ-22",
+      "text": "Add a Clients bulk upload flow (CSV) that allows downloading a template, uploading a filled CSV, previewing parsed rows, showing validation errors, and committing the upload to create clients in batch.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-5"
         ],
         "quotes": [
-          "also add bulk seletion to edit or delete"
+          "add bulk uploand and selection"
         ]
       },
       "acceptanceCriteria": [
-        "Tasks table includes a selection checkbox per row and a 'select all' checkbox for the current filtered list.",
-        "When one or more tasks are selected, the UI shows bulk actions: Delete Selected and Edit Selected.",
-        "Delete Selected prompts for confirmation and then deletes the selected tasks; on success the list refreshes and selection clears.",
-        "Edit Selected opens a modal/form with optional fields; leaving a field blank means 'do not change this field' for the selected tasks; submitting calls the backend bulk update API and refreshes the list on success."
+        "Clients page provides a 'Bulk Upload' button that opens a dialog similar in structure to the existing TaskBulkUploadDialog (download template -> upload CSV -> preview/errors -> submit).",
+        "CSV template includes headers for: Client Name (required), GSTIN, PAN, Notes.",
+        "CSV parsing validates required Client Name and produces row/column validation errors in English; invalid uploads cannot be submitted.",
+        "On successful submit, the dialog shows a success state, closes, and the clients list refreshes to include newly created clients."
       ]
     },
     {
-      "id": "REQ-16",
-      "text": "Update frontend parsing/encoding and React Query hooks to align with the new Task model and the new bulk APIs, removing any legacy encoding that stored task metadata inside the description field.",
+      "id": "REQ-23",
+      "text": "Add React Query hooks for the new client bulk APIs (bulk create and bulk delete) and wire them into the Clients bulk upload and bulk selection UIs.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-5"
         ],
         "quotes": [
-          "Task compnents are ..."
+          "add bulk uploand and selection"
         ]
       },
       "acceptanceCriteria": [
-        "Frontend task types (parser/encoder) represent the new Task fields explicitly (no priority/status encoding inside description).",
-        "Existing task create/update/delete hooks work with the updated backend API signatures and payload shapes.",
-        "New React Query mutations/hooks exist for bulk create (upload), bulk update, and bulk delete; successful mutations invalidate the tasks query so the list refreshes."
+        "frontend/src/hooks/clients.ts includes hooks for bulkCreateClients and bulkDeleteClients (naming consistent with tasks hooks).",
+        "Hooks invalidate/refetch the clients list query on success.",
+        "UI uses these hooks (no direct actor calls from components other than through hooks)."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor (all logic in backend/main.mo).",
-    "Generate backend/migration.mo only if needed to preserve/upgrade existing persisted state; otherwise do not add it.",
-    "Do not modify files under frontend/src/components/ui or other immutable paths listed in SYSTEM_CONTEXT.",
-    "Use English for any user-facing text."
+    "Respect the single-actor backend architecture: all Motoko logic must remain in backend/main.mo; only use backend/migration.mo for conditional state upgrades.",
+    "Do not edit files under frontend/src/components/ui, frontend/src/main.tsx, frontend/src/hooks/useActor.ts, or frontend/src/hooks/useInternetIdentity.ts(x) (immutable paths).",
+    "Use English for all user-facing text."
   ],
   "nonGoals": [
-    "Adding third-party integrations for file parsing/storage (no external databases, no external storage providers).",
-    "Supporting XLSX import/export if it requires adding heavy spreadsheet dependencies; CSV is sufficient unless explicitly requested later.",
-    "Changing authentication mechanism (Internet Identity remains the only auth)."
+    "Do not change the Task model, Tasks bulk upload, or Tasks bulk selection behavior.",
+    "Do not add third-party authentication providers or external databases.",
+    "Do not implement real-time updates (no websockets/push)."
   ],
   "imageRequirements": {
     "required": [],

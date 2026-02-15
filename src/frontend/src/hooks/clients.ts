@@ -1,9 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import type { Client, ClientId } from '../backend';
+import type { Client, ClientId, PartialClientInput } from '../backend';
 
 export function useGetAllClients() {
-  const { actor, isFetching: actorFetching } = useActor();
+  const { actor, isFetching } = useActor();
 
   return useQuery<Client[]>({
     queryKey: ['clients'],
@@ -11,12 +11,12 @@ export function useGetAllClients() {
       if (!actor) return [];
       return actor.getAllClients();
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !isFetching,
   });
 }
 
 export function useGetClient(clientId: ClientId) {
-  const { actor, isFetching: actorFetching } = useActor();
+  const { actor, isFetching } = useActor();
 
   return useQuery<Client | null>({
     queryKey: ['client', clientId.toString()],
@@ -24,7 +24,7 @@ export function useGetClient(clientId: ClientId) {
       if (!actor) return null;
       return actor.getClient(clientId);
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !isFetching,
   });
 }
 
@@ -33,9 +33,9 @@ export function useCreateClient() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { name: string; contactInfo: string; projects: string[] }) => {
+    mutationFn: async (client: PartialClientInput) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.createClient(data.name, data.contactInfo, data.projects);
+      return actor.createClient(client);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
@@ -48,9 +48,9 @@ export function useUpdateClient() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { clientId: ClientId; name: string; contactInfo: string; projects: string[] }) => {
+    mutationFn: async ({ clientId, ...client }: PartialClientInput & { clientId: ClientId }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.updateClient(data.clientId, data.name, data.contactInfo, data.projects);
+      return actor.updateClient(clientId, client);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
@@ -67,6 +67,36 @@ export function useDeleteClient() {
     mutationFn: async (clientId: ClientId) => {
       if (!actor) throw new Error('Actor not available');
       return actor.deleteClient(clientId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+    },
+  });
+}
+
+export function useBulkCreateClients() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (clients: PartialClientInput[]) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.bulkCreateClients(clients);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+    },
+  });
+}
+
+export function useBulkDeleteClients() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (clientIds: ClientId[]) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.bulkDeleteClients(clientIds);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });

@@ -1,127 +1,106 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Expand Tasks UI for new fields + bulk upload and bulk edit/delete",
+  "title": "Update Clients UI fields and add bulk upload + bulk selection",
   "requirements": [
     {
-      "id": "REQ-13",
-      "summary": "Add a CSV template download + CSV upload preview/validation flow to bulk-create tasks.",
+      "id": "REQ-20",
+      "summary": "Update client parsing/encoding and all client UI surfaces to use Name/GSTIN/PAN/Notes only.",
       "acceptanceCriteria": [
-        "Tasks page includes an action to download a CSV template with headers matching the task fields (Client Name, Task Category, Sub Category, Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, Payment Status).",
-        "User can upload a CSV file; the UI parses it client-side and shows a preview table with row count and any validation errors (at minimum: missing required fields).",
-        "Submitting the upload calls the backend bulk create API and refreshes the task list on success.",
-        "User-facing text is in English, and error messages clearly indicate which row/column is invalid."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/utils/taskCsv.ts",
-          "operation": "create",
-          "description": "Implement CSV template generation (headers for all supported Task fields) and lightweight CSV parsing + row-level validation helpers (at minimum required fields present) used by the bulk upload UI. Ensure English error messages include row/column context."
-        },
-        {
-          "path": "frontend/src/components/tasks/TaskBulkUploadDialog.tsx",
-          "operation": "create",
-          "description": "Create a Tasks bulk upload dialog: download template action, file input for CSV upload, client-side parse/validation, and a preview table summarizing row count and validation errors before allowing submit. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/TasksPage.tsx",
-          "operation": "modify",
-          "description": "Add a visible bulk upload action on the Tasks page that opens the new TaskBulkUploadDialog, and refreshes tasks on successful upload. Keep all user-facing text in English. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/tasks.ts",
-          "operation": "modify",
-          "description": "Add a React Query mutation/hook for bulk create that calls the backend bulkCreateTasks capability and invalidates the ['tasks'] query on success (so the list refreshes)."
-        }
-      ]
-    },
-    {
-      "id": "REQ-14",
-      "summary": "Update Tasks create/edit dialog and Tasks table to use the new Task field set with responsive columns.",
-      "acceptanceCriteria": [
-        "Task create/edit dialog enforces required fields: Client Name, Task Category, Sub Category (cannot submit if missing).",
-        "All other fields are optional and can be left blank without blocking save.",
-        "Tasks table includes columns for the specified fields; on small screens, less critical columns may be hidden or moved into an 'Details' row/expander, but the data remains accessible.",
-        "Existing task quick status editing continues to work with the new data model (or is replaced with an equivalent control) without breaking the page."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/tasks/TaskFormDialog.tsx",
-          "operation": "modify",
-          "description": "Replace the legacy task form fields (title/description/clientId/priority/deadline) with the new Task fields: required Client Name, Task Category, Sub Category; optional Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, Payment Status. Enforce required fields before submit; encode optional blanks as null/undefined as expected by hooks. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/tasks/TaskQuickStatus.tsx",
-          "operation": "modify",
-          "description": "Update quick status editing to work with the new Task model/update mutation (ensure it updates status without breaking other fields). If the new update flow requires more context, pass the needed task fields through and keep the UI behavior equivalent. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/TasksPage.tsx",
-          "operation": "modify",
-          "description": "Update Tasks table columns to match the specified Task fields (Client Name, Task Category, Sub Category, Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, Payment Status) with sensible responsive behavior (e.g., hide less critical columns on small screens and provide an accessible details/expander row). Remove legacy title/priority/description/client mapping logic. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/lib/dataParser.ts",
-          "operation": "modify",
-          "description": "Update task parsing/representation helpers to reflect the new Task fields explicitly (no decoding from a compact description/status format). Keep client parsing as-is. Ensure any date/number normalization used by UI is consistent (e.g., bigint dates displayed as locale dates)."
-        }
-      ]
-    },
-    {
-      "id": "REQ-15",
-      "summary": "Add bulk selection on Tasks list plus bulk delete and bulk edit (patch-style) actions.",
-      "acceptanceCriteria": [
-        "Tasks table includes a selection checkbox per row and a 'select all' checkbox for the current filtered list.",
-        "When one or more tasks are selected, the UI shows bulk actions: Delete Selected and Edit Selected.",
-        "Delete Selected prompts for confirmation and then deletes the selected tasks; on success the list refreshes and selection clears.",
-        "Edit Selected opens a modal/form with optional fields; leaving a field blank means 'do not change this field' for the selected tasks; submitting calls the backend bulk update API and refreshes the list on success."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
-          "operation": "create",
-          "description": "Create a bulk edit dialog that lets the user set one or more optional fields across selected tasks. Leaving a field unset must mean 'do not change'. On submit, call the bulk update hook and close on success. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/TasksPage.tsx",
-          "operation": "modify",
-          "description": "Add row selection checkboxes + select-all for the currently filtered list, show bulk action buttons (Delete Selected, Edit Selected) when selection is non-empty, and wire to confirmation + dialogs. Ensure selection clears and tasks refetch after successful bulk operations. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/tasks.ts",
-          "operation": "modify",
-          "description": "Add React Query mutations/hooks for bulk delete and bulk update that call the backend bulkDeleteTasks and bulkUpdateTasks capabilities, and invalidate the ['tasks'] query on success."
-        }
-      ]
-    },
-    {
-      "id": "REQ-16",
-      "summary": "Align frontend types/parsing and React Query hooks with the new Task model and new bulk APIs; remove legacy encoding.",
-      "acceptanceCriteria": [
-        "Frontend task types (parser/encoder) represent the new Task fields explicitly (no priority/status encoding inside description).",
-        "Existing task create/update/delete hooks work with the updated backend API signatures and payload shapes.",
-        "New React Query mutations/hooks exist for bulk create (upload), bulk update, and bulk delete; successful mutations invalidate the tasks query so the list refreshes."
+        "frontend/src/lib/dataParser.ts is updated so client parsing no longer expects contactInfo/projects to encode email/phone/taxYears/status; it instead maps to name, gstin, pan, notes.",
+        "Client create/edit dialog (frontend/src/components/clients/ClientFormDialog.tsx) shows inputs for Name (required), GSTIN (optional), PAN (optional), Notes (optional), and validation error text is in English.",
+        "Clients list page (frontend/src/pages/ClientsPage.tsx) displays sensible columns for the new client fields (at minimum Name, GSTIN, PAN; Notes can be hidden/truncated) and search filters operate on Name and optionally GSTIN/PAN.",
+        "Client detail page (frontend/src/pages/ClientDetailPage.tsx) displays GSTIN, PAN, and Notes sections when present."
       ],
       "file_operations": [
         {
           "path": "frontend/src/lib/dataParser.ts",
           "operation": "modify",
-          "description": "Remove legacy task encoding/decoding that stored metadata in the description field; update ParsedTask (or equivalent) to mirror the backend Task shape and keep conversions minimal and explicit."
+          "description": "Replace legacy client parsing/encoding (contactInfo/projects-derived email/phone/taxYears/status) with a new ParsedClient shape mapping directly to backend Client fields: name, gstin?, pan?, notes?. Remove encodeClientData if no longer needed, and update exports accordingly."
         },
         {
-          "path": "frontend/src/hooks/tasks.ts",
+          "path": "frontend/src/components/clients/ClientFormDialog.tsx",
           "operation": "modify",
-          "description": "Update existing task hooks (get/create/update/delete) to match the current backend function signatures and Task type shape from frontend/src/backend.d.ts. Add bulk create/update/delete hooks (or refactor into a consistent API) and ensure all successful mutations invalidate tasks queries for refresh."
+          "description": "Update the client create/edit/delete dialog to capture and validate the new fields: Name (required), GSTIN (optional), PAN (optional), Notes (optional). Remove email/phone/taxYears/status UI and any reliance on encodeClientData/parseClientData legacy fields. Ensure all user-facing validation/errors remain in English."
         },
         {
-          "path": "frontend/src/components/tasks/TaskFormDialog.tsx",
+          "path": "frontend/src/pages/ClientsPage.tsx",
           "operation": "modify",
-          "description": "Update create/edit/delete wiring to use the updated hooks and data shapes (no legacy encoded description/status/priority behavior). Verify the component's usage instructions before implementing."
+          "description": "Update the Clients list UI to display columns aligned with the new client model (e.g., Name, GSTIN, PAN; optionally show Notes truncated). Remove status filter UI and any email-based search logic; update search to filter by Name and optionally GSTIN/PAN/Notes."
         },
         {
-          "path": "frontend/src/pages/TasksPage.tsx",
+          "path": "frontend/src/pages/ClientDetailPage.tsx",
           "operation": "modify",
-          "description": "Update Tasks page filtering/search logic to use the new Task fields (e.g., search across Client Name/Category/Sub Category/Assigned Name/Comment) and remove legacy references to title/description/priority/clientId/deadline while preserving equivalent UX where possible. Verify the component's usage instructions before implementing."
+          "description": "Update the client detail view to remove contact/tax-year/status UI and instead render sections/rows for GSTIN, PAN, and Notes when present, while keeping the client name as the primary heading."
+        }
+      ]
+    },
+    {
+      "id": "REQ-21",
+      "summary": "Implement Clients bulk selection in the Clients list with select-all, selection count bar, and bulk delete confirmation.",
+      "acceptanceCriteria": [
+        "Clients list table includes a checkbox column and a select-all checkbox with behavior consistent with the existing Tasks bulk selection UI (frontend/src/pages/TasksPage.tsx).",
+        "When one or more clients are selected, a bulk action card/bar appears showing the count selected and at least a 'Delete Selected' action.",
+        "Bulk delete prompts for confirmation and, on success, clears selection and refreshes the clients query."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/ClientsPage.tsx",
+          "operation": "modify",
+          "description": "Add bulk selection state and UI to the Clients table: row checkboxes, a select-all checkbox, and a visible bulk action bar showing 'X clients selected' and a 'Delete Selected' action. Mirror selection patterns from frontend/src/pages/TasksPage.tsx (without changing tasks behavior). Wire bulk delete to the clients bulk delete hook and include a confirmation dialog; on success clear selection and rely on query invalidation/refresh."
+        }
+      ]
+    },
+    {
+      "id": "REQ-22",
+      "summary": "Add Clients CSV bulk upload dialog with template download, upload/preview, validation errors, and batch create submit.",
+      "acceptanceCriteria": [
+        "Clients page provides a 'Bulk Upload' button that opens a dialog similar in structure to the existing TaskBulkUploadDialog (download template -> upload CSV -> preview/errors -> submit).",
+        "CSV template includes headers for: Client Name (required), GSTIN, PAN, Notes.",
+        "CSV parsing validates required Client Name and produces row/column validation errors in English; invalid uploads cannot be submitted.",
+        "On successful submit, the dialog shows a success state, closes, and the clients list refreshes to include newly created clients."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/utils/clientCsv.ts",
+          "operation": "create",
+          "description": "Create CSV utilities for Clients bulk upload: generate/download template with headers (Client Name, GSTIN, PAN, Notes), parse CSV rows (including quoted fields), and validate that Client Name is present per row. Return parsed rows plus English row/column validation errors, and provide a conversion helper to the backend bulk-create input shape."
+        },
+        {
+          "path": "frontend/src/components/clients/ClientBulkUploadDialog.tsx",
+          "operation": "create",
+          "description": "Implement a Clients bulk upload dialog modeled after frontend/src/components/tasks/TaskBulkUploadDialog.tsx: Step 1 download template, Step 2 upload CSV, show parsed preview table, show validation errors (English), and submit using the bulkCreateClients hook. Include a success state and auto-close/reset behavior, and ensure submit is disabled when invalid."
+        },
+        {
+          "path": "frontend/src/pages/ClientsPage.tsx",
+          "operation": "modify",
+          "description": "Add a 'Bulk Upload' button to open the new ClientBulkUploadDialog, manage its open/close state, and ensure successful uploads result in the clients list reflecting new entries via React Query invalidation/refetch."
+        }
+      ]
+    },
+    {
+      "id": "REQ-23",
+      "summary": "Add React Query hooks for clients bulk create/delete and wire them into bulk upload and bulk selection UIs.",
+      "acceptanceCriteria": [
+        "frontend/src/hooks/clients.ts includes hooks for bulkCreateClients and bulkDeleteClients (naming consistent with tasks hooks).",
+        "Hooks invalidate/refetch the clients list query on success.",
+        "UI uses these hooks (no direct actor calls from components other than through hooks)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/clients.ts",
+          "operation": "modify",
+          "description": "Add React Query mutation hooks for bulkCreateClients and bulkDeleteClients using the backend actor (consistent patterns with frontend/src/hooks/tasks.ts). Ensure onSuccess invalidates the ['clients'] query and, where relevant, any per-client queries. Update existing create/update hooks to use the new backend client input shape (name, gstin?, pan?, notes?) instead of legacy contactInfo/projects arguments."
+        },
+        {
+          "path": "frontend/src/pages/ClientsPage.tsx",
+          "operation": "modify",
+          "description": "Wire the bulk selection delete flow to use the new useBulkDeleteClients hook (no direct actor calls). Ensure successful deletion clears selection and relies on hook invalidation/refetch to update the list."
+        },
+        {
+          "path": "frontend/src/components/clients/ClientBulkUploadDialog.tsx",
+          "operation": "modify",
+          "description": "Wire the upload submit action to use the new useBulkCreateClients hook (no direct actor calls). Ensure success triggers UI success state and close/reset flow, and that the clients list refreshes via hook invalidation."
         }
       ]
     }

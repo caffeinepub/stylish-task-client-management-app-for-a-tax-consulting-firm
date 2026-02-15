@@ -13,6 +13,18 @@ export const UserRole = IDL.Variant({
   'user' : IDL.Null,
   'guest' : IDL.Null,
 });
+export const PartialClientInput = IDL.Record({
+  'pan' : IDL.Opt(IDL.Text),
+  'name' : IDL.Text,
+  'gstin' : IDL.Opt(IDL.Text),
+  'notes' : IDL.Opt(IDL.Text),
+});
+export const ClientId = IDL.Nat;
+export const TaskInput = IDL.Record({
+  'subCategory' : IDL.Text,
+  'clientName' : IDL.Text,
+  'taskCategory' : IDL.Text,
+});
 export const TaskId = IDL.Nat;
 export const PartialTaskUpdate = IDL.Record({
   'status' : IDL.Opt(IDL.Text),
@@ -29,12 +41,12 @@ export const PartialTaskUpdate = IDL.Record({
   'taskCategory' : IDL.Opt(IDL.Text),
   'assignedName' : IDL.Opt(IDL.Text),
 });
-export const ClientId = IDL.Nat;
 export const Client = IDL.Record({
   'id' : ClientId,
-  'contactInfo' : IDL.Text,
-  'projects' : IDL.Vec(IDL.Text),
+  'pan' : IDL.Opt(IDL.Text),
   'name' : IDL.Text,
+  'gstin' : IDL.Opt(IDL.Text),
+  'notes' : IDL.Opt(IDL.Text),
   'timestamp' : IDL.Int,
 });
 export const Task = IDL.Record({
@@ -59,22 +71,20 @@ export const UserProfile = IDL.Record({ 'name' : IDL.Text });
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
-  'bulkCreateTasks' : IDL.Func(
-      [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text, IDL.Text))],
-      [IDL.Vec(TaskId)],
+  'bulkCreateClients' : IDL.Func(
+      [IDL.Vec(PartialClientInput)],
+      [IDL.Vec(ClientId)],
       [],
     ),
+  'bulkCreateTasks' : IDL.Func([IDL.Vec(TaskInput)], [IDL.Vec(TaskId)], []),
+  'bulkDeleteClients' : IDL.Func([IDL.Vec(ClientId)], [], []),
   'bulkDeleteTasks' : IDL.Func([IDL.Vec(TaskId)], [], []),
   'bulkUpdateTasks' : IDL.Func(
       [IDL.Vec(IDL.Tuple(TaskId, PartialTaskUpdate))],
       [],
       [],
     ),
-  'createClient' : IDL.Func(
-      [IDL.Text, IDL.Text, IDL.Vec(IDL.Text)],
-      [ClientId],
-      [],
-    ),
+  'createClient' : IDL.Func([PartialClientInput], [ClientId], []),
   'createTask' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [TaskId], []),
   'deleteClient' : IDL.Func([ClientId], [], []),
   'deleteTask' : IDL.Func([TaskId], [], []),
@@ -91,11 +101,7 @@ export const idlService = IDL.Service({
     ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
-  'updateClient' : IDL.Func(
-      [ClientId, IDL.Text, IDL.Text, IDL.Vec(IDL.Text)],
-      [],
-      [],
-    ),
+  'updateClient' : IDL.Func([ClientId, PartialClientInput], [], []),
   'updateTask' : IDL.Func(
       [
         TaskId,
@@ -126,6 +132,18 @@ export const idlFactory = ({ IDL }) => {
     'user' : IDL.Null,
     'guest' : IDL.Null,
   });
+  const PartialClientInput = IDL.Record({
+    'pan' : IDL.Opt(IDL.Text),
+    'name' : IDL.Text,
+    'gstin' : IDL.Opt(IDL.Text),
+    'notes' : IDL.Opt(IDL.Text),
+  });
+  const ClientId = IDL.Nat;
+  const TaskInput = IDL.Record({
+    'subCategory' : IDL.Text,
+    'clientName' : IDL.Text,
+    'taskCategory' : IDL.Text,
+  });
   const TaskId = IDL.Nat;
   const PartialTaskUpdate = IDL.Record({
     'status' : IDL.Opt(IDL.Text),
@@ -142,12 +160,12 @@ export const idlFactory = ({ IDL }) => {
     'taskCategory' : IDL.Opt(IDL.Text),
     'assignedName' : IDL.Opt(IDL.Text),
   });
-  const ClientId = IDL.Nat;
   const Client = IDL.Record({
     'id' : ClientId,
-    'contactInfo' : IDL.Text,
-    'projects' : IDL.Vec(IDL.Text),
+    'pan' : IDL.Opt(IDL.Text),
     'name' : IDL.Text,
+    'gstin' : IDL.Opt(IDL.Text),
+    'notes' : IDL.Opt(IDL.Text),
     'timestamp' : IDL.Int,
   });
   const Task = IDL.Record({
@@ -172,22 +190,20 @@ export const idlFactory = ({ IDL }) => {
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
-    'bulkCreateTasks' : IDL.Func(
-        [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text, IDL.Text))],
-        [IDL.Vec(TaskId)],
+    'bulkCreateClients' : IDL.Func(
+        [IDL.Vec(PartialClientInput)],
+        [IDL.Vec(ClientId)],
         [],
       ),
+    'bulkCreateTasks' : IDL.Func([IDL.Vec(TaskInput)], [IDL.Vec(TaskId)], []),
+    'bulkDeleteClients' : IDL.Func([IDL.Vec(ClientId)], [], []),
     'bulkDeleteTasks' : IDL.Func([IDL.Vec(TaskId)], [], []),
     'bulkUpdateTasks' : IDL.Func(
         [IDL.Vec(IDL.Tuple(TaskId, PartialTaskUpdate))],
         [],
         [],
       ),
-    'createClient' : IDL.Func(
-        [IDL.Text, IDL.Text, IDL.Vec(IDL.Text)],
-        [ClientId],
-        [],
-      ),
+    'createClient' : IDL.Func([PartialClientInput], [ClientId], []),
     'createTask' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [TaskId], []),
     'deleteClient' : IDL.Func([ClientId], [], []),
     'deleteTask' : IDL.Func([TaskId], [], []),
@@ -204,11 +220,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
-    'updateClient' : IDL.Func(
-        [ClientId, IDL.Text, IDL.Text, IDL.Vec(IDL.Text)],
-        [],
-        [],
-      ),
+    'updateClient' : IDL.Func([ClientId, PartialClientInput], [], []),
     'updateTask' : IDL.Func(
         [
           TaskId,

@@ -6,20 +6,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Users, CheckSquare, AlertCircle, Calendar } from 'lucide-react';
 import { useGetAllClients } from '../hooks/clients';
 import { useGetAllTasks } from '../hooks/tasks';
-import { parseClientData } from '../lib/dataParser';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { data: clients, isLoading: clientsLoading } = useGetAllClients();
   const { data: tasks, isLoading: tasksLoading } = useGetAllTasks();
 
-  const parsedClients = useMemo(() => {
-    return clients?.map(parseClientData) || [];
-  }, [clients]);
-
   const stats = useMemo(() => {
     const now = Date.now();
-    const activeClients = parsedClients.filter(c => c.status === 'Active').length;
+    const totalClients = clients?.length || 0;
     const openTasks = tasks?.filter(t => t.status !== 'Done').length || 0;
     const overdueTasks = tasks?.filter(t => 
       t.dueDate && Number(t.dueDate) < now && t.status !== 'Done'
@@ -31,8 +26,8 @@ export default function DashboardPage() {
       return dueDate >= now && dueDate <= sevenDaysFromNow;
     }).length || 0;
 
-    return { activeClients, openTasks, overdueTasks, upcomingTasks };
-  }, [parsedClients, tasks]);
+    return { totalClients, openTasks, overdueTasks, upcomingTasks };
+  }, [clients, tasks]);
 
   const isLoading = clientsLoading || tasksLoading;
 
@@ -55,17 +50,17 @@ export default function DashboardPage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card className="border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Clients</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <Skeleton className="h-8 w-16" />
             ) : (
-              <div className="text-2xl font-bold">{stats.activeClients}</div>
+              <div className="text-2xl font-bold">{stats.totalClients}</div>
             )}
             <p className="text-xs text-muted-foreground mt-1">
-              Total active clients
+              All registered clients
             </p>
           </CardContent>
         </Card>
@@ -165,7 +160,7 @@ export default function DashboardPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Total Clients</span>
-                <span className="font-medium">{parsedClients.length}</span>
+                <span className="font-medium">{clients?.length || 0}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Total Tasks</span>
