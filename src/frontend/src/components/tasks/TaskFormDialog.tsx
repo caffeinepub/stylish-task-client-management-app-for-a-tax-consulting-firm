@@ -11,33 +11,36 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { useCreateTask, useUpdateTask, useDeleteTask } from '../../hooks/tasks';
-import { useGetAllClients } from '../../hooks/clients';
-import { parseTaskData, encodeTaskData, parseClientData } from '../../lib/dataParser';
-import type { ParsedTask } from '../../lib/dataParser';
+import type { Task } from '../../backend';
 
 interface TaskFormDialogProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  task?: ParsedTask;
+  task?: Task;
   trigger?: React.ReactNode;
-  preselectedClientId?: bigint;
 }
 
-export default function TaskFormDialog({ open, onOpenChange, task, trigger, preselectedClientId }: TaskFormDialogProps) {
+export default function TaskFormDialog({ open, onOpenChange, task, trigger }: TaskFormDialogProps) {
   const isEdit = !!task;
 
   const [internalOpen, setInternalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [clientId, setClientId] = useState<string>('');
+  const [clientName, setClientName] = useState('');
+  const [taskCategory, setTaskCategory] = useState('');
+  const [subCategory, setSubCategory] = useState('');
   const [status, setStatus] = useState('To Do');
-  const [priority, setPriority] = useState('Medium');
-  const [deadline, setDeadline] = useState<Date | undefined>();
+  const [comment, setComment] = useState('');
+  const [assignedName, setAssignedName] = useState('');
+  const [dueDate, setDueDate] = useState<Date | undefined>();
+  const [assignmentDate, setAssignmentDate] = useState<Date | undefined>();
+  const [completionDate, setCompletionDate] = useState<Date | undefined>();
+  const [bill, setBill] = useState('');
+  const [advanceReceived, setAdvanceReceived] = useState('');
+  const [outstandingAmount, setOutstandingAmount] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const { data: clients } = useGetAllClients();
   const { mutate: createTask, isPending: isCreating } = useCreateTask();
   const { mutate: updateTask, isPending: isUpdating } = useUpdateTask();
   const { mutate: deleteTask, isPending: isDeleting } = useDeleteTask();
@@ -46,43 +49,56 @@ export default function TaskFormDialog({ open, onOpenChange, task, trigger, pres
   const dialogOpen = open !== undefined ? open : internalOpen;
   const setDialogOpen = onOpenChange || setInternalOpen;
 
-  const parsedClients = clients?.map(parseClientData) || [];
-
   useEffect(() => {
     if (task) {
-      setTitle(task.title);
-      setDescription(task.description);
-      setClientId(task.clientId.toString());
-      setStatus(task.status);
-      setPriority(task.priority);
-      setDeadline(task.deadline ? new Date(Number(task.deadline)) : undefined);
+      setClientName(task.clientName);
+      setTaskCategory(task.taskCategory);
+      setSubCategory(task.subCategory);
+      setStatus(task.status || 'To Do');
+      setComment(task.comment || '');
+      setAssignedName(task.assignedName || '');
+      setDueDate(task.dueDate ? new Date(Number(task.dueDate)) : undefined);
+      setAssignmentDate(task.assignmentDate ? new Date(Number(task.assignmentDate)) : undefined);
+      setCompletionDate(task.completionDate ? new Date(Number(task.completionDate)) : undefined);
+      setBill(task.bill !== undefined ? task.bill.toString() : '');
+      setAdvanceReceived(task.advanceReceived !== undefined ? task.advanceReceived.toString() : '');
+      setOutstandingAmount(task.outstandingAmount !== undefined ? task.outstandingAmount.toString() : '');
+      setPaymentStatus(task.paymentStatus || '');
     } else {
       resetForm();
-      if (preselectedClientId) {
-        setClientId(preselectedClientId.toString());
-      }
     }
-  }, [task, dialogOpen, preselectedClientId]);
+  }, [task, dialogOpen]);
 
   const resetForm = () => {
-    setTitle('');
-    setDescription('');
-    setClientId('');
+    setClientName('');
+    setTaskCategory('');
+    setSubCategory('');
     setStatus('To Do');
-    setPriority('Medium');
-    setDeadline(undefined);
+    setComment('');
+    setAssignedName('');
+    setDueDate(undefined);
+    setAssignmentDate(undefined);
+    setCompletionDate(undefined);
+    setBill('');
+    setAdvanceReceived('');
+    setOutstandingAmount('');
+    setPaymentStatus('');
     setErrors({});
   };
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
     
-    if (!title.trim()) {
-      newErrors.title = 'Title is required';
+    if (!clientName.trim()) {
+      newErrors.clientName = 'Client Name is required';
     }
     
-    if (!clientId) {
-      newErrors.clientId = 'Client is required';
+    if (!taskCategory.trim()) {
+      newErrors.taskCategory = 'Task Category is required';
+    }
+
+    if (!subCategory.trim()) {
+      newErrors.subCategory = 'Sub Category is required';
     }
 
     setErrors(newErrors);
@@ -94,22 +110,23 @@ export default function TaskFormDialog({ open, onOpenChange, task, trigger, pres
     
     if (!validate()) return;
 
-    const { description: encodedDescription, status: encodedStatus } = encodeTaskData({
-      description,
-      priority,
-      status,
-    });
-
-    const deadlineMs = deadline ? BigInt(deadline.getTime()) : null;
-
     if (isEdit && task) {
       updateTask(
         {
           taskId: task.id,
-          title: title.trim(),
-          description: encodedDescription,
-          status: encodedStatus,
-          deadline: deadlineMs,
+          clientName: clientName.trim(),
+          taskCategory: taskCategory.trim(),
+          subCategory: subCategory.trim(),
+          status: status || null,
+          comment: comment.trim() || null,
+          assignedName: assignedName.trim() || null,
+          dueDate: dueDate ? BigInt(dueDate.getTime()) : null,
+          assignmentDate: assignmentDate ? BigInt(assignmentDate.getTime()) : null,
+          completionDate: completionDate ? BigInt(completionDate.getTime()) : null,
+          bill: bill ? parseFloat(bill) : null,
+          advanceReceived: advanceReceived ? parseFloat(advanceReceived) : null,
+          outstandingAmount: outstandingAmount ? parseFloat(outstandingAmount) : null,
+          paymentStatus: paymentStatus || null,
         },
         {
           onSuccess: () => {
@@ -121,10 +138,9 @@ export default function TaskFormDialog({ open, onOpenChange, task, trigger, pres
     } else {
       createTask(
         {
-          title: title.trim(),
-          description: encodedDescription,
-          clientId: BigInt(clientId),
-          deadline: deadlineMs,
+          clientName: clientName.trim(),
+          taskCategory: taskCategory.trim(),
+          subCategory: subCategory.trim(),
         },
         {
           onSuccess: () => {
@@ -153,38 +169,47 @@ export default function TaskFormDialog({ open, onOpenChange, task, trigger, pres
       <DialogHeader>
         <DialogTitle>{isEdit ? 'Edit Task' : 'Add New Task'}</DialogTitle>
         <DialogDescription>
-          {isEdit ? 'Update task details' : 'Create a new task for a client'}
+          {isEdit ? 'Update task details' : 'Create a new task'}
         </DialogDescription>
       </DialogHeader>
       <form onSubmit={handleSubmit}>
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Title *</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Task title"
-              disabled={isPending}
-            />
-            {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
+        <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="clientName">Client Name *</Label>
+              <Input
+                id="clientName"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+                placeholder="Client name"
+                disabled={isPending}
+              />
+              {errors.clientName && <p className="text-sm text-destructive">{errors.clientName}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="taskCategory">Task Category *</Label>
+              <Input
+                id="taskCategory"
+                value={taskCategory}
+                onChange={(e) => setTaskCategory(e.target.value)}
+                placeholder="e.g., Tax Filing"
+                disabled={isPending}
+              />
+              {errors.taskCategory && <p className="text-sm text-destructive">{errors.taskCategory}</p>}
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="client">Client *</Label>
-            <Select value={clientId} onValueChange={setClientId} disabled={isPending || isEdit}>
-              <SelectTrigger id="client">
-                <SelectValue placeholder="Select a client" />
-              </SelectTrigger>
-              <SelectContent>
-                {parsedClients.map((client) => (
-                  <SelectItem key={client.id.toString()} value={client.id.toString()}>
-                    {client.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.clientId && <p className="text-sm text-destructive">{errors.clientId}</p>}
+            <Label htmlFor="subCategory">Sub Category *</Label>
+            <Input
+              id="subCategory"
+              value={subCategory}
+              onChange={(e) => setSubCategory(e.target.value)}
+              placeholder="e.g., Individual Tax Return"
+              disabled={isPending}
+            />
+            {errors.subCategory && <p className="text-sm text-destructive">{errors.subCategory}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -192,7 +217,7 @@ export default function TaskFormDialog({ open, onOpenChange, task, trigger, pres
               <Label htmlFor="status">Status</Label>
               <Select value={status} onValueChange={setStatus} disabled={isPending}>
                 <SelectTrigger id="status">
-                  <SelectValue />
+                  <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="To Do">To Do</SelectItem>
@@ -204,73 +229,170 @@ export default function TaskFormDialog({ open, onOpenChange, task, trigger, pres
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="priority">Priority</Label>
-              <Select value={priority} onValueChange={setPriority} disabled={isPending}>
-                <SelectTrigger id="priority">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Low">Low</SelectItem>
-                  <SelectItem value="Medium">Medium</SelectItem>
-                  <SelectItem value="High">High</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="assignedName">Assigned Name</Label>
+              <Input
+                id="assignedName"
+                value={assignedName}
+                onChange={(e) => setAssignedName(e.target.value)}
+                placeholder="Assigned to"
+                disabled={isPending}
+              />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Due Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-left font-normal"
-                  disabled={isPending}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {deadline ? format(deadline, 'PPP') : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={deadline}
-                  onSelect={setDeadline}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+            <Label htmlFor="comment">Comment</Label>
+            <Textarea
+              id="comment"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Additional notes or comments"
+              disabled={isPending}
+              rows={3}
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Due Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left font-normal"
+                    disabled={isPending}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dueDate ? format(dueDate, 'PPP') : <span className="text-muted-foreground">Pick date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar mode="single" selected={dueDate} onSelect={setDueDate} initialFocus />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Assignment Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left font-normal"
+                    disabled={isPending}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {assignmentDate ? format(assignmentDate, 'PPP') : <span className="text-muted-foreground">Pick date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar mode="single" selected={assignmentDate} onSelect={setAssignmentDate} initialFocus />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Completion Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left font-normal"
+                    disabled={isPending}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {completionDate ? format(completionDate, 'PPP') : <span className="text-muted-foreground">Pick date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar mode="single" selected={completionDate} onSelect={setCompletionDate} initialFocus />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="bill">Bill</Label>
+              <Input
+                id="bill"
+                type="number"
+                step="0.01"
+                value={bill}
+                onChange={(e) => setBill(e.target.value)}
+                placeholder="0.00"
+                disabled={isPending}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="advanceReceived">Advance Received</Label>
+              <Input
+                id="advanceReceived"
+                type="number"
+                step="0.01"
+                value={advanceReceived}
+                onChange={(e) => setAdvanceReceived(e.target.value)}
+                placeholder="0.00"
+                disabled={isPending}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="outstandingAmount">Outstanding Amount</Label>
+              <Input
+                id="outstandingAmount"
+                type="number"
+                step="0.01"
+                value={outstandingAmount}
+                onChange={(e) => setOutstandingAmount(e.target.value)}
+                placeholder="0.00"
+                disabled={isPending}
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Task details..."
-              rows={4}
-              disabled={isPending}
-            />
+            <Label htmlFor="paymentStatus">Payment Status</Label>
+            <Select value={paymentStatus} onValueChange={setPaymentStatus} disabled={isPending}>
+              <SelectTrigger id="paymentStatus">
+                <SelectValue placeholder="Select payment status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Pending">Pending</SelectItem>
+                <SelectItem value="Partial">Partial</SelectItem>
+                <SelectItem value="Paid">Paid</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="flex-col sm:flex-row gap-2">
           {isEdit && (
             <Button
               type="button"
               variant="destructive"
               onClick={() => setDeleteDialogOpen(true)}
               disabled={isPending}
+              className="sm:mr-auto"
             >
               Delete
             </Button>
           )}
-          <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={isPending}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setDialogOpen(false)}
+            disabled={isPending}
+          >
             Cancel
           </Button>
-          <Button type="submit" disabled={isPending}>
-            {isPending ? 'Saving...' : isEdit ? 'Update' : 'Create'}
+          <Button
+            type="submit"
+            disabled={isPending}
+            className="bg-[oklch(0.50_0.08_130)] hover:bg-[oklch(0.45_0.08_130)] dark:bg-[oklch(0.65_0.08_130)] dark:hover:bg-[oklch(0.70_0.08_130)]"
+          >
+            {isPending ? 'Saving...' : isEdit ? 'Update Task' : 'Create Task'}
           </Button>
         </DialogFooter>
       </form>
@@ -278,15 +400,19 @@ export default function TaskFormDialog({ open, onOpenChange, task, trigger, pres
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Task</AlertDialogTitle>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this task? This action cannot be undone.
+              This action cannot be undone. This will permanently delete the task.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              {isDeleting ? 'Deleting...' : 'Delete'}
+            <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isPending ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -298,18 +424,14 @@ export default function TaskFormDialog({ open, onOpenChange, task, trigger, pres
     return (
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogTrigger asChild>{trigger}</DialogTrigger>
-        <DialogContent className="sm:max-w-[500px]">
-          {content}
-        </DialogContent>
+        <DialogContent className="max-w-3xl">{content}</DialogContent>
       </Dialog>
     );
   }
 
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-      <DialogContent className="sm:max-w-[500px]">
-        {content}
-      </DialogContent>
+      <DialogContent className="max-w-3xl">{content}</DialogContent>
     </Dialog>
   );
 }

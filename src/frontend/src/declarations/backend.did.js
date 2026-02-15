@@ -13,8 +13,23 @@ export const UserRole = IDL.Variant({
   'user' : IDL.Null,
   'guest' : IDL.Null,
 });
-export const ClientId = IDL.Nat;
 export const TaskId = IDL.Nat;
+export const PartialTaskUpdate = IDL.Record({
+  'status' : IDL.Opt(IDL.Text),
+  'subCategory' : IDL.Opt(IDL.Text),
+  'paymentStatus' : IDL.Opt(IDL.Text),
+  'completionDate' : IDL.Opt(IDL.Int),
+  'clientName' : IDL.Opt(IDL.Text),
+  'assignmentDate' : IDL.Opt(IDL.Int),
+  'bill' : IDL.Opt(IDL.Float64),
+  'advanceReceived' : IDL.Opt(IDL.Float64),
+  'dueDate' : IDL.Opt(IDL.Int),
+  'comment' : IDL.Opt(IDL.Text),
+  'outstandingAmount' : IDL.Opt(IDL.Float64),
+  'taskCategory' : IDL.Opt(IDL.Text),
+  'assignedName' : IDL.Opt(IDL.Text),
+});
+export const ClientId = IDL.Nat;
 export const Client = IDL.Record({
   'id' : ClientId,
   'contactInfo' : IDL.Text,
@@ -24,28 +39,43 @@ export const Client = IDL.Record({
 });
 export const Task = IDL.Record({
   'id' : TaskId,
-  'status' : IDL.Text,
-  'title' : IDL.Text,
-  'clientId' : ClientId,
+  'status' : IDL.Opt(IDL.Text),
+  'subCategory' : IDL.Text,
+  'paymentStatus' : IDL.Opt(IDL.Text),
+  'completionDate' : IDL.Opt(IDL.Int),
+  'clientName' : IDL.Text,
+  'assignmentDate' : IDL.Opt(IDL.Int),
+  'bill' : IDL.Opt(IDL.Float64),
+  'advanceReceived' : IDL.Opt(IDL.Float64),
   'createdAt' : IDL.Int,
-  'description' : IDL.Text,
-  'deadline' : IDL.Opt(IDL.Int),
+  'dueDate' : IDL.Opt(IDL.Int),
+  'comment' : IDL.Opt(IDL.Text),
+  'outstandingAmount' : IDL.Opt(IDL.Float64),
+  'taskCategory' : IDL.Text,
+  'assignedName' : IDL.Opt(IDL.Text),
 });
 export const UserProfile = IDL.Record({ 'name' : IDL.Text });
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'bulkCreateTasks' : IDL.Func(
+      [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text, IDL.Text))],
+      [IDL.Vec(TaskId)],
+      [],
+    ),
+  'bulkDeleteTasks' : IDL.Func([IDL.Vec(TaskId)], [], []),
+  'bulkUpdateTasks' : IDL.Func(
+      [IDL.Vec(IDL.Tuple(TaskId, PartialTaskUpdate))],
+      [],
+      [],
+    ),
   'createClient' : IDL.Func(
       [IDL.Text, IDL.Text, IDL.Vec(IDL.Text)],
       [ClientId],
       [],
     ),
-  'createTask' : IDL.Func(
-      [IDL.Text, IDL.Text, ClientId, IDL.Opt(IDL.Int)],
-      [TaskId],
-      [],
-    ),
+  'createTask' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [TaskId], []),
   'deleteClient' : IDL.Func([ClientId], [], []),
   'deleteTask' : IDL.Func([TaskId], [], []),
   'getAllClients' : IDL.Func([], [IDL.Vec(Client)], ['query']),
@@ -54,7 +84,6 @@ export const idlService = IDL.Service({
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getClient' : IDL.Func([ClientId], [IDL.Opt(Client)], ['query']),
   'getTask' : IDL.Func([TaskId], [IDL.Opt(Task)], ['query']),
-  'getTasksByClient' : IDL.Func([ClientId], [IDL.Vec(Task)], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
@@ -68,7 +97,22 @@ export const idlService = IDL.Service({
       [],
     ),
   'updateTask' : IDL.Func(
-      [TaskId, IDL.Text, IDL.Text, IDL.Text, IDL.Opt(IDL.Int)],
+      [
+        TaskId,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Opt(IDL.Text),
+        IDL.Opt(IDL.Text),
+        IDL.Opt(IDL.Text),
+        IDL.Opt(IDL.Int),
+        IDL.Opt(IDL.Int),
+        IDL.Opt(IDL.Int),
+        IDL.Opt(IDL.Float64),
+        IDL.Opt(IDL.Float64),
+        IDL.Opt(IDL.Float64),
+        IDL.Opt(IDL.Text),
+      ],
       [],
       [],
     ),
@@ -82,8 +126,23 @@ export const idlFactory = ({ IDL }) => {
     'user' : IDL.Null,
     'guest' : IDL.Null,
   });
-  const ClientId = IDL.Nat;
   const TaskId = IDL.Nat;
+  const PartialTaskUpdate = IDL.Record({
+    'status' : IDL.Opt(IDL.Text),
+    'subCategory' : IDL.Opt(IDL.Text),
+    'paymentStatus' : IDL.Opt(IDL.Text),
+    'completionDate' : IDL.Opt(IDL.Int),
+    'clientName' : IDL.Opt(IDL.Text),
+    'assignmentDate' : IDL.Opt(IDL.Int),
+    'bill' : IDL.Opt(IDL.Float64),
+    'advanceReceived' : IDL.Opt(IDL.Float64),
+    'dueDate' : IDL.Opt(IDL.Int),
+    'comment' : IDL.Opt(IDL.Text),
+    'outstandingAmount' : IDL.Opt(IDL.Float64),
+    'taskCategory' : IDL.Opt(IDL.Text),
+    'assignedName' : IDL.Opt(IDL.Text),
+  });
+  const ClientId = IDL.Nat;
   const Client = IDL.Record({
     'id' : ClientId,
     'contactInfo' : IDL.Text,
@@ -93,28 +152,43 @@ export const idlFactory = ({ IDL }) => {
   });
   const Task = IDL.Record({
     'id' : TaskId,
-    'status' : IDL.Text,
-    'title' : IDL.Text,
-    'clientId' : ClientId,
+    'status' : IDL.Opt(IDL.Text),
+    'subCategory' : IDL.Text,
+    'paymentStatus' : IDL.Opt(IDL.Text),
+    'completionDate' : IDL.Opt(IDL.Int),
+    'clientName' : IDL.Text,
+    'assignmentDate' : IDL.Opt(IDL.Int),
+    'bill' : IDL.Opt(IDL.Float64),
+    'advanceReceived' : IDL.Opt(IDL.Float64),
     'createdAt' : IDL.Int,
-    'description' : IDL.Text,
-    'deadline' : IDL.Opt(IDL.Int),
+    'dueDate' : IDL.Opt(IDL.Int),
+    'comment' : IDL.Opt(IDL.Text),
+    'outstandingAmount' : IDL.Opt(IDL.Float64),
+    'taskCategory' : IDL.Text,
+    'assignedName' : IDL.Opt(IDL.Text),
   });
   const UserProfile = IDL.Record({ 'name' : IDL.Text });
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'bulkCreateTasks' : IDL.Func(
+        [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text, IDL.Text))],
+        [IDL.Vec(TaskId)],
+        [],
+      ),
+    'bulkDeleteTasks' : IDL.Func([IDL.Vec(TaskId)], [], []),
+    'bulkUpdateTasks' : IDL.Func(
+        [IDL.Vec(IDL.Tuple(TaskId, PartialTaskUpdate))],
+        [],
+        [],
+      ),
     'createClient' : IDL.Func(
         [IDL.Text, IDL.Text, IDL.Vec(IDL.Text)],
         [ClientId],
         [],
       ),
-    'createTask' : IDL.Func(
-        [IDL.Text, IDL.Text, ClientId, IDL.Opt(IDL.Int)],
-        [TaskId],
-        [],
-      ),
+    'createTask' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [TaskId], []),
     'deleteClient' : IDL.Func([ClientId], [], []),
     'deleteTask' : IDL.Func([TaskId], [], []),
     'getAllClients' : IDL.Func([], [IDL.Vec(Client)], ['query']),
@@ -123,7 +197,6 @@ export const idlFactory = ({ IDL }) => {
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getClient' : IDL.Func([ClientId], [IDL.Opt(Client)], ['query']),
     'getTask' : IDL.Func([TaskId], [IDL.Opt(Task)], ['query']),
-    'getTasksByClient' : IDL.Func([ClientId], [IDL.Vec(Task)], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],
@@ -137,7 +210,22 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'updateTask' : IDL.Func(
-        [TaskId, IDL.Text, IDL.Text, IDL.Text, IDL.Opt(IDL.Int)],
+        [
+          TaskId,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Opt(IDL.Text),
+          IDL.Opt(IDL.Text),
+          IDL.Opt(IDL.Text),
+          IDL.Opt(IDL.Int),
+          IDL.Opt(IDL.Int),
+          IDL.Opt(IDL.Int),
+          IDL.Opt(IDL.Float64),
+          IDL.Opt(IDL.Float64),
+          IDL.Opt(IDL.Float64),
+          IDL.Opt(IDL.Text),
+        ],
         [],
         [],
       ),

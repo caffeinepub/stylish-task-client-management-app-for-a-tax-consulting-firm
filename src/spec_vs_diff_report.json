@@ -1,93 +1,85 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T08:50:29.359Z",
-  "summary": "Diff adds a Motoko backend actor with per-principal Maps for clients/tasks plus a React/TanStack Router + React Query frontend with Internet Identity gating, dashboard/clients/tasks pages, forms, and theme styling. Several requested backend data fields and filtering/query APIs are not evidenced in the backend diff snippet, and some unrequested features (user profile setup, admin/access-control secret initialization) were added.",
+  "generatedAt": "2026-02-15T10:45:34.513Z",
+  "summary": "Diff implements significant frontend UI for expanded Task fields, CSV bulk upload, and bulk selection/edit/delete dialogs, and updates the backend Task/PartialTaskUpdate types plus adds a migration module. However, key backend API implementations (validation, updated CRUD signatures, and bulk APIs) are not evidenced in the provided backend diff snippet, and the frontend hooks indicate bulk/create APIs may only support required fields rather than the full expanded model.",
   "missing_requirements": [
     {
-      "id": "REQ-2",
-      "requirement": "Client and Task backend models must include required fields (Client: primary contact name/email/phone, tax years, status, notes, createdAt, updatedAt; Task: description/notes, status, priority, dueDate optional, createdAt, updatedAt) and persist them per principal.",
-      "reason": "The backend types shown do not contain the required fields. Client only has id/name/contactInfo/projects/timestamp (no createdAt/updatedAt, status, notes, structured contact). Task lacks priority and updatedAt; dueDate is named deadline and there is no updatedAt.",
+      "id": "REQ-11",
+      "requirement": "Backend create/update task methods validate required fields (clientName, taskCategory, subCategory) are non-empty (or trap clearly), allow optional fields to be absent/null, and listing/query APIs return the new Task shape for all tasks with per-caller scoping.",
+      "reason": "While backend/main.mo shows the updated Task and PartialTaskUpdate types, the diff snippet does not show the updated createTask/updateTask/getAllTasks/getTask implementations, including required-field validation, updated method signatures for optional fields, and proof that listing/query APIs return the new shape. Evidence also suggests frontend createTask/updateTask signatures may not align with full-field support on create.",
       "evidence": [
-        "backend/main.mo"
+        "backend/main.mo",
+        "frontend/src/hooks/tasks.ts",
+        "frontend/src/components/tasks/TaskQuickStatus.tsx"
       ]
     },
     {
-      "id": "REQ-2",
-      "requirement": "Backend must expose methods to list/get/create/update/delete clients and tasks; list tasks by clientId; and filter tasks by status and due date range.",
-      "reason": "Only some methods are visible (e.g., createClient/updateClient and some profile queries). The diff snippet does not show list/get methods, task CRUD, or filtering by status/due date range. Because backend/main.mo is truncated, these may exist later, but they are not evidenced in the provided diff summary.",
+      "id": "REQ-12",
+      "requirement": "Backend bulk APIs: bulk create from a list of task inputs (with per-row success/failure or created IDs), bulk delete by list of IDs with clear error on non-existent task, and bulk update by IDs with a patch payload where omitted fields are not changed.",
+      "reason": "Frontend calls actor.bulkCreateTasks/bulkDeleteTasks/bulkUpdateTasks, but the backend diff snippet does not show these methods or their behaviors (per-row results for bulk create, error reporting for missing IDs, patch semantics). Additionally, the frontend bulk-create hook is typed as Array<[string,string,string]>, indicating only required fields are sent, not the full set of task fields required by the expanded model.",
       "evidence": [
-        "backend/main.mo (truncated)"
+        "backend/main.mo",
+        "frontend/src/hooks/tasks.ts",
+        "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
+        "frontend/src/components/tasks/TaskBulkUploadDialog.tsx"
       ]
     },
     {
-      "id": "REQ-6",
-      "requirement": "Empty states for no clients and no tasks, with a clear action to create the first record.",
-      "reason": "Loading and error states are clearly implemented on pages, but empty-state UI is not evidenced in the visible truncated page code for Clients/Tasks (content cut before empty-state rendering).",
+      "id": "REQ-13",
+      "requirement": "Bulk upload flow includes preview table with row count and validation errors before commit; submitting calls backend bulk create API to create tasks with all supported fields from the CSV template.",
+      "reason": "CSV utilities and the upload dialog show parsing and validation, but the diff for convertRowsToBackendFormat is truncated, and the bulk-create hook signature shows only three required fields per row (Array<[string,string,string]>). This suggests the upload may not actually transmit optional CSV columns to the backend bulk-create API.",
       "evidence": [
-        "frontend/src/pages/ClientsPage.tsx (truncated)",
-        "frontend/src/pages/TasksPage.tsx (truncated)"
+        "frontend/src/components/tasks/TaskBulkUploadDialog.tsx",
+        "frontend/src/utils/taskCsv.ts",
+        "frontend/src/hooks/tasks.ts"
       ]
     },
     {
-      "id": "REQ-8",
-      "requirement": "Generated images must be stored in frontend/public/assets/generated (tax-monogram-logo.dim_256x256.png and dashboard-banner.dim_1600x400.png) and referenced directly by the frontend.",
-      "reason": "Frontend references /assets/generated/tax-monogram-logo.dim_256x256.png and Dashboard mentions a hero banner section, but the diff summary does not show the actual image files being added under frontend/public/assets/generated (some added files are omitted due to limits). Presence of the required image assets is therefore not confirmed by evidence provided.",
+      "id": "REQ-14",
+      "requirement": "Task create/edit form saves required and optional fields (Status, Comment, Assigned Name, dates, financial fields, Payment Status) using backend APIs that accept these fields.",
+      "reason": "TaskFormDialog includes state for many optional fields, but the createTask hook only sends clientName/taskCategory/subCategory and calls actor.createTask with only those 3 parameters, indicating optional fields may not be persisted on create. (Update does pass optional fields, but create appears incomplete relative to the requirement to include optional fields in the create flow.)",
       "evidence": [
-        "frontend/src/components/auth/SignedOutScreen.tsx",
-        "frontend/src/components/layout/AppLayout.tsx",
-        "frontend/src/pages/DashboardPage.tsx (truncated)"
+        "frontend/src/components/tasks/TaskFormDialog.tsx",
+        "frontend/src/hooks/tasks.ts"
+      ]
+    },
+    {
+      "id": "REQ-15",
+      "requirement": "Bulk edit submits a single patch that updates only explicitly set fields across selected tasks (does not overwrite omitted fields) and calls backend bulk update API accordingly.",
+      "reason": "UI behavior for patch-style updates is implemented, but it constructs an array of [taskId, updates] pairs and passes that to the hook. This does not match the specified backend API shape (“array of task IDs and a patch object”), and backend implementation is not evidenced.",
+      "evidence": [
+        "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
+        "frontend/src/hooks/tasks.ts"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "User profile system (UserProfile type, get/save profile methods) and mandatory profile setup modal on first login.",
-      "reason": "BuildRequest does not ask for user profiles or a profile-setup flow; it only specifies client/task management and II authentication gating.",
+      "description": "Dashboard and client detail pages updated with additional task-based stats/visual changes beyond the task bulk upload/edit/delete request scope.",
+      "reason": "BuildRequest focuses on expanding task fields and adding bulk upload and bulk edit/delete; the diff includes broader UI/content updates (e.g., dashboard hero banner text and task metrics logic, client detail task filtering) not explicitly requested.",
       "evidence": [
-        "backend/main.mo",
-        "frontend/src/components/auth/ProfileSetupModal.tsx",
-        "frontend/src/hooks/useCurrentUserProfile.ts",
-        "frontend/src/App.tsx"
-      ]
-    },
-    {
-      "description": "Admin/role-based access control initialization via secret token and permission checks (AccessControl, MixinAuthorization, isAdmin, _initializeAccessControlWithSecret).",
-      "reason": "BuildRequest explicitly lists as a non-goal “Advanced role-based access control (admin/staff) beyond per-principal data scoping.” The diff introduces admin checks and a secret-based initialization path.",
-      "evidence": [
-        "backend/main.mo",
-        "frontend/src/hooks/useActor.ts"
+        "frontend/src/pages/DashboardPage.tsx",
+        "frontend/src/pages/ClientDetailPage.tsx",
+        "frontend-file-summaries.txt"
       ]
     }
   ],
-  "confidence": 0.72,
+  "confidence": 0.66,
   "changed_files": [
-    "all_files_summary.json",
     "backend/main.mo",
+    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/index.css",
-    "frontend/index.html",
-    "frontend/src/App.tsx",
-    "frontend/src/components/auth/ProfileSetupModal.tsx",
-    "frontend/src/components/auth/SignedOutScreen.tsx",
-    "frontend/src/components/clients/ClientFormDialog.tsx",
-    "frontend/src/components/layout/AppLayout.tsx",
+    "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
+    "frontend/src/components/tasks/TaskBulkUploadDialog.tsx",
     "frontend/src/components/tasks/TaskFormDialog.tsx",
     "frontend/src/components/tasks/TaskQuickStatus.tsx",
-    "frontend/src/hooks/clients.ts",
     "frontend/src/hooks/tasks.ts",
-    "frontend/src/hooks/useActor.ts",
-    "frontend/src/hooks/useCurrentUserProfile.ts",
-    "frontend/src/hooks/useInternetIdentity.ts",
-    "frontend/src/index.css",
     "frontend/src/lib/dataParser.ts",
-    "frontend/src/main.tsx",
     "frontend/src/pages/ClientDetailPage.tsx",
-    "frontend/src/pages/ClientsPage.tsx",
     "frontend/src/pages/DashboardPage.tsx",
     "frontend/src/pages/TasksPage.tsx",
-    "frontend/src/utils/urlParams.ts",
-    "frontend/tailwind.config.js",
+    "frontend/src/utils/taskCsv.ts",
     "project_state.json"
   ]
 }

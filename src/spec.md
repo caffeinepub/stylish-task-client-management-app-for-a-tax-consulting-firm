@@ -1,16 +1,14 @@
 # Specification
 
 ## Summary
-**Goal:** Build a stylish, authenticated (Internet Identity) single-tenant task + client management app for a tax consulting workflow, with per-principal data storage and a responsive UI.
+**Goal:** Expand Tasks to use the full user-specified field set and add bulk upload plus bulk edit/delete capabilities.
 
 **Planned changes:**
-- Add Internet Identity authentication gating (sign-in required to view/manage any clients or tasks) and sign-out behavior.
-- Implement a single Motoko actor backend with per-principal persistence and full CRUD for Clients and Tasks, including task listing by clientId and basic task filtering (status, due date range).
-- Build responsive Clients UI (list with search + status filter, create/edit/delete forms, client detail with embedded task list).
-- Build responsive Tasks UI (list with status/priority filters, sort by due date, create/edit/delete with client assignment, quick inline status changes, overdue visual indicator).
-- Add a dashboard showing key metrics (active clients, open tasks, overdue tasks, tasks due in next 7 days) with links to filtered views.
-- Wire frontend data fetching/mutations via React Query with loading, empty, and error+retry states and cache invalidation on mutations.
-- Apply a coherent visual theme (avoid blue/purple as primary colors) consistently across navigation, typography, spacing, and interactive states.
-- Generate and integrate static brand imagery from `frontend/public/assets/generated` (brand mark in header; subtle dashboard banner).
+- Update backend Task data model and CRUD APIs to include required fields (Client Name, Task Category, Sub Category) and optional fields (Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, Payment Status), while keeping tasks scoped to the signed-in principal and preserving existing auth behavior.
+- Add backend bulk APIs for tasks: bulk create from a list of task inputs, bulk delete by task ID list, and bulk update by ID list using a partial patch payload (only provided fields change).
+- Update Tasks UI create/edit form and Tasks table to match the expanded Task field set, with responsive handling for many columns.
+- Add a frontend bulk upload flow: downloadable CSV template with all task field headers, CSV upload with client-side parsing, preview, and validation errors before submitting to bulk create.
+- Add bulk selection in the Tasks list plus bulk actions (Edit Selected, Delete Selected), with bulk edit applying only fields explicitly set by the user.
+- Update frontend task parsing/encoding and React Query hooks to align with the new Task model and new bulk APIs, removing any legacy encoding of metadata inside the description field.
 
-**User-visible outcome:** After signing in with Internet Identity, a user can manage their own clients and tasks (create, view, edit, delete), see a dashboard overview with actionable metrics, and use a polished, responsive interface with consistent styling and embedded brand imagery.
+**User-visible outcome:** Users can create and manage tasks with the expanded set of fields, upload many tasks at once via a CSV template with preview/validation, and select multiple tasks to bulk edit optional fields or bulk delete.

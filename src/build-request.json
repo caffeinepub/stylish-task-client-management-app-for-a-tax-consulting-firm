@@ -1,169 +1,145 @@
 {
   "kind": "build_request",
-  "title": "Stylish Task + Client Management app for a Tax Consulting firm",
+  "title": "Expand Task fields + add bulk upload and bulk edit/delete",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-1",
-      "text": "Create an authenticated single-tenant experience using Internet Identity so a signed-in user can access their own data; require sign-in before viewing or editing any clients/tasks.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "i need a stylish Task/Client Managemnet app for my Tax consulting firm"
-        ]
-      },
-      "acceptanceCriteria": [
-        "When not signed in, the app shows a clear call-to-action to sign in with Internet Identity and does not display client/task data.",
-        "After signing in, the user can access the app features and only sees data associated with their principal.",
-        "Signing out returns the user to the signed-out state and hides any previously loaded data."
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Implement backend data models and persistence for Clients and Tasks, scoped per signed-in principal, supporting full CRUD operations.",
+      "id": "REQ-11",
+      "text": "Update the backend Task data model and APIs to support the Task fields specified by the user: required fields Client Name, Task Category, Sub Category; optional fields Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, Payment Status. Ensure Tasks remain scoped per signed-in principal and maintain existing access control behavior (trap when unauthenticated).",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-5"
         ],
         "quotes": [
-          "Task/Client Managemnet app"
+          "Task compnents are\nClient Name ,Task Category ,Sub Category, Status, Comment, Assigned Name ,Due Date, Assignment Date, Completion Date ,Bill, Advance Received, Outstanding Amount, Payment Status\n\nall field are optional except client name and Task Catogory,Sub Catogory"
         ]
       },
       "acceptanceCriteria": [
-        "A Client record includes at minimum: id, name, primary contact (name/email/phone fields), tax year(s) (freeform or list), status (e.g., Active/Inactive), notes, createdAt, updatedAt.",
-        "A Task record includes at minimum: id, clientId, title, description/notes, status (e.g., To do/In progress/Blocked/Done), priority (Low/Medium/High), dueDate (optional), createdAt, updatedAt.",
-        "Backend exposes query and update methods to: list/get/create/update/delete clients; list/get/create/update/delete tasks; list tasks by clientId; and filter tasks by status and due date range (basic filtering).",
-        "All methods enforce that records are stored and retrieved only for the caller’s principal (no cross-user access)."
+        "Backend Task type includes fields covering: clientName (required), taskCategory (required), subCategory (required), status (optional), comment (optional), assignedName (optional), dueDate (optional), assignmentDate (optional), completionDate (optional), bill (optional), advanceReceived (optional), outstandingAmount (optional), paymentStatus (optional).",
+        "Create/update task backend methods validate that required fields are non-empty (or trap with a clear error) and allow optional fields to be absent/null.",
+        "Existing task listing/query APIs return the new Task shape for all tasks.",
+        "All task CRUD remains scoped by caller Principal as it is today (no cross-user data leakage)."
       ]
     },
     {
-      "id": "REQ-3",
-      "text": "Build a responsive frontend UI for managing Clients (list + detail) with creation/editing forms, search, and basic filters.",
-      "target": "frontend",
+      "id": "REQ-12",
+      "text": "Add backend support for bulk task operations: (1) bulk create tasks for an authenticated user from a list of task inputs, and (2) bulk delete tasks by a list of task IDs, and (3) bulk update multiple tasks by IDs with a partial 'patch' payload where omitted fields are not changed.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-5"
         ],
         "quotes": [
-          "Task/Client Managemnet app"
+          "also add bulk upload using template and bulk seletion to edit or delete"
         ]
       },
       "acceptanceCriteria": [
-        "Clients page shows a table/list of clients with quick search by name and a filter by status (Active/Inactive).",
-        "User can create a new client and edit/delete an existing client via validated forms (required name; email format validation when provided).",
-        "Client detail view shows client info and an embedded list of tasks for that client.",
-        "UI is responsive and usable on mobile and desktop."
+        "Backend exposes a bulk create API that accepts an array of task inputs and creates tasks in a single call (returns created IDs and/or per-row success/failure information).",
+        "Backend exposes a bulk delete API that accepts an array of task IDs and deletes tasks owned by the caller; attempting to delete a non-existent task returns an error that clearly identifies the failure.",
+        "Backend exposes a bulk update API that accepts an array of task IDs and a patch object; only fields present in the patch are updated for each task (required fields are not forced unless being changed).",
+        "All bulk operations enforce the same authentication/authorization checks as single-task operations."
       ]
     },
     {
-      "id": "REQ-4",
-      "text": "Build a responsive frontend UI for managing Tasks with list views, quick actions, and task editing, including task assignment to a client.",
+      "id": "REQ-13",
+      "text": "Add a Tasks bulk upload flow in the frontend: provide a downloadable CSV template that includes columns for all supported task fields, and allow uploading a filled CSV to create tasks in batch. Show a preview and validation errors before committing the upload.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-5"
         ],
         "quotes": [
-          "Task/Client Managemnet app"
+          "also add bulk upload using template"
         ]
       },
       "acceptanceCriteria": [
-        "Tasks page shows a list/table of tasks with filters for status and priority and sorting by due date.",
-        "User can create/edit/delete tasks; task form allows selecting a client, setting status/priority, and optionally setting a due date.",
-        "Task rows support quick status change (e.g., dropdown or inline control) without navigating away.",
-        "Overdue tasks are visually indicated (e.g., badge or subtle highlight)."
+        "Tasks page includes an action to download a CSV template with headers matching the task fields (Client Name, Task Category, Sub Category, Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, Payment Status).",
+        "User can upload a CSV file; the UI parses it client-side and shows a preview table with row count and any validation errors (at minimum: missing required fields).",
+        "Submitting the upload calls the backend bulk create API and refreshes the task list on success.",
+        "User-facing text is in English, and error messages clearly indicate which row/column is invalid."
       ]
     },
     {
-      "id": "REQ-5",
-      "text": "Add a dashboard overview that surfaces key operational metrics relevant to a tax consulting workflow.",
+      "id": "REQ-14",
+      "text": "Update the Tasks UI to match the new Task field set: (1) update the task create/edit form to include required fields Client Name, Task Category, Sub Category and optional fields Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, Payment Status; (2) update the Tasks list table to show the user-specified task components as columns (with sensible responsive behavior, e.g., column hiding on small screens).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-5"
         ],
         "quotes": [
-          "for my Tax consulting firm"
+          "Task compnents are\nClient Name ,Task Category ,Sub Category, Status, Comment, Assigned Name ,Due Date, Assignment Date, Completion Date ,Bill, Advance Received, Outstanding Amount, Payment Status"
         ]
       },
       "acceptanceCriteria": [
-        "Dashboard displays: number of Active clients; count of open tasks (non-Done); count of overdue tasks; and tasks due in the next 7 days.",
-        "Each metric section links to the relevant filtered view (e.g., overdue tasks opens Tasks with overdue filter applied)."
+        "Task create/edit dialog enforces required fields: Client Name, Task Category, Sub Category (cannot submit if missing).",
+        "All other fields are optional and can be left blank without blocking save.",
+        "Tasks table includes columns for the specified fields; on small screens, less critical columns may be hidden or moved into an 'Details' row/expander, but the data remains accessible.",
+        "Existing task quick status editing continues to work with the new data model (or is replaced with an equivalent control) without breaking the page."
       ]
     },
     {
-      "id": "REQ-6",
-      "text": "Implement frontend-backend data flow using React Query for all client/task reads and mutations, including loading, empty, and error states.",
+      "id": "REQ-15",
+      "text": "Implement bulk selection on the Tasks list and provide bulk actions to edit or delete multiple tasks at once. Bulk edit must allow setting one or more optional fields across selected tasks without overwriting fields the user did not explicitly set in the bulk edit form.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-5"
+        ],
+        "quotes": [
+          "also add bulk seletion to edit or delete"
         ]
       },
       "acceptanceCriteria": [
-        "All pages that fetch data show a loading state while requests are in flight and an error state with retry when requests fail.",
-        "Mutations (create/update/delete) trigger cache invalidation/refetch so UI stays consistent without manual refresh.",
-        "Empty states are present for no clients and no tasks, with a clear action to create the first record."
+        "Tasks table includes a selection checkbox per row and a 'select all' checkbox for the current filtered list.",
+        "When one or more tasks are selected, the UI shows bulk actions: Delete Selected and Edit Selected.",
+        "Delete Selected prompts for confirmation and then deletes the selected tasks; on success the list refreshes and selection clears.",
+        "Edit Selected opens a modal/form with optional fields; leaving a field blank means 'do not change this field' for the selected tasks; submitting calls the backend bulk update API and refreshes the list on success."
       ]
     },
     {
-      "id": "REQ-7",
-      "text": "Apply a coherent, stylish visual theme appropriate for a tax consulting firm and enforce it consistently across layout, typography, spacing, and components (avoid blue/purple as primary brand colors).",
+      "id": "REQ-16",
+      "text": "Update frontend parsing/encoding and React Query hooks to align with the new Task model and the new bulk APIs, removing any legacy encoding that stored task metadata inside the description field.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-5"
         ],
         "quotes": [
-          "stylish"
+          "Task compnents are ..."
         ]
       },
       "acceptanceCriteria": [
-        "The app uses a consistent design system with a distinct theme (e.g., warm neutrals + charcoal + sage accents), clear typographic hierarchy, and polished spacing.",
-        "Navigation (top bar and/or side nav) looks cohesive and remains consistent across all main views (Dashboard, Clients, Tasks, Settings/Profile).",
-        "Interactive states (hover/focus/disabled) are visually consistent and accessible."
-      ]
-    },
-    {
-      "id": "REQ-8",
-      "text": "Add generated static brand imagery and integrate it into the UI (no backend image routing).",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "stylish"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Generated images are stored in frontend/public/assets/generated and referenced directly by the frontend.",
-        "A small brand mark is used in the app header/navigation.",
-        "A subtle dashboard hero/banner graphic is used on the dashboard without harming readability."
+        "Frontend task types (parser/encoder) represent the new Task fields explicitly (no priority/status encoding inside description).",
+        "Existing task create/update/delete hooks work with the updated backend API signatures and payload shapes.",
+        "New React Query mutations/hooks exist for bulk create (upload), bulk update, and bulk delete; successful mutations invalidate the tasks query so the list refreshes."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor (all business logic in the main actor file).",
-    "Do not edit files under frontend/src/components/ui or any other immutable paths defined by the platform; compose those components instead.",
-    "No external databases or third-party auth providers; use Internet Identity only."
+    "Backend must remain a single Motoko actor (all logic in backend/main.mo).",
+    "Generate backend/migration.mo only if needed to preserve/upgrade existing persisted state; otherwise do not add it.",
+    "Do not modify files under frontend/src/components/ui or other immutable paths listed in SYSTEM_CONTEXT.",
+    "Use English for any user-facing text."
   ],
   "nonGoals": [
-    "Invoicing, payments, or billing workflows.",
-    "Email/SMS sending, notifications, or calendar integrations.",
-    "Document storage, file uploads, or OCR of tax documents.",
-    "Real-time collaboration/chat or WebSocket-based updates.",
-    "Advanced role-based access control (admin/staff) beyond per-principal data scoping."
+    "Adding third-party integrations for file parsing/storage (no external databases, no external storage providers).",
+    "Supporting XLSX import/export if it requires adding heavy spreadsheet dependencies; CSV is sufficient unless explicitly requested later.",
+    "Changing authentication mechanism (Internet Identity remains the only auth)."
   ],
   "imageRequirements": {
-    "required": [
-      "Minimal monogram logo using a stylized letterform (e.g., T) in charcoal and sage on a transparent background (tax-monogram-logo.dim_256x256.png)",
-      "Wide subtle abstract banner background with warm cream paper texture and thin geometric lines in charcoal/sage (dashboard-banner.dim_1600x400.png)"
-    ],
+    "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

@@ -1,10 +1,14 @@
 import Map "mo:core/Map";
 import List "mo:core/List";
+import Array "mo:core/Array";
+import Time "mo:core/Time";
 import Runtime "mo:core/Runtime";
 import Principal "mo:core/Principal";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
+import Migration "migration";
 
+(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -22,12 +26,36 @@ actor {
 
   public type Task = {
     id : TaskId;
-    title : Text;
-    description : Text;
-    status : Text;
-    clientId : ClientId;
+    clientName : Text;
+    taskCategory : Text;
+    subCategory : Text;
+    status : ?Text;
+    comment : ?Text;
+    assignedName : ?Text;
+    dueDate : ?Int;
+    assignmentDate : ?Int;
+    completionDate : ?Int;
+    bill : ?Float;
+    advanceReceived : ?Float;
+    outstandingAmount : ?Float;
+    paymentStatus : ?Text;
     createdAt : Int;
-    deadline : ?Int;
+  };
+
+  public type PartialTaskUpdate = {
+    clientName : ?Text;
+    taskCategory : ?Text;
+    subCategory : ?Text;
+    status : ?Text;
+    comment : ?Text;
+    assignedName : ?Text;
+    dueDate : ?Int;
+    assignmentDate : ?Int;
+    completionDate : ?Int;
+    bill : ?Float;
+    advanceReceived : ?Float;
+    outstandingAmount : ?Float;
+    paymentStatus : ?Text;
   };
 
   public type UserProfile = {
@@ -97,7 +125,7 @@ actor {
       name;
       contactInfo;
       projects;
-      timestamp = 0;
+      timestamp = Time.now();
     };
 
     let clientStorage = getClientStorage(caller);
@@ -119,7 +147,7 @@ actor {
           name;
           contactInfo;
           projects;
-          timestamp = 0;
+          timestamp = Time.now();
         };
         clientStorage.add(clientId, updatedClient);
       };
@@ -156,14 +184,13 @@ actor {
     clientStorage.values().toArray();
   };
 
-  public shared ({ caller }) func createTask(title : Text, description : Text, clientId : ClientId, deadline : ?Int) : async TaskId {
+  public shared ({ caller }) func createTask(
+    clientName : Text,
+    taskCategory : Text,
+    subCategory : Text
+  ) : async TaskId {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Please sign in to continue");
-    };
-
-    let clientStorage = getClientStorage(caller);
-    if (not clientStorage.containsKey(clientId)) {
-      Runtime.trap("Client does not exist");
     };
 
     let taskId = nextTaskId;
@@ -171,12 +198,20 @@ actor {
 
     let newTask : Task = {
       id = taskId;
-      title;
-      description;
-      status = "pending";
-      clientId;
-      createdAt = 0;
-      deadline;
+      clientName;
+      taskCategory;
+      subCategory;
+      status = null;
+      comment = null;
+      assignedName = null;
+      dueDate = null;
+      assignmentDate = null;
+      completionDate = null;
+      bill = null;
+      advanceReceived = null;
+      outstandingAmount = null;
+      paymentStatus = null;
+      createdAt = Time.now();
     };
 
     let taskStorage = getTaskStorage(caller);
@@ -184,7 +219,22 @@ actor {
     taskId;
   };
 
-  public shared ({ caller }) func updateTask(taskId : TaskId, title : Text, description : Text, status : Text, deadline : ?Int) : async () {
+  public shared ({ caller }) func updateTask(
+    taskId : TaskId,
+    clientName : Text,
+    taskCategory : Text,
+    subCategory : Text,
+    status : ?Text,
+    comment : ?Text,
+    assignedName : ?Text,
+    dueDate : ?Int,
+    assignmentDate : ?Int,
+    completionDate : ?Int,
+    bill : ?Float,
+    advanceReceived : ?Float,
+    outstandingAmount : ?Float,
+    paymentStatus : ?Text
+  ) : async () {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Please sign in to continue");
     };
@@ -195,12 +245,20 @@ actor {
       case (?existingTask) {
         let updatedTask : Task = {
           id = taskId;
-          title;
-          description;
+          clientName;
+          taskCategory;
+          subCategory;
           status;
-          clientId = existingTask.clientId;
+          comment;
+          assignedName;
+          dueDate;
+          assignmentDate;
+          completionDate;
+          bill;
+          advanceReceived;
+          outstandingAmount;
+          paymentStatus;
           createdAt = existingTask.createdAt;
-          deadline;
         };
         taskStorage.add(taskId, updatedTask);
       };
@@ -237,20 +295,125 @@ actor {
     taskStorage.values().toArray();
   };
 
-  public query ({ caller }) func getTasksByClient(clientId : ClientId) : async [Task] {
+  public shared ({ caller }) func bulkCreateTasks(taskInputs : [(Text, Text, Text)]) : async [TaskId] {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
       Runtime.trap("Unauthorized: Please sign in to continue");
     };
 
     let taskStorage = getTaskStorage(caller);
-    let filteredTasks = List.empty<Task>();
-    taskStorage.forEach(
-      func(_id, task) {
-        if (task.clientId == clientId) {
-          filteredTasks.add(task);
+    let createdTaskIds = List.empty<TaskId>();
+
+    for ((clientName, taskCategory, subCategory) in taskInputs.values()) {
+      let taskId = nextTaskId;
+      nextTaskId += 1;
+
+      let newTask : Task = {
+        id = taskId;
+        clientName;
+        taskCategory;
+        subCategory;
+        status = null;
+        comment = null;
+        assignedName = null;
+        dueDate = null;
+        assignmentDate = null;
+        completionDate = null;
+        bill = null;
+        advanceReceived = null;
+        outstandingAmount = null;
+        paymentStatus = null;
+        createdAt = Time.now();
+      };
+
+      taskStorage.add(taskId, newTask);
+      createdTaskIds.add(taskId);
+    };
+
+    createdTaskIds.toArray();
+  };
+
+  public shared ({ caller }) func bulkDeleteTasks(taskIds : [TaskId]) : async () {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Please sign in to continue");
+    };
+
+    let taskStorage = getTaskStorage(caller);
+    for (taskId in taskIds.values()) {
+      if (taskStorage.containsKey(taskId)) {
+        taskStorage.remove(taskId);
+      };
+    };
+  };
+
+  public shared ({ caller }) func bulkUpdateTasks(taskUpdates : [(TaskId, PartialTaskUpdate)]) : async () {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Please sign in to continue");
+    };
+
+    let taskStorage = getTaskStorage(caller);
+    for ((taskId, updates) in taskUpdates.values()) {
+      switch (taskStorage.get(taskId)) {
+        case (null) {};
+        case (?existingTask) {
+          let updatedTask : Task = {
+            id = taskId;
+            clientName = switch (updates.clientName) {
+              case (null) { existingTask.clientName };
+              case (?newValue) { newValue };
+            };
+            taskCategory = switch (updates.taskCategory) {
+              case (null) { existingTask.taskCategory };
+              case (?newValue) { newValue };
+            };
+            subCategory = switch (updates.subCategory) {
+              case (null) { existingTask.subCategory };
+              case (?newValue) { newValue };
+            };
+            status = switch (updates.status) {
+              case (null) { existingTask.status };
+              case (?newValue) { ?newValue };
+            };
+            comment = switch (updates.comment) {
+              case (null) { existingTask.comment };
+              case (?newValue) { ?newValue };
+            };
+            assignedName = switch (updates.assignedName) {
+              case (null) { existingTask.assignedName };
+              case (?newValue) { ?newValue };
+            };
+            dueDate = switch (updates.dueDate) {
+              case (null) { existingTask.dueDate };
+              case (?newValue) { ?newValue };
+            };
+            assignmentDate = switch (updates.assignmentDate) {
+              case (null) { existingTask.assignmentDate };
+              case (?newValue) { ?newValue };
+            };
+            completionDate = switch (updates.completionDate) {
+              case (null) { existingTask.completionDate };
+              case (?newValue) { ?newValue };
+            };
+            bill = switch (updates.bill) {
+              case (null) { existingTask.bill };
+              case (?newValue) { ?newValue };
+            };
+            advanceReceived = switch (updates.advanceReceived) {
+              case (null) { existingTask.advanceReceived };
+              case (?newValue) { ?newValue };
+            };
+            outstandingAmount = switch (updates.outstandingAmount) {
+              case (null) { existingTask.outstandingAmount };
+              case (?newValue) { ?newValue };
+            };
+            paymentStatus = switch (updates.paymentStatus) {
+              case (null) { existingTask.paymentStatus };
+              case (?newValue) { ?newValue };
+            };
+            createdAt = existingTask.createdAt;
+          };
+          taskStorage.add(taskId, updatedTask);
         };
-      }
-    );
-    filteredTasks.toArray();
+      };
+    };
   };
 };

@@ -7,50 +7,38 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, AlertCircle, CheckSquare } from 'lucide-react';
-import { useGetAllTasks } from '../hooks/tasks';
-import { useGetAllClients } from '../hooks/clients';
-import { parseTaskData, parseClientData } from '../lib/dataParser';
+import { Checkbox } from '@/components/ui/checkbox';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Plus, Search, AlertCircle, CheckSquare, Upload, Edit, Trash2 } from 'lucide-react';
+import { useGetAllTasks, useBulkDeleteTasks } from '../hooks/tasks';
 import TaskFormDialog from '../components/tasks/TaskFormDialog';
 import TaskQuickStatus from '../components/tasks/TaskQuickStatus';
+import TaskBulkUploadDialog from '../components/tasks/TaskBulkUploadDialog';
+import TaskBulkEditDialog from '../components/tasks/TaskBulkEditDialog';
+import type { Task } from '../backend';
 
 export default function TasksPage() {
   const { data: tasks, isLoading: tasksLoading, error: tasksError, refetch: refetchTasks } = useGetAllTasks();
-  const { data: clients, isLoading: clientsLoading } = useGetAllClients();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [preselectedClientId, setPreselectedClientId] = useState<bigint | undefined>();
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  // Parse URL params for pre-filtering
-  const urlParams = new URLSearchParams(window.location.search);
-  const urlStatus = urlParams.get('status');
-  const urlOverdue = urlParams.get('overdue');
-  const urlDueNextDays = urlParams.get('dueNextDays');
-  const urlClientId = urlParams.get('clientId');
-
-  const parsedTasks = useMemo(() => {
-    return tasks?.map(parseTaskData) || [];
-  }, [tasks]);
-
-  const parsedClients = useMemo(() => {
-    return clients?.map(parseClientData) || [];
-  }, [clients]);
-
-  const clientMap = useMemo(() => {
-    const map = new Map<string, string>();
-    parsedClients.forEach((client) => {
-      map.set(client.id.toString(), client.name);
-    });
-    return map;
-  }, [parsedClients]);
+  const { mutate: bulkDeleteTasks, isPending: isDeleting } = useBulkDeleteTasks();
 
   const filteredTasks = useMemo(() => {
-    const now = Date.now();
-    return parsedTasks.filter((task) => {
-      const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.description.toLowerCase().includes(searchQuery.toLowerCase());
+    if (!tasks) return [];
+    
+    return tasks.filter((task) => {
+      const matchesSearch = 
+        task.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.taskCategory.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.subCategory.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (task.assignedName && task.assignedName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (task.comment && task.comment.toLowerCase().includes(searchQuery.toLowerCase()));
       
       let matchesStatus = true;
       if (statusFilter !== 'all') {
@@ -60,49 +48,52 @@ export default function TasksPage() {
           matchesStatus = task.status === statusFilter;
         }
       }
-      
-      const matchesPriority = priorityFilter === 'all' || task.priority === priorityFilter;
 
-      // URL-based filters
-      if (urlOverdue === 'true') {
-        const isOverdue = task.deadline && Number(task.deadline) < now && task.status !== 'Done';
-        if (!isOverdue) return false;
-      }
-
-      if (urlDueNextDays) {
-        const days = parseInt(urlDueNextDays);
-        const futureTime = now + days * 24 * 60 * 60 * 1000;
-        const inRange = task.deadline && 
-          Number(task.deadline) >= now && 
-          Number(task.deadline) <= futureTime &&
-          task.status !== 'Done';
-        if (!inRange) return false;
-      }
-
-      if (urlClientId) {
-        if (task.clientId.toString() !== urlClientId) return false;
-      }
-
-      return matchesSearch && matchesStatus && matchesPriority;
+      return matchesSearch && matchesStatus;
     });
-  }, [parsedTasks, searchQuery, statusFilter, priorityFilter, urlOverdue, urlDueNextDays, urlClientId]);
+  }, [tasks, searchQuery, statusFilter]);
 
   const sortedTasks = useMemo(() => {
     return [...filteredTasks].sort((a, b) => {
-      // Sort by deadline (nulls last)
-      if (!a.deadline && !b.deadline) return 0;
-      if (!a.deadline) return 1;
-      if (!b.deadline) return -1;
-      return Number(a.deadline) - Number(b.deadline);
+      if (!a.dueDate && !b.dueDate) return 0;
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return Number(a.dueDate) - Number(b.dueDate);
     });
   }, [filteredTasks]);
 
-  // Handle preselected client from URL
-  useMemo(() => {
-    if (urlClientId && !preselectedClientId) {
-      setPreselectedClientId(BigInt(urlClientId));
+  const selectedTasks = useMemo(() => {
+    return sortedTasks.filter(task => selectedTaskIds.has(task.id.toString()));
+  }, [sortedTasks, selectedTaskIds]);
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = new Set(sortedTasks.map(task => task.id.toString()));
+      setSelectedTaskIds(allIds);
+    } else {
+      setSelectedTaskIds(new Set());
     }
-  }, [urlClientId]);
+  };
+
+  const handleSelectTask = (taskId: string, checked: boolean) => {
+    const newSelection = new Set(selectedTaskIds);
+    if (checked) {
+      newSelection.add(taskId);
+    } else {
+      newSelection.delete(taskId);
+    }
+    setSelectedTaskIds(newSelection);
+  };
+
+  const handleBulkDelete = () => {
+    const taskIds = Array.from(selectedTaskIds).map(id => BigInt(id));
+    bulkDeleteTasks(taskIds, {
+      onSuccess: () => {
+        setSelectedTaskIds(new Set());
+        setDeleteDialogOpen(false);
+      },
+    });
+  };
 
   if (tasksError) {
     return (
@@ -122,7 +113,7 @@ export default function TasksPage() {
     );
   }
 
-  if (tasksLoading || clientsLoading) {
+  if (tasksLoading) {
     return (
       <div className="space-y-6">
         <div>
@@ -152,17 +143,53 @@ export default function TasksPage() {
           <h1 className="text-3xl font-bold">Tasks</h1>
           <p className="text-muted-foreground">Manage your task workflow</p>
         </div>
-        <Button 
-          onClick={() => {
-            setPreselectedClientId(urlClientId ? BigInt(urlClientId) : undefined);
-            setDialogOpen(true);
-          }}
-          className="bg-[oklch(0.50_0.08_130)] hover:bg-[oklch(0.45_0.08_130)] dark:bg-[oklch(0.65_0.08_130)] dark:hover:bg-[oklch(0.70_0.08_130)]"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Add Task
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => setBulkUploadOpen(true)}
+            variant="outline"
+          >
+            <Upload className="mr-2 h-4 w-4" />
+            Bulk Upload
+          </Button>
+          <Button 
+            onClick={() => setDialogOpen(true)}
+            className="bg-[oklch(0.50_0.08_130)] hover:bg-[oklch(0.45_0.08_130)] dark:bg-[oklch(0.65_0.08_130)] dark:hover:bg-[oklch(0.70_0.08_130)]"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Task
+          </Button>
+        </div>
       </div>
+
+      {selectedTaskIds.size > 0 && (
+        <Card className="border-[oklch(0.50_0.08_130)] bg-[oklch(0.50_0.08_130)]/5">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <span className="font-medium">
+                {selectedTaskIds.size} task{selectedTaskIds.size !== 1 ? 's' : ''} selected
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setBulkEditOpen(true)}
+                >
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit Selected
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Selected
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)]">
         <CardHeader>
@@ -195,31 +222,20 @@ export default function TasksPage() {
                 <SelectItem value="Done">Done</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Filter by priority" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Priorities</SelectItem>
-                <SelectItem value="Low">Low</SelectItem>
-                <SelectItem value="Medium">Medium</SelectItem>
-                <SelectItem value="High">High</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           {sortedTasks.length === 0 ? (
             <div className="text-center py-12">
               <CheckSquare className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">
-                {parsedTasks.length === 0 ? 'No tasks yet' : 'No tasks found'}
+                {tasks && tasks.length === 0 ? 'No tasks yet' : 'No tasks found'}
               </h3>
               <p className="text-muted-foreground mb-4">
-                {parsedTasks.length === 0
+                {tasks && tasks.length === 0
                   ? 'Get started by adding your first task'
                   : 'Try adjusting your search or filters'}
               </p>
-              {parsedTasks.length === 0 && (
+              {tasks && tasks.length === 0 && (
                 <Button onClick={() => setDialogOpen(true)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add Your First Task
@@ -227,42 +243,51 @@ export default function TasksPage() {
               )}
             </div>
           ) : (
-            <div className="rounded-md border border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)]">
+            <div className="rounded-md border border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)] overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Client</TableHead>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={sortedTasks.length > 0 && selectedTaskIds.size === sortedTasks.length}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
+                    <TableHead>Client Name</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead className="hidden md:table-cell">Sub Category</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Priority</TableHead>
-                    <TableHead>Due Date</TableHead>
+                    <TableHead className="hidden lg:table-cell">Assigned</TableHead>
+                    <TableHead className="hidden xl:table-cell">Due Date</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {sortedTasks.map((task) => {
-                    const isOverdue = task.deadline && Number(task.deadline) < Date.now() && task.status !== 'Done';
+                    const isOverdue = task.dueDate && Number(task.dueDate) < Date.now() && task.status !== 'Done';
+                    const isSelected = selectedTaskIds.has(task.id.toString());
+                    
                     return (
                       <TableRow key={task.id.toString()}>
-                        <TableCell className="font-medium">{task.title}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {clientMap.get(task.clientId.toString()) || 'Unknown'}
+                        <TableCell>
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={(checked) => handleSelectTask(task.id.toString(), checked as boolean)}
+                          />
                         </TableCell>
+                        <TableCell className="font-medium">{task.clientName}</TableCell>
+                        <TableCell>{task.taskCategory}</TableCell>
+                        <TableCell className="hidden md:table-cell">{task.subCategory}</TableCell>
                         <TableCell>
                           <TaskQuickStatus task={task} />
                         </TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={task.priority === 'High' ? 'destructive' : 'secondary'}
-                            className={task.priority === 'Medium' ? 'bg-[oklch(0.70_0.15_60)] text-white' : ''}
-                          >
-                            {task.priority}
-                          </Badge>
+                        <TableCell className="hidden lg:table-cell">
+                          {task.assignedName || <span className="text-muted-foreground">-</span>}
                         </TableCell>
-                        <TableCell>
-                          {task.deadline ? (
+                        <TableCell className="hidden xl:table-cell">
+                          {task.dueDate ? (
                             <div className={isOverdue ? 'text-destructive font-medium' : ''}>
-                              {new Date(Number(task.deadline)).toLocaleDateString()}
+                              {new Date(Number(task.dueDate)).toLocaleDateString()}
                               {isOverdue && (
                                 <Badge variant="destructive" className="ml-2 text-xs">
                                   Overdue
@@ -270,7 +295,7 @@ export default function TasksPage() {
                               )}
                             </div>
                           ) : (
-                            <span className="text-muted-foreground">No deadline</span>
+                            <span className="text-muted-foreground">-</span>
                           )}
                         </TableCell>
                         <TableCell className="text-right">
@@ -293,8 +318,39 @@ export default function TasksPage() {
       <TaskFormDialog 
         open={dialogOpen} 
         onOpenChange={setDialogOpen}
-        preselectedClientId={preselectedClientId}
       />
+
+      <TaskBulkUploadDialog
+        open={bulkUploadOpen}
+        onOpenChange={setBulkUploadOpen}
+      />
+
+      <TaskBulkEditDialog
+        open={bulkEditOpen}
+        onOpenChange={setBulkEditOpen}
+        selectedTasks={selectedTasks}
+      />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete {selectedTaskIds.size} task{selectedTaskIds.size !== 1 ? 's' : ''}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

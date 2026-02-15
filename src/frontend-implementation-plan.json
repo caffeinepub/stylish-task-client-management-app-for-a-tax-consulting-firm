@@ -1,268 +1,127 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Stylish Task + Client Management (Tax Consulting) — Frontend Plan",
+  "title": "Expand Tasks UI for new fields + bulk upload and bulk edit/delete",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Require Internet Identity sign-in before accessing any client/task data, including profile setup and clean sign-out behavior.",
+      "id": "REQ-13",
+      "summary": "Add a CSV template download + CSV upload preview/validation flow to bulk-create tasks.",
       "acceptanceCriteria": [
-        "When not signed in, the app shows a clear call-to-action to sign in with Internet Identity and does not display client/task data.",
-        "After signing in, the user can access the app features and only sees data associated with their principal.",
-        "Signing out returns the user to the signed-out state and hides any previously loaded data."
+        "Tasks page includes an action to download a CSV template with headers matching the task fields (Client Name, Task Category, Sub Category, Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, Payment Status).",
+        "User can upload a CSV file; the UI parses it client-side and shows a preview table with row count and any validation errors (at minimum: missing required fields).",
+        "Submitting the upload calls the backend bulk create API and refreshes the task list on success.",
+        "User-facing text is in English, and error messages clearly indicate which row/column is invalid."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/utils/taskCsv.ts",
           "operation": "create",
-          "description": "Create the app shell with route structure and an authentication gate that prevents rendering any client/task views until Internet Identity is present; show a signed-out screen with a clear sign-in CTA. Use the authorization component patterns for Internet Identity + profile gating; verify the component's usage instructions before implementing."
+          "description": "Implement CSV template generation (headers for all supported Task fields) and lightweight CSV parsing + row-level validation helpers (at minimum required fields present) used by the bulk upload UI. Ensure English error messages include row/column context."
         },
         {
-          "path": "frontend/src/components/auth/LoginButton.tsx",
+          "path": "frontend/src/components/tasks/TaskBulkUploadDialog.tsx",
           "operation": "create",
-          "description": "Add a Login/Logout button using the existing useInternetIdentity hook and clear React Query cache on logout (queryClient.clear) to ensure previously loaded data is hidden. Use the authorization component guidance for logout cache clearing; verify the component's usage instructions before implementing."
+          "description": "Create a Tasks bulk upload dialog: download template action, file input for CSV upload, client-side parse/validation, and a preview table summarizing row count and validation errors before allowing submit. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/components/auth/RequireAuth.tsx",
-          "operation": "create",
-          "description": "Add a wrapper component that blocks children when not authenticated (identity missing) and renders the signed-out CTA instead. Use the authorization component guidance for \"must be logged in before seeing any application data\"; verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/auth/ProfileSetupModal.tsx",
-          "operation": "create",
-          "description": "Create a first-login profile setup modal that prompts for user name if getCallerUserProfile returns null; avoid showing principal IDs in the UI. Use the authorization component guidance (getCallerUserProfile/saveCallerUserProfile and modal-flash prevention pattern); verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useCurrentUserProfile.ts",
-          "operation": "create",
-          "description": "Implement a React Query hook for getCallerUserProfile with the actor dependency-aware loading state to prevent profile modal flash. Use the authorization component guidance and example pattern; verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/layout/AppLayout.tsx",
-          "operation": "create",
-          "description": "Create a consistent authenticated layout (header/sidebar nav) that displays the user profile name (not principal) and includes Logout. Compose shadcn-ui layout primitives (e.g., Button, DropdownMenu, Sheet for mobile nav); verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/main.tsx",
+          "path": "frontend/src/pages/TasksPage.tsx",
           "operation": "modify",
-          "description": "Ensure App is wrapped with QueryClientProvider and InternetIdentityProvider (already present); if needed, adjust QueryClient defaults for consistent auth-gated fetching behavior (e.g., retries for authorization traps handled in UI)."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Responsive Clients management UI (list + detail) with create/edit/delete forms, search, and status filter; embed client tasks in detail view.",
-      "acceptanceCriteria": [
-        "Clients page shows a table/list of clients with quick search by name and a filter by status (Active/Inactive).",
-        "User can create a new client and edit/delete an existing client via validated forms (required name; email format validation when provided).",
-        "Client detail view shows client info and an embedded list of tasks for that client.",
-        "UI is responsive and usable on mobile and desktop."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/ClientsPage.tsx",
-          "operation": "create",
-          "description": "Create the Clients list view with quick search by name and a status filter; provide empty/loading/error states and actions to create a first client. Compose shadcn-ui components (Input, Select, Table, Button, Card, Skeleton, AlertDialog); verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/ClientDetailPage.tsx",
-          "operation": "create",
-          "description": "Create a Client detail view showing client fields and an embedded tasks list for that client (read-only list plus quick link to add a task preselected to client). Compose shadcn-ui components (Card, Tabs, Badge, Table); verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/clients/ClientFormDialog.tsx",
-          "operation": "create",
-          "description": "Add a create/edit client dialog with validation (name required; email format validation when present) and delete confirmation. Compose shadcn-ui (Dialog, Form patterns, Input, Textarea, Button, AlertDialog); verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/clients.ts",
-          "operation": "create",
-          "description": "Implement React Query hooks for clients reads/mutations (getAllClients, getClient, createClient, updateClient, deleteClient) and handle cache invalidation after mutations. Verify shadcn-ui usage instructions before implementing."
+          "description": "Add a visible bulk upload action on the Tasks page that opens the new TaskBulkUploadDialog, and refreshes tasks on successful upload. Keep all user-facing text in English. Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/hooks/tasks.ts",
-          "operation": "create",
-          "description": "Add a hook for getTasksByClient to power the embedded tasks list on the client detail view, with loading/error/empty handling and cache keys aligned for invalidation. Verify shadcn-ui usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Wire Clients routes into the app (e.g., /clients and /clients/:clientId) under the RequireAuth wrapper and AppLayout navigation. Verify shadcn-ui usage instructions before implementing."
+          "description": "Add a React Query mutation/hook for bulk create that calls the backend bulkCreateTasks capability and invalidates the ['tasks'] query on success (so the list refreshes)."
         }
       ]
     },
     {
-      "id": "REQ-4",
-      "summary": "Responsive Tasks management UI with list filters, due-date sorting, create/edit/delete, quick status changes, and overdue indicators; task assignment to a client.",
+      "id": "REQ-14",
+      "summary": "Update Tasks create/edit dialog and Tasks table to use the new Task field set with responsive columns.",
       "acceptanceCriteria": [
-        "Tasks page shows a list/table of tasks with filters for status and priority and sorting by due date.",
-        "User can create/edit/delete tasks; task form allows selecting a client, setting status/priority, and optionally setting a due date.",
-        "Task rows support quick status change (e.g., dropdown or inline control) without navigating away.",
-        "Overdue tasks are visually indicated (e.g., badge or subtle highlight)."
+        "Task create/edit dialog enforces required fields: Client Name, Task Category, Sub Category (cannot submit if missing).",
+        "All other fields are optional and can be left blank without blocking save.",
+        "Tasks table includes columns for the specified fields; on small screens, less critical columns may be hidden or moved into an 'Details' row/expander, but the data remains accessible.",
+        "Existing task quick status editing continues to work with the new data model (or is replaced with an equivalent control) without breaking the page."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/TasksPage.tsx",
-          "operation": "create",
-          "description": "Create the Tasks list/table with filters (status, priority), due-date sorting, and visual overdue indicators; include loading/error/empty states and quick actions. Compose shadcn-ui components (Table, Select, Badge, Button, Tooltip); verify the component's usage instructions before implementing."
-        },
-        {
           "path": "frontend/src/components/tasks/TaskFormDialog.tsx",
-          "operation": "create",
-          "description": "Add create/edit task dialog with client selection, status/priority controls, optional due date, and delete confirmation. Compose shadcn-ui (Dialog, Select, Input, Textarea, Calendar/Popover if available); verify the component's usage instructions before implementing."
+          "operation": "modify",
+          "description": "Replace the legacy task form fields (title/description/clientId/priority/deadline) with the new Task fields: required Client Name, Task Category, Sub Category; optional Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, Payment Status. Enforce required fields before submit; encode optional blanks as null/undefined as expected by hooks. Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/components/tasks/TaskQuickStatus.tsx",
-          "operation": "create",
-          "description": "Implement an inline status control for each task row that triggers an update mutation and React Query invalidation without navigating away. Compose shadcn-ui (Select or DropdownMenu); verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/tasks.ts",
           "operation": "modify",
-          "description": "Extend tasks hooks to support getAllTasks, createTask, updateTask, deleteTask and shared cache invalidation for list + per-client queries; ensure due date optional handling is consistent. Verify shadcn-ui usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/clients.ts",
-          "operation": "modify",
-          "description": "Expose a lightweight clients list query used for the task client selector (for assignment) and ensure it shares the same cache key as Clients page. Verify shadcn-ui usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Wire Tasks route into the authenticated navigation and routing (e.g., /tasks) under RequireAuth and AppLayout. Verify shadcn-ui usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "summary": "Dashboard overview with key workflow metrics and deep links to filtered Clients/Tasks views.",
-      "acceptanceCriteria": [
-        "Dashboard displays: number of Active clients; count of open tasks (non-Done); count of overdue tasks; and tasks due in the next 7 days.",
-        "Each metric section links to the relevant filtered view (e.g., overdue tasks opens Tasks with overdue filter applied)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/DashboardPage.tsx",
-          "operation": "create",
-          "description": "Create a dashboard page that computes and displays key metrics from React Query-fetched clients/tasks, and provides links that navigate to pre-filtered views (via URL search params). Compose shadcn-ui components (Card, Button, Badge); verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/dashboard.ts",
-          "operation": "create",
-          "description": "Add a small helper hook that derives dashboard metrics from cached clients/tasks queries (or triggers minimal queries when not yet cached) and exposes loading/error states. Verify shadcn-ui usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Wire Dashboard as the default authenticated route (e.g., /) and add navigation entry in AppLayout. Verify shadcn-ui usage instructions before implementing."
+          "description": "Update quick status editing to work with the new Task model/update mutation (ensure it updates status without breaking other fields). If the new update flow requires more context, pass the needed task fields through and keep the UI behavior equivalent. Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/pages/TasksPage.tsx",
           "operation": "modify",
-          "description": "Support reading URL search params for pre-filtering (e.g., status=open, overdue=true, dueNextDays=7) so dashboard metric links land on the correct filtered list. Verify the component's usage instructions before implementing."
+          "description": "Update Tasks table columns to match the specified Task fields (Client Name, Task Category, Sub Category, Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, Payment Status) with sensible responsive behavior (e.g., hide less critical columns on small screens and provide an accessible details/expander row). Remove legacy title/priority/description/client mapping logic. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/pages/ClientsPage.tsx",
+          "path": "frontend/src/lib/dataParser.ts",
           "operation": "modify",
-          "description": "Support reading URL search params for pre-filtering (e.g., status=Active) so dashboard metric links land on the correct filtered list. Verify the component's usage instructions before implementing."
+          "description": "Update task parsing/representation helpers to reflect the new Task fields explicitly (no decoding from a compact description/status format). Keep client parsing as-is. Ensure any date/number normalization used by UI is consistent (e.g., bigint dates displayed as locale dates)."
         }
       ]
     },
     {
-      "id": "REQ-6",
-      "summary": "Use React Query for all client/task reads and mutations with loading, error, retry, cache invalidation, and empty states.",
+      "id": "REQ-15",
+      "summary": "Add bulk selection on Tasks list plus bulk delete and bulk edit (patch-style) actions.",
       "acceptanceCriteria": [
-        "All pages that fetch data show a loading state while requests are in flight and an error state with retry when requests fail.",
-        "Mutations (create/update/delete) trigger cache invalidation/refetch so UI stays consistent without manual refresh.",
-        "Empty states are present for no clients and no tasks, with a clear action to create the first record."
+        "Tasks table includes a selection checkbox per row and a 'select all' checkbox for the current filtered list.",
+        "When one or more tasks are selected, the UI shows bulk actions: Delete Selected and Edit Selected.",
+        "Delete Selected prompts for confirmation and then deletes the selected tasks; on success the list refreshes and selection clears.",
+        "Edit Selected opens a modal/form with optional fields; leaving a field blank means 'do not change this field' for the selected tasks; submitting calls the backend bulk update API and refreshes the list on success."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/clients.ts",
-          "operation": "modify",
-          "description": "Ensure all client queries/mutations are implemented with React Query, include consistent query keys, invalidation/refetch after mutations, and surface errors for UI retry actions. Verify shadcn-ui usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/tasks.ts",
-          "operation": "modify",
-          "description": "Ensure all task queries/mutations are implemented with React Query, include consistent query keys (all tasks, by client), invalidation/refetch after mutations, and surface errors for UI retry actions. Verify shadcn-ui usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/ClientsPage.tsx",
-          "operation": "modify",
-          "description": "Add consistent loading (skeleton/spinner), error (message + retry button), and empty state (CTA to create first client) driven by React Query states. Compose shadcn-ui (Skeleton, Alert, Button); verify the component's usage instructions before implementing."
+          "path": "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
+          "operation": "create",
+          "description": "Create a bulk edit dialog that lets the user set one or more optional fields across selected tasks. Leaving a field unset must mean 'do not change'. On submit, call the bulk update hook and close on success. Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/pages/TasksPage.tsx",
           "operation": "modify",
-          "description": "Add consistent loading, error (with retry), and empty state (CTA to create first task) driven by React Query states; ensure quick status mutation shows pending UI state. Compose shadcn-ui (Skeleton, Alert, Button); verify the component's usage instructions before implementing."
+          "description": "Add row selection checkboxes + select-all for the currently filtered list, show bulk action buttons (Delete Selected, Edit Selected) when selection is non-empty, and wire to confirmation + dialogs. Ensure selection clears and tasks refetch after successful bulk operations. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/pages/ClientDetailPage.tsx",
+          "path": "frontend/src/hooks/tasks.ts",
           "operation": "modify",
-          "description": "Add loading/error handling for client + tasks-by-client queries and provide a clear empty state for the embedded task list. Compose shadcn-ui components; verify the component's usage instructions before implementing."
+          "description": "Add React Query mutations/hooks for bulk delete and bulk update that call the backend bulkDeleteTasks and bulkUpdateTasks capabilities, and invalidate the ['tasks'] query on success."
         }
       ]
     },
     {
-      "id": "REQ-7",
-      "summary": "Apply a cohesive, stylish tax-firm theme (warm neutrals + charcoal + sage accents) consistently across layout and components; avoid blue/purple primary.",
+      "id": "REQ-16",
+      "summary": "Align frontend types/parsing and React Query hooks with the new Task model and new bulk APIs; remove legacy encoding.",
       "acceptanceCriteria": [
-        "The app uses a consistent design system with a distinct theme (e.g., warm neutrals + charcoal + sage accents), clear typographic hierarchy, and polished spacing.",
-        "Navigation (top bar and/or side nav) looks cohesive and remains consistent across all main views (Dashboard, Clients, Tasks, Settings/Profile).",
-        "Interactive states (hover/focus/disabled) are visually consistent and accessible."
+        "Frontend task types (parser/encoder) represent the new Task fields explicitly (no priority/status encoding inside description).",
+        "Existing task create/update/delete hooks work with the updated backend API signatures and payload shapes.",
+        "New React Query mutations/hooks exist for bulk create (upload), bulk update, and bulk delete; successful mutations invalidate the tasks query so the list refreshes."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/index.css",
-          "operation": "create",
-          "description": "Create global styles and CSS variables for the theme (warm neutrals background, charcoal text, sage accents) compatible with the existing Tailwind/shadcn token approach; ensure focus/hover/disabled states are accessible and consistent. Verify shadcn-ui theming usage instructions before implementing."
-        },
-        {
-          "path": "frontend/tailwind.config.js",
+          "path": "frontend/src/lib/dataParser.ts",
           "operation": "modify",
-          "description": "Adjust/extend theme tokens to align with the new brand palette (ensure primary is not blue/purple) while keeping shadcn-ui token conventions intact. Verify shadcn-ui usage instructions before implementing."
+          "description": "Remove legacy task encoding/decoding that stored metadata in the description field; update ParsedTask (or equivalent) to mirror the backend Task shape and keep conversions minimal and explicit."
         },
         {
-          "path": "frontend/src/components/layout/AppLayout.tsx",
+          "path": "frontend/src/hooks/tasks.ts",
           "operation": "modify",
-          "description": "Ensure navigation layout styling (desktop + mobile) consistently applies the theme, spacing, and typography hierarchy across all main views. Compose shadcn-ui components; verify the component's usage instructions before implementing."
+          "description": "Update existing task hooks (get/create/update/delete) to match the current backend function signatures and Task type shape from frontend/src/backend.d.ts. Add bulk create/update/delete hooks (or refactor into a consistent API) and ensure all successful mutations invalidate tasks queries for refresh."
         },
         {
-          "path": "frontend/src/pages/DashboardPage.tsx",
+          "path": "frontend/src/components/tasks/TaskFormDialog.tsx",
           "operation": "modify",
-          "description": "Apply the theme to dashboard cards/typography and ensure responsive spacing; keep hero/banner readable (sufficient contrast). Verify shadcn-ui usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-8",
-      "summary": "Add generated brand images as static assets and integrate monogram logo into header and a subtle banner into dashboard.",
-      "acceptanceCriteria": [
-        "Generated images are stored in frontend/public/assets/generated and referenced directly by the frontend.",
-        "A small brand mark is used in the app header/navigation.",
-        "A subtle dashboard hero/banner graphic is used on the dashboard without harming readability."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/public/assets/generated/tax-monogram-logo.dim_256x256.png",
-          "operation": "create",
-          "description": "Add the generated monogram logo asset at the exact path frontend/public/assets/generated/tax-monogram-logo.dim_256x256.png for direct frontend use (no backend routing)."
+          "description": "Update create/edit/delete wiring to use the updated hooks and data shapes (no legacy encoded description/status/priority behavior). Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/public/assets/generated/dashboard-banner.dim_1600x400.png",
-          "operation": "create",
-          "description": "Add the generated dashboard banner asset at the exact path frontend/public/assets/generated/dashboard-banner.dim_1600x400.png for direct frontend use (no backend routing)."
-        },
-        {
-          "path": "frontend/src/components/layout/AppLayout.tsx",
+          "path": "frontend/src/pages/TasksPage.tsx",
           "operation": "modify",
-          "description": "Integrate the brand mark from frontend/public/assets/generated/tax-monogram-logo.dim_256x256.png into the header/navigation (small, consistent placement). Compose shadcn-ui components; verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/DashboardPage.tsx",
-          "operation": "modify",
-          "description": "Add a subtle hero/banner treatment using frontend/public/assets/generated/dashboard-banner.dim_1600x400.png while preserving readability of dashboard metrics (contrast/overlay as needed). Compose shadcn-ui components; verify the component's usage instructions before implementing."
+          "description": "Update Tasks page filtering/search logic to use the new Task fields (e.g., search across Client Name/Category/Sub Category/Assigned Name/Comment) and remove legacy references to title/description/priority/clientId/deadline while preserving equivalent UX where possible. Verify the component's usage instructions before implementing."
         }
       ]
     }

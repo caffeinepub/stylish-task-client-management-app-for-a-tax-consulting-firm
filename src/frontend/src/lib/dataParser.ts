@@ -1,4 +1,4 @@
-import type { Client, Task, ClientId, TaskId } from '../backend';
+import type { Client, ClientId } from '../backend';
 
 export interface ParsedClient {
   id: ClientId;
@@ -8,16 +8,6 @@ export interface ParsedClient {
   taxYears: string[];
   status: 'Active' | 'Inactive';
   notes: string;
-}
-
-export interface ParsedTask {
-  id: TaskId;
-  title: string;
-  description: string;
-  status: string;
-  priority: string;
-  clientId: ClientId;
-  deadline: bigint | null;
 }
 
 // Client data encoding/decoding
@@ -61,37 +51,4 @@ export function encodeClientData(data: {
   const contactInfo = `${data.email}|${data.phone}|${data.notes}`;
   const projects = [`status:${data.status}`, ...data.taxYears];
   return { contactInfo, projects };
-}
-
-// Task data encoding/decoding
-// Format: description = "priority:Medium|actualDescription"
-// Format: status = "To Do" (also encodes status)
-export function parseTaskData(task: Task): ParsedTask {
-  const descParts = task.description.split('|');
-  let priority = 'Medium';
-  let description = task.description;
-
-  if (descParts[0]?.startsWith('priority:')) {
-    priority = descParts[0].substring(9);
-    description = descParts.slice(1).join('|');
-  }
-
-  return {
-    id: task.id,
-    title: task.title,
-    description,
-    status: task.status,
-    priority,
-    clientId: task.clientId,
-    deadline: task.deadline || null,
-  };
-}
-
-export function encodeTaskData(data: {
-  description: string;
-  priority: string;
-  status: string;
-}): { description: string; status: string } {
-  const description = `priority:${data.priority}|${data.description}`;
-  return { description, status: data.status };
 }
