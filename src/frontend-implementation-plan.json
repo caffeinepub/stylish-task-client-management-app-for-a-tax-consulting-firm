@@ -1,27 +1,94 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Add assignee-wise sorting to Tasks list",
+  "title": "Fix TanStack Router startup blank-screen by deferring URL cleanup, hardening init queries and search validation, and adding top-level fallback UI",
   "requirements": [
     {
-      "id": "REQ-52",
-      "summary": "Add an assignee-wise sort option to the Tasks page and implement client-side sorting by Task.assignedName while preserving existing sort behavior.",
+      "id": "REQ-53",
+      "summary": "Prevent URL mutation during initial router/bootstrap by deferring caffeineAdminToken hash cleanup until after first render while preserving admin-token initialization.",
       "acceptanceCriteria": [
-        "In frontend/src/utils/taskSort.ts, the SortField union includes an assignee sort field (e.g., \"assignedName\") and SORT_FIELD_LABELS includes an English label for it.",
-        "In frontend/src/utils/taskSort.ts, sortTasks() can sort by assignedName using the existing null-safe, case-insensitive string comparison behavior (tasks with missing/empty assignedName sort to the end).",
-        "In frontend/src/pages/TasksPage.tsx, the \"Sort by\" Select includes an option for the new assignee sort field, and selecting it updates the rendered task ordering accordingly.",
-        "Existing sort options (Due Date, Status, Task Category, Client Name, Bill Amount, Created At) continue to work as before."
+        "Loading the app at /, /dashboard, /tasks, or /clients no longer results in a fully blank screen.",
+        "The app renders either the Signed Out screen (when not authenticated) or the authenticated layout (when authenticated) without requiring a hard refresh.",
+        "Admin-token initialization still works: if caffeineAdminToken is present in the URL hash, access control is initialized successfully, and the token is cleared only after the app has rendered at least once (no router hang).",
+        "No new console errors are introduced during initial load."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/utils/taskSort.ts",
+          "path": "frontend/src/utils/urlParams.ts",
           "operation": "modify",
-          "description": "Extend SortField to include an assignee sort field (\"assignedName\"), add its label to SORT_FIELD_LABELS, and update sortTasks() to support sorting by Task.assignedName using the existing null-safe, case-insensitive string comparison (ensuring missing/empty assignedName values sort to the end). Keep all sorting client-side and do not introduce backend changes."
+          "description": "Change secret-parameter handling so getSecretParameter('caffeineAdminToken') never calls history.replaceState during synchronous startup; instead mark the secret for later removal (after it has been persisted to sessionStorage) and provide an exported helper to flush/clear pending secret params from the URL hash safely after initial render."
         },
         {
-          "path": "frontend/src/pages/TasksPage.tsx",
+          "path": "frontend/src/hooks/useDeferredUrlCleanup.ts",
+          "operation": "create",
+          "description": "Add a small hook that runs in a post-render effect to flush pending URL secret cleanup (e.g., caffeineAdminToken) using the new helper from utils/urlParams, ensuring cleanup occurs only after the app has rendered at least once."
+        },
+        {
+          "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Add the new assignee sort option to the existing \"Sort by\" Select (without modifying any files under frontend/src/components/ui) and ensure selecting it updates sortField so the rendered task table order changes accordingly via the existing sortTasks(filteredTasks, sortField, sortDirection) flow. Preserve all existing sort options and their behavior."
+          "description": "Wire deferred URL cleanup into RootComponent by calling the new useDeferredUrlCleanup hook early in the component lifecycle so the router/root route can render before any hash cleanup occurs."
+        }
+      ]
+    },
+    {
+      "id": "REQ-54",
+      "summary": "Make root initialization resilient by gating current-user-profile fetching so it cannot throw or run in unauthenticated/pre-actor states.",
+      "acceptanceCriteria": [
+        "When not authenticated, the Signed Out screen renders without any runtime exceptions related to current user profile fetching.",
+        "When authenticated, the root route shows the existing loading state while profile is loading and then renders the app layout normally.",
+        "The app does not throw 'Actor not available' (or any other uncaught error) that results in a blank screen during startup."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useCurrentUserProfile.ts",
+          "operation": "modify",
+          "description": "Update useGetCallerUserProfile to be fully defensive: gate the React Query enablement on authenticated identity readiness (not just actor existence), and ensure the query function never throws on missing actor/identity; instead avoid running or return a safe value without triggering uncaught exceptions during startup."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Align RootComponent loading and profile-setup gating with the updated profile hook semantics (authenticated-only fetching), ensuring SignedOutScreen renders without triggering profile query execution in guest/anonymous mode."
+        }
+      ]
+    },
+    {
+      "id": "REQ-55",
+      "summary": "Harden /tasks validateSearch to be fully defensive and return safe defaults for missing/malformed search params.",
+      "acceptanceCriteria": [
+        "Navigating to /tasks with no search params, partial params, or malformed params (e.g., overdue=123, status[]=x) does not crash or hang the app.",
+        "The tasks page still receives the expected optional search parameters when they are present (overdue/status/taskCategory)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Replace the current unsafe casts in the /tasks route validateSearch with defensive normalization (accept only expected primitive string values, ignore arrays/objects/unexpected types, and return undefined defaults when invalid) so route validation cannot throw or block rendering."
+        }
+      ]
+    },
+    {
+      "id": "REQ-56",
+      "summary": "Add a user-visible top-level error fallback so unexpected initialization errors show a clear message and reload action instead of a blank screen.",
+      "acceptanceCriteria": [
+        "If an unexpected error occurs during startup, the user sees an error screen instead of a blank page.",
+        "The error screen includes a clear message (English) and a button/link to reload the page.",
+        "Normal operation is unchanged when no error occurs."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/errors/AppStartupErrorBoundary.tsx",
+          "operation": "create",
+          "description": "Create a top-level React error boundary component that renders a minimal, non-sensitive English error screen with a Reload action (e.g., triggers window.location.reload) to prevent fully blank UI on startup failures."
+        },
+        {
+          "path": "frontend/src/components/errors/StartupErrorScreen.tsx",
+          "operation": "create",
+          "description": "Create a presentational error screen used by the error boundary with a clear generic message and reload control; avoid exposing stack traces or sensitive details."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Wrap RouterProvider with the new AppStartupErrorBoundary and (optionally) attach a router/root-level errorComponent for route render errors so any unexpected initialization error results in the fallback UI rather than a blank screen."
         }
       ]
     }

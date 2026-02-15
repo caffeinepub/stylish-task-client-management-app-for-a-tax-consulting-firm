@@ -1,5 +1,5 @@
 {
-  "frontend/src/App.tsx": "Main application component with TanStack Router setup including search parameter validation for the tasks route (overdue, status, taskCategory).",
+  "frontend/src/App.tsx": "Main application component with TanStack Router setup including deferred URL cleanup hook, defensive search parameter validation for tasks route, error boundary wrapper, and root-level error component to prevent blank screens on startup failures.",
   "frontend/src/components/auth/SignedOutScreen.tsx": "Landing page shown to unauthenticated users with CSWA Group of Companies branding, sign-in CTA, and feature highlights for client management, task tracking, and dashboard insights.",
   "frontend/src/components/auth/ProfileSetupModal.tsx": "Modal dialog that prompts new users to enter their name on first login.",
   "frontend/src/components/layout/AppLayout.tsx": "Authenticated app layout with header navigation displaying CSWA Group of Companies logo, user menu, mobile responsive sidebar including new Assignees nav item, and footer with caffeine.ai attribution.",
@@ -10,7 +10,7 @@
   "frontend/src/components/clients/ClientFormDialog.tsx": "Reusable dialog for creating and editing clients with validation for Name (required), GSTIN (optional), PAN (optional), and Notes (optional) fields.",
   "frontend/src/components/tasks/TaskFormDialog.tsx": "Reusable dialog for creating and editing tasks with free-text inputs for Client Name and Assignee (no dropdowns), all fields optional, Status dropdown using non-empty sentinel value to prevent Radix Select crashes, and inline error display for backend validation failures.",
   "frontend/src/components/tasks/TaskQuickStatus.tsx": "Inline status dropdown for quick task status updates using the 7 allowed statuses from the shared constants, with normalized display labels for legacy values.",
-  "frontend/src/hooks/useCurrentUserProfile.ts": "React Query hooks for fetching and saving user profile with actor-aware loading states to prevent modal flash.",
+  "frontend/src/hooks/useCurrentUserProfile.ts": "React Query hooks for user profile with defensive query enablement gated on authenticated identity and safe error handling that returns null instead of throwing to prevent startup crashes.",
   "frontend/src/hooks/clients.ts": "React Query hooks for all client CRUD operations plus bulk create and bulk delete with proper cache invalidation using the new Client model (name, gstin, pan, notes).",
   "frontend/src/hooks/tasks.ts": "React Query hooks for all task CRUD operations plus bulk create, bulk update, and bulk delete with proper cache invalidation using the TaskInput type from backend.",
   "frontend/src/lib/dataParser.ts": "Deprecated utility functions for client data parsing; new Client model uses explicit fields (name, gstin, pan, notes) without encoding.",
@@ -33,5 +33,9 @@
   "frontend/src/utils/taskSort.ts": "Reusable task sorting utilities providing sort field types (including assignedName), direction types, field labels, and a sortTasks function that handles safe comparison of optional fields (pushing missing values to the end) for bigint timestamps, numbers, and strings.",
   "frontend/src/utils/taskExcel.ts": "Client-side Excel export utility that dynamically loads the SheetJS library from CDN, converts Task arrays to Excel-friendly format with proper column headers and formatting, then generates and downloads a .xlsx file with a descriptive filename including the current date.",
   "frontend/src/utils/taskDisplay.ts": "Shared display utilities for Task rendering providing consistent formatting for dates (bigint timestamps), currency (INR), and placeholders for missing optional fields.",
-  "frontend/src/components/tasks/TaskDetailsPanel.tsx": "Reusable read-only Task details presentation component that renders all task fields in a mobile-friendly stacked layout with consistent placeholders and proper formatting for dates and amounts."
+  "frontend/src/components/tasks/TaskDetailsPanel.tsx": "Reusable read-only Task details presentation component that renders all task fields in a mobile-friendly stacked layout with consistent placeholders and proper formatting for dates and amounts.",
+  "frontend/src/utils/urlParams.ts": "URL parameter utilities with deferred cleanup mechanism that marks secret parameters for removal after initial render instead of synchronous history.replaceState calls, preventing router initialization conflicts.",
+  "frontend/src/hooks/useDeferredUrlCleanup.ts": "React hook that flushes pending URL cleanups in a post-mount effect to ensure cleanup happens only after the router has fully initialized.",
+  "frontend/src/components/errors/StartupErrorScreen.tsx": "Presentational error screen component displaying a user-friendly message with reload action for unexpected startup failures.",
+  "frontend/src/components/errors/AppStartupErrorBoundary.tsx": "Top-level React error boundary that catches and displays startup errors using StartupErrorScreen instead of showing a blank page."
 }

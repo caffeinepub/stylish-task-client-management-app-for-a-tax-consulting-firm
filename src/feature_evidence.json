@@ -2,11 +2,12 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-extend-the-tasks-page-sorting-controls-and-sorting-logic-to-support-assignee-wise-sorting-i-e-sort-by-task-assignedname-in-addition-to-the-existing-sort-fields-including-the-already-supported-client-wise-sorting",
-      "featureTitle": "Extend the Tasks page sorting controls and sorting logic to support assignee-wise sorting (i.e., sort by Task.assignedName) in addition to the existing sort fields (including the already-supported client-wise sorting).",
+      "featureId": "feature-fix-the-app-s-blank-screen-on-initial-load-across-all-routes-by-preventing-url-mutation-during-initial-router-app-bootstrap-currently-caused-by-reading-the-admin-token-via-getsecretparameter-caffeineadmintoken-which-clears-modifies-window-location-via-history-replacestate-ensure-the-router-can-render-the-root-route-reliably-before-any-url-cleanup-occurs",
+      "featureTitle": "Fix the app’s blank-screen on initial load across all routes by preventing URL mutation during initial router/app bootstrap (currently caused by reading the admin token via getSecretParameter('caffeineAdminToken') which clears/modifies window.location via history.replaceState). Ensure the router can render the root route reliably before any URL cleanup occurs.",
       "files": [
-        "frontend/src/pages/TasksPage.tsx",
-        "frontend/src/utils/taskSort.ts"
+        "frontend/src/App.tsx",
+        "frontend/src/hooks/useDeferredUrlCleanup.ts",
+        "frontend/src/utils/urlParams.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -17,7 +18,67 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-52"
+        "REQ-53"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-make-root-initialization-resilient-by-ensuring-user-profile-fetching-cannot-crash-the-root-route-during-unauthenticated-or-pre-actor-states-specifically-ensure-the-current-user-profile-query-is-never-invoked-or-never-throws-in-a-way-that-can-crash-initial-rendering-when-the-actor-identity-is-not-ready",
+      "featureTitle": "Make root initialization resilient by ensuring user profile fetching cannot crash the root route during unauthenticated or pre-actor states. Specifically, ensure the current-user-profile query is never invoked (or never throws) in a way that can crash initial rendering when the actor/identity is not ready.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/hooks/useCurrentUserProfile.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-54"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-harden-tanstack-router-search-param-validation-so-it-cannot-contribute-to-startup-hangs-crashes-ensure-validatesearch-on-the-tasks-route-is-fully-defensive-does-not-throw-for-unexpected-types-values-and-returns-safe-defaults-when-search-params-are-missing-or-malformed",
+      "featureTitle": "Harden TanStack Router search-param validation so it cannot contribute to startup hangs/crashes. Ensure validateSearch on the /tasks route is fully defensive (does not throw for unexpected types/values) and returns safe defaults when search params are missing or malformed.",
+      "files": [
+        "frontend/src/App.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-55"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-a-user-visible-fallback-for-unexpected-initialization-errors-at-the-top-level-so-the-ui-never-remains-fully-blank-the-fallback-should-display-a-clear-english-error-message-and-a-reload-action-without-exposing-sensitive-details",
+      "featureTitle": "Add a user-visible fallback for unexpected initialization errors at the top level so the UI never remains fully blank. The fallback should display a clear English error message and a reload action, without exposing sensitive details.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/errors/AppStartupErrorBoundary.tsx",
+        "frontend/src/components/errors/StartupErrorScreen.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-56"
       ],
       "confidence": "high"
     }

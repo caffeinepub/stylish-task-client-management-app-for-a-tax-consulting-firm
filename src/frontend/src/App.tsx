@@ -1,6 +1,7 @@
 import { createRouter, RouterProvider, createRoute, createRootRoute, Outlet } from '@tanstack/react-router';
 import { useInternetIdentity } from './hooks/useInternetIdentity';
 import { useGetCallerUserProfile } from './hooks/useCurrentUserProfile';
+import { useDeferredUrlCleanup } from './hooks/useDeferredUrlCleanup';
 import AppLayout from './components/layout/AppLayout';
 import ProfileSetupModal from './components/auth/ProfileSetupModal';
 import DashboardPage from './pages/DashboardPage';
@@ -9,11 +10,16 @@ import ClientDetailPage from './pages/ClientDetailPage';
 import TasksPage from './pages/TasksPage';
 import AssigneesPage from './pages/AssigneesPage';
 import SignedOutScreen from './components/auth/SignedOutScreen';
+import AppStartupErrorBoundary from './components/errors/AppStartupErrorBoundary';
+import StartupErrorScreen from './components/errors/StartupErrorScreen';
 
 // Root route component
 function RootComponent() {
   const { identity, isInitializing } = useInternetIdentity();
   const { data: userProfile, isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
+
+  // Defer URL cleanup to avoid router conflicts
+  useDeferredUrlCleanup();
 
   const isAuthenticated = !!identity;
 
@@ -45,6 +51,7 @@ function RootComponent() {
 // Define routes
 const rootRoute = createRootRoute({
   component: RootComponent,
+  errorComponent: StartupErrorScreen,
 });
 
 const indexRoute = createRoute({
@@ -70,11 +77,23 @@ const tasksRoute = createRoute({
   path: '/tasks',
   component: TasksPage,
   validateSearch: (search: Record<string, unknown>): { overdue?: string; status?: string; taskCategory?: string } => {
-    return {
-      overdue: search.overdue as string | undefined,
-      status: search.status as string | undefined,
-      taskCategory: search.taskCategory as string | undefined,
-    };
+    // Defensive normalization: only accept expected string values
+    const result: { overdue?: string; status?: string; taskCategory?: string } = {};
+
+    // Only accept string primitives, ignore arrays/objects/unexpected types
+    if (typeof search.overdue === 'string' && search.overdue.length > 0) {
+      result.overdue = search.overdue;
+    }
+
+    if (typeof search.status === 'string' && search.status.length > 0) {
+      result.status = search.status;
+    }
+
+    if (typeof search.taskCategory === 'string' && search.taskCategory.length > 0) {
+      result.taskCategory = search.taskCategory;
+    }
+
+    return result;
   },
 });
 
@@ -104,5 +123,9 @@ declare module '@tanstack/react-router' {
 }
 
 export default function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <AppStartupErrorBoundary>
+      <RouterProvider router={router} />
+    </AppStartupErrorBoundary>
+  );
 }

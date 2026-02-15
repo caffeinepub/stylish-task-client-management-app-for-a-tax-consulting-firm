@@ -1,17 +1,30 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
+import { useInternetIdentity } from './useInternetIdentity';
 import type { UserProfile } from '../backend';
 
 export function useGetCallerUserProfile() {
   const { actor, isFetching: actorFetching } = useActor();
+  const { identity } = useInternetIdentity();
+
+  const isAuthenticated = !!identity;
 
   const query = useQuery<UserProfile | null>({
     queryKey: ['currentUserProfile'],
     queryFn: async () => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.getCallerUserProfile();
+      if (!actor) {
+        // Return null instead of throwing to prevent crashes
+        return null;
+      }
+      try {
+        return await actor.getCallerUserProfile();
+      } catch (error) {
+        console.error('Failed to fetch user profile:', error);
+        return null;
+      }
     },
-    enabled: !!actor && !actorFetching,
+    // Only enable when authenticated and actor is ready
+    enabled: isAuthenticated && !!actor && !actorFetching,
     retry: false,
   });
 

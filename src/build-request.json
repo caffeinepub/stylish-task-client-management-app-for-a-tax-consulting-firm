@@ -1,48 +1,95 @@
 {
   "kind": "build_request",
-  "title": "Add assignee-wise sorting to Tasks list",
-  "priority": "normal",
+  "title": "Fix TanStack Router root route blank-screen crash on initial load",
+  "priority": "high",
   "requirements": [
     {
-      "id": "REQ-52",
-      "text": "Extend the Tasks page sorting controls and sorting logic to support assignee-wise sorting (i.e., sort by Task.assignedName) in addition to the existing sort fields (including the already-supported client-wise sorting).",
+      "id": "REQ-53",
+      "text": "Fix the app’s blank-screen on initial load across all routes by preventing URL mutation during initial router/app bootstrap (currently caused by reading the admin token via getSecretParameter('caffeineAdminToken') which clears/modifies window.location via history.replaceState). Ensure the router can render the root route reliably before any URL cleanup occurs.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "recent-messages"
         ],
         "quotes": [
-          "clinet wise,assignee wise sorting also needed"
+          "Fix root route crash"
         ]
       },
       "acceptanceCriteria": [
-        "In frontend/src/utils/taskSort.ts, the SortField union includes an assignee sort field (e.g., \"assignedName\") and SORT_FIELD_LABELS includes an English label for it.",
-        "In frontend/src/utils/taskSort.ts, sortTasks() can sort by assignedName using the existing null-safe, case-insensitive string comparison behavior (tasks with missing/empty assignedName sort to the end).",
-        "In frontend/src/pages/TasksPage.tsx, the \"Sort by\" Select includes an option for the new assignee sort field, and selecting it updates the rendered task ordering accordingly.",
-        "Existing sort options (Due Date, Status, Task Category, Client Name, Bill Amount, Created At) continue to work as before."
+        "Loading the app at /, /dashboard, /tasks, or /clients no longer results in a fully blank screen.",
+        "The app renders either the Signed Out screen (when not authenticated) or the authenticated layout (when authenticated) without requiring a hard refresh.",
+        "Admin-token initialization still works: if caffeineAdminToken is present in the URL hash, access control is initialized successfully, and the token is cleared only after the app has rendered at least once (no router hang).",
+        "No new console errors are introduced during initial load."
+      ]
+    },
+    {
+      "id": "REQ-54",
+      "text": "Make root initialization resilient by ensuring user profile fetching cannot crash the root route during unauthenticated or pre-actor states. Specifically, ensure the current-user-profile query is never invoked (or never throws) in a way that can crash initial rendering when the actor/identity is not ready.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "recent-messages"
+        ],
+        "quotes": [
+          "not loading",
+          "same issue"
+        ]
+      },
+      "acceptanceCriteria": [
+        "When not authenticated, the Signed Out screen renders without any runtime exceptions related to current user profile fetching.",
+        "When authenticated, the root route shows the existing loading state while profile is loading and then renders the app layout normally.",
+        "The app does not throw 'Actor not available' (or any other uncaught error) that results in a blank screen during startup."
+      ]
+    },
+    {
+      "id": "REQ-55",
+      "text": "Harden TanStack Router search-param validation so it cannot contribute to startup hangs/crashes. Ensure validateSearch on the /tasks route is fully defensive (does not throw for unexpected types/values) and returns safe defaults when search params are missing or malformed.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "recent-messages"
+        ],
+        "quotes": [
+          "classic TanStack Router “blank white screen” bug",
+          "validateSearch"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Navigating to /tasks with no search params, partial params, or malformed params (e.g., overdue=123, status[]=x) does not crash or hang the app.",
+        "The tasks page still receives the expected optional search parameters when they are present (overdue/status/taskCategory)."
+      ]
+    },
+    {
+      "id": "REQ-56",
+      "text": "Add a user-visible fallback for unexpected initialization errors at the top level so the UI never remains fully blank. The fallback should display a clear English error message and a reload action, without exposing sensitive details.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "recent-messages"
+        ],
+        "quotes": [
+          "fully blank page"
+        ]
+      },
+      "acceptanceCriteria": [
+        "If an unexpected error occurs during startup, the user sees an error screen instead of a blank page.",
+        "The error screen includes a clear message (English) and a button/link to reload the page.",
+        "Normal operation is unchanged when no error occurs."
       ]
     }
   ],
   "constraints": [
-    "Do not modify any files under frontend/src/components/ui (read-only shadcn components).",
-    "Do not introduce backend schema/API changes for this request; sorting must remain client-side on the Tasks page."
+    "Do not modify any files under frontend/src/components/ui (read-only).",
+    "Do not edit immutable hook files listed in SYSTEM_CONTEXT (frontend/src/hooks/useInternetIdentity.ts / .tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx). Compose around them or add new modules/hooks instead.",
+    "Backend changes are not required for this fix; keep changes confined to the frontend unless a backend defect is proven."
   ],
   "nonGoals": [
-    "Adding new filters or grouping views (e.g., grouped-by-client or grouped-by-assignee sections).",
-    "Changing the meaning of the existing \"Client Name\" sorting behavior."
+    "Changing task/client/business logic, schemas, or backend persistence.",
+    "Adding new features unrelated to fixing the root-route startup crash.",
+    "Implementing new authentication providers (Internet Identity remains the only auth mechanism)."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }
