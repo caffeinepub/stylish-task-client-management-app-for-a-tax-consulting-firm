@@ -1,0 +1,93 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-15T08:50:29.359Z",
+  "summary": "Diff adds a Motoko backend actor with per-principal Maps for clients/tasks plus a React/TanStack Router + React Query frontend with Internet Identity gating, dashboard/clients/tasks pages, forms, and theme styling. Several requested backend data fields and filtering/query APIs are not evidenced in the backend diff snippet, and some unrequested features (user profile setup, admin/access-control secret initialization) were added.",
+  "missing_requirements": [
+    {
+      "id": "REQ-2",
+      "requirement": "Client and Task backend models must include required fields (Client: primary contact name/email/phone, tax years, status, notes, createdAt, updatedAt; Task: description/notes, status, priority, dueDate optional, createdAt, updatedAt) and persist them per principal.",
+      "reason": "The backend types shown do not contain the required fields. Client only has id/name/contactInfo/projects/timestamp (no createdAt/updatedAt, status, notes, structured contact). Task lacks priority and updatedAt; dueDate is named deadline and there is no updatedAt.",
+      "evidence": [
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "Backend must expose methods to list/get/create/update/delete clients and tasks; list tasks by clientId; and filter tasks by status and due date range.",
+      "reason": "Only some methods are visible (e.g., createClient/updateClient and some profile queries). The diff snippet does not show list/get methods, task CRUD, or filtering by status/due date range. Because backend/main.mo is truncated, these may exist later, but they are not evidenced in the provided diff summary.",
+      "evidence": [
+        "backend/main.mo (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "requirement": "Empty states for no clients and no tasks, with a clear action to create the first record.",
+      "reason": "Loading and error states are clearly implemented on pages, but empty-state UI is not evidenced in the visible truncated page code for Clients/Tasks (content cut before empty-state rendering).",
+      "evidence": [
+        "frontend/src/pages/ClientsPage.tsx (truncated)",
+        "frontend/src/pages/TasksPage.tsx (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-8",
+      "requirement": "Generated images must be stored in frontend/public/assets/generated (tax-monogram-logo.dim_256x256.png and dashboard-banner.dim_1600x400.png) and referenced directly by the frontend.",
+      "reason": "Frontend references /assets/generated/tax-monogram-logo.dim_256x256.png and Dashboard mentions a hero banner section, but the diff summary does not show the actual image files being added under frontend/public/assets/generated (some added files are omitted due to limits). Presence of the required image assets is therefore not confirmed by evidence provided.",
+      "evidence": [
+        "frontend/src/components/auth/SignedOutScreen.tsx",
+        "frontend/src/components/layout/AppLayout.tsx",
+        "frontend/src/pages/DashboardPage.tsx (truncated)"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "User profile system (UserProfile type, get/save profile methods) and mandatory profile setup modal on first login.",
+      "reason": "BuildRequest does not ask for user profiles or a profile-setup flow; it only specifies client/task management and II authentication gating.",
+      "evidence": [
+        "backend/main.mo",
+        "frontend/src/components/auth/ProfileSetupModal.tsx",
+        "frontend/src/hooks/useCurrentUserProfile.ts",
+        "frontend/src/App.tsx"
+      ]
+    },
+    {
+      "description": "Admin/role-based access control initialization via secret token and permission checks (AccessControl, MixinAuthorization, isAdmin, _initializeAccessControlWithSecret).",
+      "reason": "BuildRequest explicitly lists as a non-goal “Advanced role-based access control (admin/staff) beyond per-principal data scoping.” The diff introduces admin checks and a secret-based initialization path.",
+      "evidence": [
+        "backend/main.mo",
+        "frontend/src/hooks/useActor.ts"
+      ]
+    }
+  ],
+  "confidence": 0.72,
+  "changed_files": [
+    "all_files_summary.json",
+    "backend/main.mo",
+    "frontend-file-summaries.txt",
+    "frontend/index.css",
+    "frontend/index.html",
+    "frontend/src/App.tsx",
+    "frontend/src/components/auth/ProfileSetupModal.tsx",
+    "frontend/src/components/auth/SignedOutScreen.tsx",
+    "frontend/src/components/clients/ClientFormDialog.tsx",
+    "frontend/src/components/layout/AppLayout.tsx",
+    "frontend/src/components/tasks/TaskFormDialog.tsx",
+    "frontend/src/components/tasks/TaskQuickStatus.tsx",
+    "frontend/src/hooks/clients.ts",
+    "frontend/src/hooks/tasks.ts",
+    "frontend/src/hooks/useActor.ts",
+    "frontend/src/hooks/useCurrentUserProfile.ts",
+    "frontend/src/hooks/useInternetIdentity.ts",
+    "frontend/src/index.css",
+    "frontend/src/lib/dataParser.ts",
+    "frontend/src/main.tsx",
+    "frontend/src/pages/ClientDetailPage.tsx",
+    "frontend/src/pages/ClientsPage.tsx",
+    "frontend/src/pages/DashboardPage.tsx",
+    "frontend/src/pages/TasksPage.tsx",
+    "frontend/src/utils/urlParams.ts",
+    "frontend/tailwind.config.js",
+    "project_state.json"
+  ]
+}

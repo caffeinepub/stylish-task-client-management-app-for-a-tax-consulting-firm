@@ -1,0 +1,19 @@
+{
+  "frontend/src/App.tsx": "Main application component with TanStack Router setup, authentication gating via a named RootComponent function, and routes for Dashboard, Clients, and Tasks pages.",
+  "frontend/src/components/auth/SignedOutScreen.tsx": "Landing page shown to unauthenticated users with sign-in CTA, feature highlights, and branding.",
+  "frontend/src/components/auth/ProfileSetupModal.tsx": "Modal dialog that prompts new users to enter their name on first login.",
+  "frontend/src/components/layout/AppLayout.tsx": "Authenticated app layout with header navigation, logo, user menu, mobile responsive sidebar, and footer.",
+  "frontend/src/pages/DashboardPage.tsx": "Dashboard overview displaying key metrics (active clients, open tasks, overdue tasks, upcoming tasks) with hero banner and quick action links.",
+  "frontend/src/pages/ClientsPage.tsx": "Client list page with search, status filtering, table view, empty states, and create client action (fixed Tailwind v3 transform class).",
+  "frontend/src/pages/ClientDetailPage.tsx": "Client detail view showing contact information, tax years, status, and embedded list of client tasks.",
+  "frontend/src/pages/TasksPage.tsx": "Task list page with search, status/priority filters, due date sorting, overdue indicators, quick status changes, and URL-based pre-filtering (fixed Tailwind v3 transform class).",
+  "frontend/src/components/clients/ClientFormDialog.tsx": "Reusable dialog for creating and editing clients with validation, status selection, and delete confirmation.",
+  "frontend/src/components/tasks/TaskFormDialog.tsx": "Reusable dialog for creating and editing tasks with client selection, status/priority controls, date picker, and delete confirmation.",
+  "frontend/src/components/tasks/TaskQuickStatus.tsx": "Inline status dropdown for quick task status updates without opening full edit dialog.",
+  "frontend/src/hooks/useCurrentUserProfile.ts": "React Query hooks for fetching and saving user profile with actor-aware loading states to prevent modal flash.",
+  "frontend/src/hooks/clients.ts": "React Query hooks for all client CRUD operations with proper cache invalidation.",
+  "frontend/src/hooks/tasks.ts": "React Query hooks for all task CRUD operations including by-client queries with proper cache invalidation.",
+  "frontend/src/lib/dataParser.ts": "Utility functions to encode/decode structured client and task data into backend's text fields (status, priority, contact info).",
+  "frontend/src/index.css": "Global styles with OKLCH-based warm neutral + charcoal + sage color system for light and dark modes.",
+  "frontend/tailwind.config.js": "Tailwind configuration with custom color tokens, Inter font family, and extended design system utilities."
+}

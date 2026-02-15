@@ -1,0 +1,169 @@
+{
+  "kind": "build_request",
+  "title": "Stylish Task + Client Management app for a Tax Consulting firm",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "text": "Create an authenticated single-tenant experience using Internet Identity so a signed-in user can access their own data; require sign-in before viewing or editing any clients/tasks.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "i need a stylish Task/Client Managemnet app for my Tax consulting firm"
+        ]
+      },
+      "acceptanceCriteria": [
+        "When not signed in, the app shows a clear call-to-action to sign in with Internet Identity and does not display client/task data.",
+        "After signing in, the user can access the app features and only sees data associated with their principal.",
+        "Signing out returns the user to the signed-out state and hides any previously loaded data."
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Implement backend data models and persistence for Clients and Tasks, scoped per signed-in principal, supporting full CRUD operations.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Task/Client Managemnet app"
+        ]
+      },
+      "acceptanceCriteria": [
+        "A Client record includes at minimum: id, name, primary contact (name/email/phone fields), tax year(s) (freeform or list), status (e.g., Active/Inactive), notes, createdAt, updatedAt.",
+        "A Task record includes at minimum: id, clientId, title, description/notes, status (e.g., To do/In progress/Blocked/Done), priority (Low/Medium/High), dueDate (optional), createdAt, updatedAt.",
+        "Backend exposes query and update methods to: list/get/create/update/delete clients; list/get/create/update/delete tasks; list tasks by clientId; and filter tasks by status and due date range (basic filtering).",
+        "All methods enforce that records are stored and retrieved only for the caller’s principal (no cross-user access)."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Build a responsive frontend UI for managing Clients (list + detail) with creation/editing forms, search, and basic filters.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Task/Client Managemnet app"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Clients page shows a table/list of clients with quick search by name and a filter by status (Active/Inactive).",
+        "User can create a new client and edit/delete an existing client via validated forms (required name; email format validation when provided).",
+        "Client detail view shows client info and an embedded list of tasks for that client.",
+        "UI is responsive and usable on mobile and desktop."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Build a responsive frontend UI for managing Tasks with list views, quick actions, and task editing, including task assignment to a client.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Task/Client Managemnet app"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Tasks page shows a list/table of tasks with filters for status and priority and sorting by due date.",
+        "User can create/edit/delete tasks; task form allows selecting a client, setting status/priority, and optionally setting a due date.",
+        "Task rows support quick status change (e.g., dropdown or inline control) without navigating away.",
+        "Overdue tasks are visually indicated (e.g., badge or subtle highlight)."
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "text": "Add a dashboard overview that surfaces key operational metrics relevant to a tax consulting workflow.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "for my Tax consulting firm"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Dashboard displays: number of Active clients; count of open tasks (non-Done); count of overdue tasks; and tasks due in the next 7 days.",
+        "Each metric section links to the relevant filtered view (e.g., overdue tasks opens Tasks with overdue filter applied)."
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "text": "Implement frontend-backend data flow using React Query for all client/task reads and mutations, including loading, empty, and error states.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ]
+      },
+      "acceptanceCriteria": [
+        "All pages that fetch data show a loading state while requests are in flight and an error state with retry when requests fail.",
+        "Mutations (create/update/delete) trigger cache invalidation/refetch so UI stays consistent without manual refresh.",
+        "Empty states are present for no clients and no tasks, with a clear action to create the first record."
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "text": "Apply a coherent, stylish visual theme appropriate for a tax consulting firm and enforce it consistently across layout, typography, spacing, and components (avoid blue/purple as primary brand colors).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "stylish"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The app uses a consistent design system with a distinct theme (e.g., warm neutrals + charcoal + sage accents), clear typographic hierarchy, and polished spacing.",
+        "Navigation (top bar and/or side nav) looks cohesive and remains consistent across all main views (Dashboard, Clients, Tasks, Settings/Profile).",
+        "Interactive states (hover/focus/disabled) are visually consistent and accessible."
+      ]
+    },
+    {
+      "id": "REQ-8",
+      "text": "Add generated static brand imagery and integrate it into the UI (no backend image routing).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "stylish"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Generated images are stored in frontend/public/assets/generated and referenced directly by the frontend.",
+        "A small brand mark is used in the app header/navigation.",
+        "A subtle dashboard hero/banner graphic is used on the dashboard without harming readability."
+      ]
+    }
+  ],
+  "constraints": [
+    "Backend must remain a single Motoko actor (all business logic in the main actor file).",
+    "Do not edit files under frontend/src/components/ui or any other immutable paths defined by the platform; compose those components instead.",
+    "No external databases or third-party auth providers; use Internet Identity only."
+  ],
+  "nonGoals": [
+    "Invoicing, payments, or billing workflows.",
+    "Email/SMS sending, notifications, or calendar integrations.",
+    "Document storage, file uploads, or OCR of tax documents.",
+    "Real-time collaboration/chat or WebSocket-based updates.",
+    "Advanced role-based access control (admin/staff) beyond per-principal data scoping."
+  ],
+  "imageRequirements": {
+    "required": [
+      "Minimal monogram logo using a stylized letterform (e.g., T) in charcoal and sage on a transparent background (tax-monogram-logo.dim_256x256.png)",
+      "Wide subtle abstract banner background with warm cream paper texture and thin geometric lines in charcoal/sage (dashboard-banner.dim_1600x400.png)"
+    ],
+    "edits": []
+  }
+}
