@@ -1,10 +1,16 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 9,
+  "projectStateVersion": 19,
   "summary": "Build a stylish Task/Client Management app for a tax consulting firm.",
-  "architectural_notes": [],
-  "known_issues": [],
-  "isFixRequest": false,
+  "architectural_notes": [
+    "Dashboard should support interactive drill-down: clicking an aggregate metric navigates/filters to the corresponding Tasks list view (e.g., by category/status) and shows the matching items.",
+    "Task.status should be constrained to the allowed set: Pending, Docs Pending, In Progress, Checking, Payment Pending, Completed, Hold; UI and dashboard aggregations should treat these as the canonical statuses.",
+    "Single Add Task form should not depend on dropdown/select components for Client Name or Assigned Name; treat them as optional free-text fields."
+  ],
+  "known_issues": [
+    "Single task addition (Add Task dialog) is not working while bulk task addition works; likely due to Add Task form crash related to dropdown/select rendering/default values."
+  ],
+  "isFixRequest": true,
   "existing_features": [
     {
       "id": "feature-create-an-authenticated-single-tenant-experience-using-internet-identity-so-a-signed-in-user-can-access-their-own-data-require-sign-in-before-viewing-or-editing-any-clients-tasks",
@@ -141,6 +147,150 @@
         "REQ-23"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-add-react-query-hooks-to-read-mutate-assignees-single-list-crud-bulk-create-via-the-backend-actor-following-the-patterns-used-in-frontend-src-hooks-clients-ts-and-frontend-src-hooks-tasks-ts-query-keys-invalidation-on-mutation-success-actor-availability-guarding",
+      "title": "Add React Query hooks to read/mutate Assignees (single + list + CRUD + bulk create) via the backend actor, following the patterns used in frontend/src/hooks/clients.ts and frontend/src/hooks/tasks.ts (query keys, invalidation on mutation success, actor availability guarding).",
+      "reqIds": [
+        "REQ-26"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-an-assignees-management-ui-that-allows-users-to-create-edit-and-delete-assignees-with-team-name-and-captain-fields-using-the-existing-ui-patterns-dialogs-forms-loading-empty-error-states-and-consistent-styling",
+      "title": "Add an Assignees management UI that allows users to create, edit, and delete assignees with Team Name and Captain fields, using the existing UI patterns (dialogs/forms, loading/empty/error states) and consistent styling.",
+      "reqIds": [
+        "REQ-27"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-bulk-addition-bulk-upload-for-assignees-in-the-frontend-including-a-downloadable-csv-template-csv-upload-preview-of-parsed-rows-validation-error-display-and-a-commit-step-that-calls-the-backend-bulkcreateassignees-api",
+      "title": "Implement bulk addition (bulk upload) for Assignees in the frontend, including a downloadable CSV template, CSV upload, preview of parsed rows, validation error display, and a commit step that calls the backend bulkCreateAssignees API.",
+      "reqIds": [
+        "REQ-28"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-tasks-create-edit-ui-to-make-the-assigned-name-field-optionally-selectable-from-existing-assignees-teams-while-preserving-compatibility-with-the-current-stored-task-assignedname-text-field",
+      "title": "Update the Tasks create/edit UI to make the 'Assigned Name' field optionally selectable from existing Assignees (teams), while preserving compatibility with the current stored Task.assignedName text field.",
+      "reqIds": [
+        "REQ-29"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-dashboard-to-display-total-revenue-aggregated-by-task-category-using-each-task-s-numeric-bill-field-as-the-revenue-amount-treat-missing-null-bills-as-0-show-a-clear-list-table-of-categories-with-their-total-revenue-sorted-by-highest-revenue-first",
+      "title": "Update the Dashboard to display total revenue aggregated by Task Category, using each task’s numeric \"Bill\" field as the revenue amount (treat missing/null bills as 0). Show a clear list/table of categories with their total revenue, sorted by highest revenue first.",
+      "reqIds": [
+        "REQ-30"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-dashboard-to-display-a-status-wise-breakdown-of-tasks-count-per-status-include-a-total-count-and-per-status-counts-based-on-the-current-stored-task-status-values-including-the-existing-done-semantics",
+      "title": "Update the Dashboard to display a status-wise breakdown of tasks (count per status). Include a total count and per-status counts based on the current stored task.status values (including the existing \"Done\" semantics).",
+      "reqIds": [
+        "REQ-31"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-click-through-behavior-on-dashboard-revenue-by-category-and-status-breakdown-items-so-that-clicking-an-item-navigates-to-the-tasks-page-and-lists-only-the-corresponding-tasks-i-e-drill-down-to-the-concerned-items",
+      "title": "Add click-through behavior on Dashboard revenue-by-category and status breakdown items so that clicking an item navigates to the Tasks page and lists only the corresponding tasks (i.e., drill-down to the concerned items).",
+      "reqIds": [
+        "REQ-32"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-extend-the-tasks-page-to-support-initializing-and-applying-filters-from-route-search-parameters-e-g-overdue-true-status-value-taskcategory-value-so-dashboard-drill-down-navigation-reliably-filters-the-list",
+      "title": "Extend the Tasks page to support initializing and applying filters from route search parameters (e.g., overdue=true, status=<value>, taskCategory=<value>) so Dashboard drill-down navigation reliably filters the list.",
+      "reqIds": [
+        "REQ-33"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-replace-the-app-s-task-status-options-everywhere-in-the-ui-with-the-user-provided-status-set-pending-docs-pending-in-progress-checking-payment-pending-completed-hold-ensure-these-exact-strings-are-used-consistently-in-status-selectors-status-filters-and-any-status-display-labels",
+      "title": "Replace the app’s Task status options everywhere in the UI with the user-provided status set: \"Pending\", \"Docs Pending\", \"In Progress\", \"Checking\", \"Payment Pending\", \"Completed\", \"Hold\". Ensure these exact strings are used consistently in status selectors, status filters, and any status display labels.",
+      "reqIds": [
+        "REQ-34"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-app-s-open-task-logic-to-treat-completed-as-the-completed-done-state-while-remaining-backward-compatible-with-existing-stored-values-like-done-this-affects-tasks-page-filtering-and-overdue-logic-and-dashboard-status-aggregation",
+      "title": "Update the app’s \"Open\" task logic to treat \"Completed\" as the completed/done state (while remaining backward-compatible with existing stored values like \"Done\"). This affects Tasks page filtering and overdue logic, and dashboard status aggregation.",
+      "reqIds": [
+        "REQ-35"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-task-create-edit-ui-so-the-client-name-can-be-selected-from-the-existing-clients-list-in-addition-to-allowing-manual-entry-and-ensure-the-ui-clearly-supports-selecting-client-status-and-assignee-from-lists",
+      "title": "Update the Task create/edit UI so the Client Name can be selected from the existing Clients list (in addition to allowing manual entry), and ensure the UI clearly supports selecting Client, Status, and Assignee from lists.",
+      "reqIds": [
+        "REQ-36"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-validate-the-task-status-values-during-csv-bulk-upload-parsing-against-the-allowed-status-set-pending-docs-pending-in-progress-checking-payment-pending-completed-hold-and-surface-a-clear-validation-error-when-an-unrecognized-status-is-provided",
+      "title": "Validate the Task Status values during CSV bulk upload parsing against the allowed status set (Pending, Docs Pending, In Progress, Checking, Payment Pending, Completed, Hold) and surface a clear validation error when an unrecognized status is provided.",
+      "reqIds": [
+        "REQ-37"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-tasks-bulk-upload-csv-template-to-include-columns-for-all-task-components-fields-supported-by-the-current-task-model-client-name-task-category-sub-category-status-comment-assigned-name-due-date-assignment-date-completion-date-bill-advance-received-outstanding-amount-payment-status-ensure-the-downloaded-template-filename-remains-a-csv-and-includes-at-least-one-example-row-that-demonstrates-the-correct-date-and-numeric-formats",
+      "title": "Update the Tasks bulk upload CSV template to include columns for all task components/fields supported by the current Task model: Client Name, Task Category, Sub Category, Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, Payment Status. Ensure the downloaded template filename remains a .csv and includes at least one example row that demonstrates the correct date and numeric formats.",
+      "reqIds": [
+        "REQ-38"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-extend-the-tasks-csv-bulk-upload-parser-to-read-and-validate-all-supported-task-columns-including-optional-fields-producing-taskinput-objects-that-include-any-provided-optional-values-and-leaving-omitted-blank-optional-fields-unset-null-validation-must-include-required-fields-present-client-name-task-category-sub-category-task-status-values-validated-against-the-allowed-status-set-date-fields-validated-and-converted-to-timestamps-in-the-format-expected-by-the-backend-and-numeric-fields-validated-as-numbers-surface-clear-row-column-specific-validation-errors-for-any-invalid-optional-values",
+      "title": "Extend the Tasks CSV bulk upload parser to read and validate all supported task columns (including optional fields), producing TaskInput objects that include any provided optional values (and leaving omitted/blank optional fields unset/null). Validation must include: required fields present (Client Name, Task Category, Sub Category), Task Status values validated against the allowed status set, date fields validated and converted to timestamps in the format expected by the backend, and numeric fields validated as numbers. Surface clear row/column-specific validation errors for any invalid optional values.",
+      "reqIds": [
+        "REQ-39"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-tasks-bulk-upload-preview-table-in-the-bulk-upload-dialog-to-display-the-uploaded-csv-s-parsed-values-for-all-supported-task-components-at-least-for-the-first-10-preview-rows-with-sensible-responsive-behavior-e-g-horizontal-scroll-or-hiding-least-important-columns-on-small-screens",
+      "title": "Update the Tasks bulk upload preview table in the bulk upload dialog to display the uploaded CSV’s parsed values for all supported task components (at least for the first 10 preview rows), with sensible responsive behavior (e.g., horizontal scroll or hiding least-important columns on small screens).",
+      "reqIds": [
+        "REQ-40"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-single-task-create-edit-dialog-to-remove-the-client-and-assignee-dropdown-select-controls-and-use-free-text-inputs-only-for-client-name-and-assigned-name",
+      "title": "Update the single Task create/edit dialog to remove the Client and Assignee dropdown (Select) controls, and use free-text inputs only for Client Name and Assigned Name.",
+      "reqIds": [
+        "REQ-41"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-make-all-fields-optional-in-the-single-task-create-flow-ui-including-client-name-task-category-and-sub-category-by-removing-required-markers-and-html-required-validation-while-keeping-the-existing-backend-api-calls-functional",
+      "title": "Make all fields optional in the single Task create flow UI (including Client Name, Task Category, and Sub Category) by removing required markers and HTML required validation, while keeping the existing backend API calls functional.",
+      "reqIds": [
+        "REQ-42"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-single-add-task-dialog-crash-caused-by-radix-select-empty-string-values-by-ensuring-no-selectitem-uses-an-empty-string-value-and-by-ensuring-select-components-never-receive-as-a-controlled-value",
+      "title": "Fix the single Add Task dialog crash caused by Radix Select empty-string values by ensuring no SelectItem uses an empty string value, and by ensuring Select components never receive \"\" as a controlled value.",
+      "reqIds": [
+        "REQ-43"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -226,6 +376,58 @@
       "reqIds": [
         "REQ-19"
       ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-14",
+      "summary": "Add an Assignees management feature: allow creating/editing assignees where each assignee includes a Team Name and a Captain.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-15",
+      "summary": "Support bulk addition (bulk upload/creation) of Assignees (teams) including Team Name and Captain fields.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-16",
+      "summary": "Add backend support for Assignees (teams) scoped per authenticated caller, where each assignee record contains Team Name and Captain fields, and provide CRUD query/update APIs consistent with existing Clients/Tasks access control behavior (trap when unauthenticated).",
+      "reqIds": [
+        "REQ-24"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-17",
+      "summary": "Add backend bulk addition APIs for Assignees to support creating many assignees in a single request, aligned with existing bulk APIs patterns (e.g., bulkCreateClients/bulkCreateTasks).",
+      "reqIds": [
+        "REQ-25"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-18",
+      "summary": "Enhance Dashboard: show total revenue aggregated by Task Category and provide status-wise task breakdown; enable click-through on dashboard widgets to drill down and list the corresponding tasks.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-19",
+      "summary": "Update Task Status to use the user-provided status components: Pending, Docs Pending, In Progress, Checking, Payment Pending, Completed, Hold (and reflect these consistently across task create/edit, list, and dashboard breakdown).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-21",
+      "summary": "Update the Tasks bulk upload (bulk addition) CSV template to include all task components/fields supported by the current Task model.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-22",
+      "summary": "Remove the Client and Assignee dropdown selectors from the single Add Task flow; make Client Name and Assigned Name optional free-text inputs instead of list-based selection.",
+      "reqIds": [],
       "status": "pending"
     }
   ],

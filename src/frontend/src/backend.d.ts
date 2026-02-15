@@ -11,6 +11,16 @@ export interface TaskInput {
     subCategory: string;
     clientName: string;
     taskCategory: string;
+    status?: string;
+    comment?: string;
+    assignedName?: string;
+    dueDate?: bigint;
+    assignmentDate?: bigint;
+    completionDate?: bigint;
+    bill?: number;
+    advanceReceived?: number;
+    outstandingAmount?: number;
+    paymentStatus?: string;
 }
 export interface PartialClientInput {
     pan?: string;
@@ -34,6 +44,10 @@ export interface PartialTaskUpdate {
     assignedName?: string;
 }
 export type TaskId = bigint;
+export interface PartialAssigneeInput {
+    name: string;
+    captain?: string;
+}
 export interface Task {
     id: TaskId;
     status?: string;
@@ -51,6 +65,11 @@ export interface Task {
     taskCategory: string;
     assignedName?: string;
 }
+export interface Assignee {
+    id: AssigneeId;
+    name: string;
+    captain?: string;
+}
 export interface Client {
     id: ClientId;
     pan?: string;
@@ -63,6 +82,7 @@ export type ClientId = bigint;
 export interface UserProfile {
     name: string;
 }
+export type AssigneeId = bigint;
 export enum UserRole {
     admin = "admin",
     user = "user",
@@ -70,17 +90,23 @@ export enum UserRole {
 }
 export interface backendInterface {
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    bulkCreateAssignees(assigneeInputs: Array<PartialAssigneeInput>): Promise<Array<AssigneeId>>;
     bulkCreateClients(clientInputs: Array<PartialClientInput>): Promise<Array<ClientId>>;
     bulkCreateTasks(taskInputs: Array<TaskInput>): Promise<Array<TaskId>>;
+    bulkDeleteAssignees(assigneeIds: Array<AssigneeId>): Promise<void>;
     bulkDeleteClients(clientIds: Array<ClientId>): Promise<void>;
     bulkDeleteTasks(taskIds: Array<TaskId>): Promise<void>;
     bulkUpdateTasks(taskUpdates: Array<[TaskId, PartialTaskUpdate]>): Promise<void>;
+    createAssignee(assignee: PartialAssigneeInput): Promise<AssigneeId>;
     createClient(client: PartialClientInput): Promise<ClientId>;
     createTask(clientName: string, taskCategory: string, subCategory: string): Promise<TaskId>;
+    deleteAssignee(assigneeId: AssigneeId): Promise<void>;
     deleteClient(clientId: ClientId): Promise<void>;
     deleteTask(taskId: TaskId): Promise<void>;
+    getAllAssignees(): Promise<Array<Assignee>>;
     getAllClients(): Promise<Array<Client>>;
     getAllTasks(): Promise<Array<Task>>;
+    getAssignee(assigneeId: AssigneeId): Promise<Assignee | null>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getClient(clientId: ClientId): Promise<Client | null>;
@@ -88,6 +114,7 @@ export interface backendInterface {
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    updateAssignee(assigneeId: AssigneeId, assignee: PartialAssigneeInput): Promise<void>;
     updateClient(clientId: ClientId, client: PartialClientInput): Promise<void>;
     updateTask(taskId: TaskId, clientName: string, taskCategory: string, subCategory: string, status: string | null, comment: string | null, assignedName: string | null, dueDate: bigint | null, assignmentDate: bigint | null, completionDate: bigint | null, bill: number | null, advanceReceived: number | null, outstandingAmount: number | null, paymentStatus: string | null): Promise<void>;
 }

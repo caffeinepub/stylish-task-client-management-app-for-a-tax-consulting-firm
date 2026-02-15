@@ -1,43 +1,23 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T10:58:18.416Z",
-  "summary": "Diff implements the new Client field shape across backend types and frontend UI, adds a Motoko migration mapping legacy client.contactInfo into notes, adds frontend bulk upload (CSV) utilities + dialog, and adds React Query hooks for bulk create/delete. However, the diff summary does not provide direct evidence that backend CRUD read/update functions and the new bulk client APIs are actually implemented/exposed in backend/main.mo (only the new Client type and createClient are shown before truncation).",
+  "generatedAt": "2026-02-15T16:47:18.022Z",
+  "summary": "TaskFormDialog.tsx was updated to use a non-empty sentinel value for an unset Status Select (addressing the Radix empty-string crash) and appears to move Client/Assignee to free-text fields per the diff summary. However, the provided truncated diff does not show the JSX where required markers/HTML required validation would be removed, so REQ-42 cannot be fully verified from the available evidence.",
   "missing_requirements": [
     {
-      "id": "REQ-17",
-      "requirement": "Backend CRUD APIs (updateClient, getClient, getAllClients) must accept/return the new Client shape (name, gstin?, pan?, notes?)",
-      "reason": "backend/main.mo diff snippet shows the updated Client type and createClient using the new fields, but the provided truncated excerpt does not show updateClient/getClient/getAllClients implementations returning/accepting the new shape.",
+      "id": "REQ-42",
+      "requirement": "Make all fields optional in the single Task create flow UI (including Client Name, Task Category, and Sub Category) by removing required markers and HTML required validation, while keeping the existing backend API calls functional.",
+      "reason": "The diff snippet does not include the JSX for the inputs/labels (where required asterisks and `required` attributes would be present/removed), so it’s not verifiable from the truncated content that required markers/HTML validation were removed and that blank submits produce a clear inline/user-visible error on backend rejection.",
       "evidence": [
-        "backend/main.mo (truncated excerpt only shows Client type + createClient)"
-      ]
-    },
-    {
-      "id": "REQ-18",
-      "requirement": "Backend must expose bulkCreateClients (list input -> created ClientIds) and bulkDeleteClients (list of ClientIds) with proper auth checks",
-      "reason": "Frontend hooks call actor.bulkCreateClients and actor.bulkDeleteClients, but the diff summary does not show these methods being added to backend/main.mo (file is truncated before any bulk client API definitions).",
-      "evidence": [
-        "frontend/src/hooks/clients.ts",
-        "backend/main.mo (truncated; no bulk client APIs shown)"
+        "frontend/src/components/tasks/TaskFormDialog.tsx (truncated)"
       ]
     }
   ],
   "hallucinated_features": [],
-  "confidence": 0.66,
+  "confidence": 0.63,
   "changed_files": [
-    "backend/main.mo",
-    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/clients/ClientBulkUploadDialog.tsx",
-    "frontend/src/components/clients/ClientFormDialog.tsx",
-    "frontend/src/hooks/clients.ts",
-    "frontend/src/hooks/tasks.ts",
-    "frontend/src/lib/dataParser.ts",
-    "frontend/src/pages/ClientDetailPage.tsx",
-    "frontend/src/pages/ClientsPage.tsx",
-    "frontend/src/pages/DashboardPage.tsx",
-    "frontend/src/utils/clientCsv.ts",
-    "frontend/src/utils/taskCsv.ts",
+    "frontend/src/components/tasks/TaskFormDialog.tsx",
     "project_state.json"
   ]
 }

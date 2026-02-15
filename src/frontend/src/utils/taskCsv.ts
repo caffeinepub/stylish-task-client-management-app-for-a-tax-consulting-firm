@@ -1,20 +1,5 @@
-// CSV template generation and parsing utilities for task bulk upload
-
-export interface CsvTaskRow {
-  clientName: string;
-  taskCategory: string;
-  subCategory: string;
-  status?: string;
-  comment?: string;
-  assignedName?: string;
-  dueDate?: string;
-  assignmentDate?: string;
-  completionDate?: string;
-  bill?: string;
-  advanceReceived?: string;
-  outstandingAmount?: string;
-  paymentStatus?: string;
-}
+import type { TaskInput } from '../backend';
+import { isValidStatus } from '../constants/taskStatus';
 
 export interface ValidationError {
   row: number;
@@ -22,141 +7,311 @@ export interface ValidationError {
   message: string;
 }
 
-const CSV_HEADERS = [
-  'Client Name',
-  'Task Category',
-  'Sub Category',
-  'Status',
-  'Comment',
-  'Assigned Name',
-  'Due Date',
-  'Assignment Date',
-  'Completion Date',
-  'Bill',
-  'Advance Received',
-  'Outstanding Amount',
-  'Payment Status',
-];
-
-export function generateCsvTemplate(): string {
-  return CSV_HEADERS.join(',') + '\n';
+/**
+ * Extended task input with all optional fields for CSV parsing and preview
+ */
+export interface ExtendedTaskInput extends TaskInput {
+  status?: string;
+  comment?: string;
+  assignedName?: string;
+  dueDate?: bigint;
+  assignmentDate?: bigint;
+  completionDate?: bigint;
+  bill?: number;
+  advanceReceived?: number;
+  outstandingAmount?: number;
+  paymentStatus?: string;
 }
 
-export function downloadCsvTemplate(): void {
-  const csv = generateCsvTemplate();
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  
-  link.setAttribute('href', url);
-  link.setAttribute('download', 'task_upload_template.csv');
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+export interface ParsedCsvData {
+  tasks: ExtendedTaskInput[];
+  errors: ValidationError[];
 }
 
-function parseCsvLine(line: string): string[] {
-  const result: string[] = [];
-  let current = '';
-  let inQuotes = false;
+/**
+ * Generate CSV template for task bulk upload with all supported fields
+ */
+export function generateTaskCsvTemplate(): string {
+  const headers = [
+    'Client Name',
+    'Task Category',
+    'Sub Category',
+    'Status',
+    'Comment',
+    'Assigned Name',
+    'Due Date',
+    'Assignment Date',
+    'Completion Date',
+    'Bill',
+    'Advance Received',
+    'Outstanding Amount',
+    'Payment Status'
+  ];
   
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    
-    if (char === '"') {
-      inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
-      result.push(current.trim());
-      current = '';
-    } else {
-      current += char;
-    }
+  const exampleRow = [
+    'ABC Corp',
+    'GST Return',
+    'GSTR-1',
+    'Pending',
+    'Urgent filing required',
+    'John Doe',
+    '2026-03-15',
+    '2026-02-15',
+    '',
+    '5000',
+    '2000',
+    '3000',
+    'Partial'
+  ];
+  
+  return [headers.join(','), exampleRow.join(',')].join('\n');
+}
+
+/**
+ * Parse a date string in YYYY-MM-DD format to bigint timestamp (milliseconds since epoch)
+ */
+function parseDateToTimestamp(dateStr: string): bigint | null {
+  if (!dateStr || dateStr.trim() === '') return null;
+  
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) {
+    return null;
   }
   
-  result.push(current.trim());
-  return result;
+  return BigInt(date.getTime());
 }
 
-export function parseCsvFile(csvContent: string): { rows: CsvTaskRow[]; errors: ValidationError[] } {
-  const lines = csvContent.split('\n').filter(line => line.trim());
+/**
+ * Parse a numeric string to number
+ */
+function parseNumber(numStr: string): number | null {
+  if (!numStr || numStr.trim() === '') return null;
+  
+  const num = parseFloat(numStr);
+  if (isNaN(num)) {
+    return null;
+  }
+  
+  return num;
+}
+
+/**
+ * Parse CSV file content and validate task data with all optional fields
+ */
+export function parseCsvFile(csvContent: string): ParsedCsvData {
+  const lines = csvContent.trim().split('\n');
+  const tasks: ExtendedTaskInput[] = [];
   const errors: ValidationError[] = [];
-  const rows: CsvTaskRow[] = [];
-  
-  if (lines.length === 0) {
-    errors.push({ row: 0, column: 'File', message: 'CSV file is empty' });
-    return { rows, errors };
-  }
-  
-  // Skip header row
-  const dataLines = lines.slice(1);
-  
-  dataLines.forEach((line, index) => {
-    const rowNumber = index + 2; // +2 because we skip header and arrays are 0-indexed
-    const values = parseCsvLine(line);
-    
-    if (values.length === 0 || values.every(v => !v)) {
-      return; // Skip empty rows
-    }
-    
-    const clientName = values[0] || '';
-    const taskCategory = values[1] || '';
-    const subCategory = values[2] || '';
-    
-    // Validate required fields
-    if (!clientName.trim()) {
-      errors.push({ row: rowNumber, column: 'Client Name', message: 'Client Name is required' });
-    }
-    if (!taskCategory.trim()) {
-      errors.push({ row: rowNumber, column: 'Task Category', message: 'Task Category is required' });
-    }
-    if (!subCategory.trim()) {
-      errors.push({ row: rowNumber, column: 'Sub Category', message: 'Sub Category is required' });
-    }
-    
-    // Parse optional numeric fields
-    const bill = values[9] ? parseFloat(values[9]) : undefined;
-    const advanceReceived = values[10] ? parseFloat(values[10]) : undefined;
-    const outstandingAmount = values[11] ? parseFloat(values[11]) : undefined;
-    
-    if (values[9] && isNaN(bill!)) {
-      errors.push({ row: rowNumber, column: 'Bill', message: 'Bill must be a valid number' });
-    }
-    if (values[10] && isNaN(advanceReceived!)) {
-      errors.push({ row: rowNumber, column: 'Advance Received', message: 'Advance Received must be a valid number' });
-    }
-    if (values[11] && isNaN(outstandingAmount!)) {
-      errors.push({ row: rowNumber, column: 'Outstanding Amount', message: 'Outstanding Amount must be a valid number' });
-    }
-    
-    rows.push({
-      clientName: clientName.trim(),
-      taskCategory: taskCategory.trim(),
-      subCategory: subCategory.trim(),
-      status: values[3] || undefined,
-      comment: values[4] || undefined,
-      assignedName: values[5] || undefined,
-      dueDate: values[6] || undefined,
-      assignmentDate: values[7] || undefined,
-      completionDate: values[8] || undefined,
-      bill: values[9] || undefined,
-      advanceReceived: values[10] || undefined,
-      outstandingAmount: values[11] || undefined,
-      paymentStatus: values[12] || undefined,
-    });
-  });
-  
-  return { rows, errors };
-}
 
-export function convertRowsToBackendFormat(rows: CsvTaskRow[]): Array<{
-  clientName: string;
-  taskCategory: string;
-  subCategory: string;
-}> {
-  return rows.map(row => ({
-    clientName: row.clientName,
-    taskCategory: row.taskCategory,
-    subCategory: row.subCategory,
-  }));
+  if (lines.length < 2) {
+    errors.push({
+      row: 0,
+      column: 'File',
+      message: 'CSV file must contain at least a header row and one data row',
+    });
+    return { tasks, errors };
+  }
+
+  const headers = lines[0].split(',').map(h => h.trim());
+  
+  // Validate required headers
+  const requiredHeaders = ['Client Name', 'Task Category', 'Sub Category'];
+  const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+  
+  if (missingHeaders.length > 0) {
+    errors.push({
+      row: 0,
+      column: 'Headers',
+      message: `Missing required columns: ${missingHeaders.join(', ')}`,
+    });
+    return { tasks, errors };
+  }
+
+  // Get column indices for all fields
+  const clientNameIdx = headers.indexOf('Client Name');
+  const taskCategoryIdx = headers.indexOf('Task Category');
+  const subCategoryIdx = headers.indexOf('Sub Category');
+  const statusIdx = headers.indexOf('Status');
+  const commentIdx = headers.indexOf('Comment');
+  const assignedNameIdx = headers.indexOf('Assigned Name');
+  const dueDateIdx = headers.indexOf('Due Date');
+  const assignmentDateIdx = headers.indexOf('Assignment Date');
+  const completionDateIdx = headers.indexOf('Completion Date');
+  const billIdx = headers.indexOf('Bill');
+  const advanceReceivedIdx = headers.indexOf('Advance Received');
+  const outstandingAmountIdx = headers.indexOf('Outstanding Amount');
+  const paymentStatusIdx = headers.indexOf('Payment Status');
+
+  // Parse data rows
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    const values = line.split(',').map(v => v.trim());
+    const rowNumber = i + 1;
+
+    // Extract required fields
+    const clientName = values[clientNameIdx] || '';
+    const taskCategory = values[taskCategoryIdx] || '';
+    const subCategory = values[subCategoryIdx] || '';
+
+    // Validate required fields
+    if (!clientName) {
+      errors.push({
+        row: rowNumber,
+        column: 'Client Name',
+        message: 'Client Name is required',
+      });
+    }
+
+    if (!taskCategory) {
+      errors.push({
+        row: rowNumber,
+        column: 'Task Category',
+        message: 'Task Category is required',
+      });
+    }
+
+    if (!subCategory) {
+      errors.push({
+        row: rowNumber,
+        column: 'Sub Category',
+        message: 'Sub Category is required',
+      });
+    }
+
+    // Extract and validate optional fields
+    const status = statusIdx >= 0 ? values[statusIdx] || '' : '';
+    const comment = commentIdx >= 0 ? values[commentIdx] || '' : '';
+    const assignedName = assignedNameIdx >= 0 ? values[assignedNameIdx] || '' : '';
+    const dueDateStr = dueDateIdx >= 0 ? values[dueDateIdx] || '' : '';
+    const assignmentDateStr = assignmentDateIdx >= 0 ? values[assignmentDateIdx] || '' : '';
+    const completionDateStr = completionDateIdx >= 0 ? values[completionDateIdx] || '' : '';
+    const billStr = billIdx >= 0 ? values[billIdx] || '' : '';
+    const advanceReceivedStr = advanceReceivedIdx >= 0 ? values[advanceReceivedIdx] || '' : '';
+    const outstandingAmountStr = outstandingAmountIdx >= 0 ? values[outstandingAmountIdx] || '' : '';
+    const paymentStatus = paymentStatusIdx >= 0 ? values[paymentStatusIdx] || '' : '';
+
+    // Validate status if provided
+    if (status && !isValidStatus(status)) {
+      errors.push({
+        row: rowNumber,
+        column: 'Status',
+        message: `Invalid status "${status}". Must be one of: Pending, Docs Pending, In Progress, Checking, Payment Pending, Completed, Hold`,
+      });
+    }
+
+    // Validate and parse dates
+    let dueDate: bigint | undefined = undefined;
+    let assignmentDate: bigint | undefined = undefined;
+    let completionDate: bigint | undefined = undefined;
+
+    if (dueDateStr) {
+      const parsed = parseDateToTimestamp(dueDateStr);
+      if (parsed === null) {
+        errors.push({
+          row: rowNumber,
+          column: 'Due Date',
+          message: `Invalid date format "${dueDateStr}". Use YYYY-MM-DD format`,
+        });
+      } else {
+        dueDate = parsed;
+      }
+    }
+
+    if (assignmentDateStr) {
+      const parsed = parseDateToTimestamp(assignmentDateStr);
+      if (parsed === null) {
+        errors.push({
+          row: rowNumber,
+          column: 'Assignment Date',
+          message: `Invalid date format "${assignmentDateStr}". Use YYYY-MM-DD format`,
+        });
+      } else {
+        assignmentDate = parsed;
+      }
+    }
+
+    if (completionDateStr) {
+      const parsed = parseDateToTimestamp(completionDateStr);
+      if (parsed === null) {
+        errors.push({
+          row: rowNumber,
+          column: 'Completion Date',
+          message: `Invalid date format "${completionDateStr}". Use YYYY-MM-DD format`,
+        });
+      } else {
+        completionDate = parsed;
+      }
+    }
+
+    // Validate and parse numeric fields
+    let bill: number | undefined = undefined;
+    let advanceReceived: number | undefined = undefined;
+    let outstandingAmount: number | undefined = undefined;
+
+    if (billStr) {
+      const parsed = parseNumber(billStr);
+      if (parsed === null) {
+        errors.push({
+          row: rowNumber,
+          column: 'Bill',
+          message: `Invalid number format "${billStr}"`,
+        });
+      } else {
+        bill = parsed;
+      }
+    }
+
+    if (advanceReceivedStr) {
+      const parsed = parseNumber(advanceReceivedStr);
+      if (parsed === null) {
+        errors.push({
+          row: rowNumber,
+          column: 'Advance Received',
+          message: `Invalid number format "${advanceReceivedStr}"`,
+        });
+      } else {
+        advanceReceived = parsed;
+      }
+    }
+
+    if (outstandingAmountStr) {
+      const parsed = parseNumber(outstandingAmountStr);
+      if (parsed === null) {
+        errors.push({
+          row: rowNumber,
+          column: 'Outstanding Amount',
+          message: `Invalid number format "${outstandingAmountStr}"`,
+        });
+      } else {
+        outstandingAmount = parsed;
+      }
+    }
+
+    // Only add task if all required fields are present
+    if (clientName && taskCategory && subCategory) {
+      const task: ExtendedTaskInput = {
+        clientName,
+        taskCategory,
+        subCategory,
+      };
+
+      // Add optional fields only if they have values
+      if (status) task.status = status;
+      if (comment) task.comment = comment;
+      if (assignedName) task.assignedName = assignedName;
+      if (dueDate !== undefined) task.dueDate = dueDate;
+      if (assignmentDate !== undefined) task.assignmentDate = assignmentDate;
+      if (completionDate !== undefined) task.completionDate = completionDate;
+      if (bill !== undefined) task.bill = bill;
+      if (advanceReceived !== undefined) task.advanceReceived = advanceReceived;
+      if (outstandingAmount !== undefined) task.outstandingAmount = outstandingAmount;
+      if (paymentStatus) task.paymentStatus = paymentStatus;
+
+      tasks.push(task);
+    }
+  }
+
+  return { tasks, errors };
 }

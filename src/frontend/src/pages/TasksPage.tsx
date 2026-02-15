@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,18 +10,24 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, Search, AlertCircle, CheckSquare, Upload, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, AlertCircle, CheckSquare, Upload, Edit, Trash2, X } from 'lucide-react';
 import { useGetAllTasks, useBulkDeleteTasks } from '../hooks/tasks';
 import TaskFormDialog from '../components/tasks/TaskFormDialog';
 import TaskQuickStatus from '../components/tasks/TaskQuickStatus';
 import TaskBulkUploadDialog from '../components/tasks/TaskBulkUploadDialog';
 import TaskBulkEditDialog from '../components/tasks/TaskBulkEditDialog';
+import { ALLOWED_TASK_STATUSES, isCompletedStatus, getStatusDisplayLabel } from '../constants/taskStatus';
 import type { Task } from '../backend';
 
 export default function TasksPage() {
+  const navigate = useNavigate();
+  const searchParams = useSearch({ from: '/tasks' }) as { overdue?: string; status?: string; taskCategory?: string };
+  
   const { data: tasks, isLoading: tasksLoading, error: tasksError, refetch: refetchTasks } = useGetAllTasks();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [overdueFilter, setOverdueFilter] = useState<boolean>(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
@@ -29,8 +36,37 @@ export default function TasksPage() {
 
   const { mutate: bulkDeleteTasks, isPending: isDeleting } = useBulkDeleteTasks();
 
+  // Initialize filters from URL search params
+  useEffect(() => {
+    if (searchParams.overdue === 'true') {
+      setOverdueFilter(true);
+    }
+    if (searchParams.status) {
+      setStatusFilter(searchParams.status);
+    }
+    if (searchParams.taskCategory) {
+      setCategoryFilter(searchParams.taskCategory);
+    }
+  }, [searchParams]);
+
+  // Clear selection when bulk edit dialog closes
+  useEffect(() => {
+    if (!bulkEditOpen) {
+      setSelectedTaskIds(new Set());
+    }
+  }, [bulkEditOpen]);
+
+  // Get unique categories for filter dropdown
+  const uniqueCategories = useMemo(() => {
+    if (!tasks) return [];
+    const categories = new Set(tasks.map(t => t.taskCategory));
+    return Array.from(categories).sort();
+  }, [tasks]);
+
   const filteredTasks = useMemo(() => {
     if (!tasks) return [];
+    
+    const now = Date.now();
     
     return tasks.filter((task) => {
       const matchesSearch = 
@@ -43,15 +79,29 @@ export default function TasksPage() {
       let matchesStatus = true;
       if (statusFilter !== 'all') {
         if (statusFilter === 'open') {
-          matchesStatus = task.status !== 'Done';
+          // Open means not completed (excludes both "Completed" and legacy "Done")
+          matchesStatus = !isCompletedStatus(task.status);
         } else {
-          matchesStatus = task.status === statusFilter;
+          // Match exact status or normalized legacy status
+          const normalizedTaskStatus = getStatusDisplayLabel(task.status);
+          matchesStatus = normalizedTaskStatus === statusFilter;
         }
       }
 
-      return matchesSearch && matchesStatus;
+      let matchesCategory = true;
+      if (categoryFilter !== 'all') {
+        matchesCategory = task.taskCategory === categoryFilter;
+      }
+
+      let matchesOverdue = true;
+      if (overdueFilter) {
+        // Overdue: has due date in past AND not completed
+        matchesOverdue = !!(task.dueDate && Number(task.dueDate) < now && !isCompletedStatus(task.status));
+      }
+
+      return matchesSearch && matchesStatus && matchesCategory && matchesOverdue;
     });
-  }, [tasks, searchQuery, statusFilter]);
+  }, [tasks, searchQuery, statusFilter, categoryFilter, overdueFilter]);
 
   const sortedTasks = useMemo(() => {
     return [...filteredTasks].sort((a, b) => {
@@ -65,6 +115,8 @@ export default function TasksPage() {
   const selectedTasks = useMemo(() => {
     return sortedTasks.filter(task => selectedTaskIds.has(task.id.toString()));
   }, [sortedTasks, selectedTaskIds]);
+
+  const hasActiveFilters = statusFilter !== 'all' || categoryFilter !== 'all' || overdueFilter;
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -93,6 +145,31 @@ export default function TasksPage() {
         setDeleteDialogOpen(false);
       },
     });
+  };
+
+  const clearFilters = () => {
+    setStatusFilter('all');
+    setCategoryFilter('all');
+    setOverdueFilter(false);
+    navigate({ to: '/tasks', search: {} });
+  };
+
+  const formatDate = (timestamp: bigint | undefined) => {
+    if (!timestamp) return 'N/A';
+    return new Date(Number(timestamp)).toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const formatCurrency = (amount: number | undefined) => {
+    if (amount === undefined || amount === null) return 'N/A';
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
 
   if (tasksError) {
@@ -161,6 +238,41 @@ export default function TasksPage() {
         </div>
       </div>
 
+      {hasActiveFilters && (
+        <Card className="border-[oklch(0.50_0.08_130)] bg-[oklch(0.50_0.08_130)]/5">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm font-medium">Active filters:</span>
+                {statusFilter !== 'all' && (
+                  <Badge variant="secondary">
+                    Status: {statusFilter === 'open' ? 'Open' : statusFilter}
+                  </Badge>
+                )}
+                {categoryFilter !== 'all' && (
+                  <Badge variant="secondary">
+                    Category: {categoryFilter}
+                  </Badge>
+                )}
+                {overdueFilter && (
+                  <Badge variant="destructive">
+                    Overdue
+                  </Badge>
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+              >
+                <X className="mr-2 h-4 w-4" />
+                Clear Filters
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {selectedTaskIds.size > 0 && (
         <Card className="border-[oklch(0.50_0.08_130)] bg-[oklch(0.50_0.08_130)]/5">
           <CardContent className="py-4">
@@ -196,6 +308,7 @@ export default function TasksPage() {
           <CardTitle>All Tasks</CardTitle>
           <CardDescription>
             {sortedTasks.length} {sortedTasks.length === 1 ? 'task' : 'tasks'}
+            {hasActiveFilters && ` (filtered from ${tasks?.length || 0} total)`}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -216,10 +329,24 @@ export default function TasksPage() {
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="open">Open</SelectItem>
-                <SelectItem value="To Do">To Do</SelectItem>
-                <SelectItem value="In Progress">In Progress</SelectItem>
-                <SelectItem value="Blocked">Blocked</SelectItem>
-                <SelectItem value="Done">Done</SelectItem>
+                {ALLOWED_TASK_STATUSES.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Filter by category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {uniqueCategories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -259,51 +386,40 @@ export default function TasksPage() {
                     <TableHead>Status</TableHead>
                     <TableHead className="hidden lg:table-cell">Assigned</TableHead>
                     <TableHead className="hidden xl:table-cell">Due Date</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="hidden xl:table-cell">Bill</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {sortedTasks.map((task) => {
-                    const isOverdue = task.dueDate && Number(task.dueDate) < Date.now() && task.status !== 'Done';
-                    const isSelected = selectedTaskIds.has(task.id.toString());
-                    
+                    const isOverdue = task.dueDate && Number(task.dueDate) < Date.now() && !isCompletedStatus(task.status);
                     return (
                       <TableRow key={task.id.toString()}>
                         <TableCell>
                           <Checkbox
-                            checked={isSelected}
+                            checked={selectedTaskIds.has(task.id.toString())}
                             onCheckedChange={(checked) => handleSelectTask(task.id.toString(), checked as boolean)}
                           />
                         </TableCell>
                         <TableCell className="font-medium">{task.clientName}</TableCell>
-                        <TableCell>{task.taskCategory}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{task.taskCategory}</Badge>
+                        </TableCell>
                         <TableCell className="hidden md:table-cell">{task.subCategory}</TableCell>
                         <TableCell>
                           <TaskQuickStatus task={task} />
                         </TableCell>
                         <TableCell className="hidden lg:table-cell">
-                          {task.assignedName || <span className="text-muted-foreground">-</span>}
+                          {task.assignedName || <span className="text-muted-foreground">Unassigned</span>}
                         </TableCell>
                         <TableCell className="hidden xl:table-cell">
-                          {task.dueDate ? (
-                            <div className={isOverdue ? 'text-destructive font-medium' : ''}>
-                              {new Date(Number(task.dueDate)).toLocaleDateString()}
-                              {isOverdue && (
-                                <Badge variant="destructive" className="ml-2 text-xs">
-                                  Overdue
-                                </Badge>
-                              )}
-                            </div>
+                          {isOverdue ? (
+                            <Badge variant="destructive">{formatDate(task.dueDate)}</Badge>
                           ) : (
-                            <span className="text-muted-foreground">-</span>
+                            formatDate(task.dueDate)
                           )}
                         </TableCell>
-                        <TableCell className="text-right">
-                          <TaskFormDialog task={task} trigger={
-                            <Button variant="ghost" size="sm">
-                              Edit
-                            </Button>
-                          } />
+                        <TableCell className="hidden xl:table-cell">
+                          {formatCurrency(task.bill)}
                         </TableCell>
                       </TableRow>
                     );
@@ -315,18 +431,10 @@ export default function TasksPage() {
         </CardContent>
       </Card>
 
-      <TaskFormDialog 
-        open={dialogOpen} 
-        onOpenChange={setDialogOpen}
-      />
-
-      <TaskBulkUploadDialog
-        open={bulkUploadOpen}
-        onOpenChange={setBulkUploadOpen}
-      />
-
-      <TaskBulkEditDialog
-        open={bulkEditOpen}
+      <TaskFormDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <TaskBulkUploadDialog open={bulkUploadOpen} onOpenChange={setBulkUploadOpen} />
+      <TaskBulkEditDialog 
+        open={bulkEditOpen} 
         onOpenChange={setBulkEditOpen}
         selectedTasks={selectedTasks}
       />
@@ -334,13 +442,14 @@ export default function TasksPage() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Selected Tasks</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete {selectedTaskIds.size} task{selectedTaskIds.size !== 1 ? 's' : ''}.
+              Are you sure you want to delete {selectedTaskIds.size} task{selectedTaskIds.size !== 1 ? 's' : ''}? 
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBulkDelete}
               disabled={isDeleting}

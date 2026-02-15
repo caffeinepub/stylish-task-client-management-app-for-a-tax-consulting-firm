@@ -1,15 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Update Clients to use the new fields (Name, GSTIN, PAN, Notes) and add bulk upload plus bulk selection/delete for Clients.
+**Goal:** Fix the single-task Add/Edit Task dialog to stop crashing, remove Client/Assignee dropdowns, and make all task fields optional during creation/editing.
 
 **Planned changes:**
-- Update backend Client model and Client CRUD APIs to store/return: name (required), gstin (optional), pan (optional), notes (optional), replacing the legacy contactInfo/projects encoding.
-- Add backend bulk client APIs: bulk create from a list of client inputs, and bulk delete by a list of client IDs, enforcing the same auth rules as existing client APIs.
-- Add conditional backend state migration to map legacy client records into the new model (preserve name; map any legacy notes when present; default gstin/pan to null), and do nothing on fresh deployments.
-- Update frontend client parsing/encoding utilities and all client UI surfaces (form, list, detail) to reflect the new fields and remove reliance on legacy derived fields.
-- Implement Clients list bulk selection UI (row checkboxes, select-all, selected count bar) and a confirmed bulk delete flow, consistent with the existing Tasks bulk selection behavior.
-- Add a Clients bulk upload (CSV) dialog flow: download template, upload CSV, preview parsed rows, show validation errors in English, and submit to create clients in batch.
-- Add React Query hooks for client bulk create and bulk delete and wire the UI to use hooks (with clients list invalidation/refetch on success).
+- Update the single Task create/edit dialog to remove the Client and Assignee dropdown/select controls and replace them with free-text inputs for Client Name and Assigned Name.
+- Make all fields optional in the single Task create flow UI by removing required markers and HTML `required` validation (including Client Name, Task Category, and Sub Category), while keeping existing backend API calls unchanged.
+- Fix the Add Task dialog crash by ensuring no Radix SelectItem uses an empty-string value and Select components in the task form never receive `""` as a controlled value (e.g., use a non-empty sentinel for “None” or avoid empty selection patterns).
 
-**User-visible outcome:** Users can create/edit/view clients using Name/GSTIN/PAN/Notes, select multiple clients in the Clients list to delete in bulk, and upload a CSV to create many clients at once with preview and validation.
+**User-visible outcome:** Users can open the Create/Edit Task dialog without errors, type client/assignee names directly (no dropdowns), and submit tasks with any fields left blank without the UI crashing (showing a clear error only if the backend rejects the submission).

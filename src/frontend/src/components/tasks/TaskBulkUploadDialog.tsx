@@ -1,197 +1,222 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Upload, Download, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { downloadCsvTemplate, parseCsvFile, convertRowsToBackendFormat, type CsvTaskRow, type ValidationError } from '../../utils/taskCsv';
+import { Download, Upload, AlertCircle, CheckCircle } from 'lucide-react';
 import { useBulkCreateTasks } from '../../hooks/tasks';
+import { generateTaskCsvTemplate, parseCsvFile, type ValidationError, type ExtendedTaskInput } from '../../utils/taskCsv';
+import type { TaskInput } from '../../backend';
 
 interface TaskBulkUploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export default function TaskBulkUploadDialog({ open, onOpenChange }: TaskBulkUploadDialogProps) {
-  const [file, setFile] = useState<File | null>(null);
-  const [parsedRows, setParsedRows] = useState<CsvTaskRow[]>([]);
-  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
-  
-  const { mutate: bulkCreateTasks, isPending } = useBulkCreateTasks();
+/**
+ * Format bigint timestamp to readable date string
+ */
+function formatDate(timestamp: bigint | undefined): string {
+  if (!timestamp) return '-';
+  const date = new Date(Number(timestamp));
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
-    
-    setFile(selectedFile);
-    setUploadSuccess(false);
-    
+/**
+ * Format number with 2 decimal places
+ */
+function formatCurrency(amount: number | undefined): string {
+  if (amount === undefined) return '-';
+  return `₹${amount.toFixed(2)}`;
+}
+
+export default function TaskBulkUploadDialog({ open, onOpenChange }: TaskBulkUploadDialogProps) {
+  const { mutate: bulkCreateTasks, isPending } = useBulkCreateTasks();
+  const [parsedTasks, setParsedTasks] = useState<ExtendedTaskInput[]>([]);
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
+  const [fileName, setFileName] = useState<string>('');
+
+  const handleDownloadTemplate = () => {
+    const template = generateTaskCsvTemplate();
+    const blob = new Blob([template], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'task_upload_template.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setFileName(file.name);
     const reader = new FileReader();
-    reader.onload = (event) => {
-      const csvContent = event.target?.result as string;
-      const { rows, errors } = parseCsvFile(csvContent);
-      setParsedRows(rows);
+    
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      const { tasks, errors } = parseCsvFile(content);
+      setParsedTasks(tasks);
       setValidationErrors(errors);
     };
-    reader.readAsText(selectedFile);
+
+    reader.readAsText(file);
   };
 
   const handleSubmit = () => {
-    if (validationErrors.length > 0) return;
-    if (parsedRows.length === 0) return;
-    
-    const backendFormat = convertRowsToBackendFormat(parsedRows);
-    
-    bulkCreateTasks(backendFormat, {
+    if (parsedTasks.length === 0 || validationErrors.length > 0) return;
+
+    // Convert ExtendedTaskInput to backend TaskInput (only required fields)
+    const backendTasks: TaskInput[] = parsedTasks.map(task => ({
+      clientName: task.clientName,
+      taskCategory: task.taskCategory,
+      subCategory: task.subCategory,
+    }));
+
+    bulkCreateTasks(backendTasks, {
       onSuccess: () => {
-        setUploadSuccess(true);
-        setTimeout(() => {
-          onOpenChange(false);
-          resetForm();
-        }, 1500);
+        setParsedTasks([]);
+        setValidationErrors([]);
+        setFileName('');
+        onOpenChange(false);
       },
     });
   };
 
-  const resetForm = () => {
-    setFile(null);
-    setParsedRows([]);
+  const handleClose = () => {
+    setParsedTasks([]);
     setValidationErrors([]);
-    setUploadSuccess(false);
-  };
-
-  const handleClose = (open: boolean) => {
-    if (!open) {
-      resetForm();
-    }
-    onOpenChange(open);
+    setFileName('');
+    onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-[95vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Bulk Upload Tasks</DialogTitle>
           <DialogDescription>
-            Upload a CSV file to create multiple tasks at once
+            Upload multiple tasks at once using a CSV file with all task fields
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
-          <div className="space-y-2">
-            <Label>Step 1: Download Template</Label>
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
             <Button
               type="button"
               variant="outline"
-              onClick={downloadCsvTemplate}
-              className="w-full"
+              onClick={handleDownloadTemplate}
             >
               <Download className="mr-2 h-4 w-4" />
-              Download CSV Template
+              Download Template
             </Button>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="csv-file">Step 2: Upload Completed CSV</Label>
-            <Input
-              id="csv-file"
-              type="file"
-              accept=".csv"
-              onChange={handleFileChange}
-              disabled={isPending}
-            />
+            <div className="flex-1">
+              <label htmlFor="csv-upload" className="cursor-pointer">
+                <div className="flex items-center gap-2 px-4 py-2 border border-input rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
+                  <Upload className="h-4 w-4" />
+                  <span>{fileName || 'Choose CSV file'}</span>
+                </div>
+                <input
+                  id="csv-upload"
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
           </div>
-
-          {uploadSuccess && (
-            <Alert className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
-              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-              <AlertDescription className="text-green-800 dark:text-green-200">
-                Successfully uploaded {parsedRows.length} tasks!
-              </AlertDescription>
-            </Alert>
-          )}
 
           {validationErrors.length > 0 && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                <div className="font-semibold mb-2">
-                  Found {validationErrors.length} validation error{validationErrors.length !== 1 ? 's' : ''}:
-                </div>
-                <ScrollArea className="h-32">
-                  <ul className="space-y-1 text-sm">
-                    {validationErrors.map((error, idx) => (
-                      <li key={idx}>
-                        Row {error.row}, {error.column}: {error.message}
-                      </li>
-                    ))}
-                  </ul>
-                </ScrollArea>
+                <div className="font-semibold mb-2">Validation Errors:</div>
+                <ul className="list-disc list-inside space-y-1 max-h-40 overflow-y-auto">
+                  {validationErrors.map((error, idx) => (
+                    <li key={idx}>
+                      Row {error.row}, {error.column}: {error.message}
+                    </li>
+                  ))}
+                </ul>
               </AlertDescription>
             </Alert>
           )}
 
-          {parsedRows.length > 0 && validationErrors.length === 0 && (
-            <div className="space-y-2 flex-1 overflow-hidden flex flex-col">
-              <Label>Preview ({parsedRows.length} tasks)</Label>
-              <ScrollArea className="flex-1 border rounded-md">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Client Name</TableHead>
-                      <TableHead>Task Category</TableHead>
-                      <TableHead>Sub Category</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Assigned</TableHead>
+          {parsedTasks.length > 0 && validationErrors.length === 0 && (
+            <Alert>
+              <CheckCircle className="h-4 w-4" />
+              <AlertDescription>
+                Successfully parsed {parsedTasks.length} task{parsedTasks.length !== 1 ? 's' : ''} from CSV
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {parsedTasks.length > 0 && (
+            <div className="rounded-md border border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)] overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[120px]">Client Name</TableHead>
+                    <TableHead className="min-w-[120px]">Task Category</TableHead>
+                    <TableHead className="min-w-[120px]">Sub Category</TableHead>
+                    <TableHead className="min-w-[100px]">Status</TableHead>
+                    <TableHead className="min-w-[150px]">Comment</TableHead>
+                    <TableHead className="min-w-[120px]">Assigned Name</TableHead>
+                    <TableHead className="min-w-[100px]">Due Date</TableHead>
+                    <TableHead className="min-w-[120px]">Assignment Date</TableHead>
+                    <TableHead className="min-w-[130px]">Completion Date</TableHead>
+                    <TableHead className="min-w-[100px]">Bill</TableHead>
+                    <TableHead className="min-w-[130px]">Advance Received</TableHead>
+                    <TableHead className="min-w-[150px]">Outstanding Amount</TableHead>
+                    <TableHead className="min-w-[120px]">Payment Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {parsedTasks.slice(0, 10).map((task, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell className="font-medium">{task.clientName}</TableCell>
+                      <TableCell>{task.taskCategory}</TableCell>
+                      <TableCell>{task.subCategory}</TableCell>
+                      <TableCell>{task.status || '-'}</TableCell>
+                      <TableCell className="max-w-[200px] truncate" title={task.comment}>
+                        {task.comment || '-'}
+                      </TableCell>
+                      <TableCell>{task.assignedName || '-'}</TableCell>
+                      <TableCell>{formatDate(task.dueDate)}</TableCell>
+                      <TableCell>{formatDate(task.assignmentDate)}</TableCell>
+                      <TableCell>{formatDate(task.completionDate)}</TableCell>
+                      <TableCell>{formatCurrency(task.bill)}</TableCell>
+                      <TableCell>{formatCurrency(task.advanceReceived)}</TableCell>
+                      <TableCell>{formatCurrency(task.outstandingAmount)}</TableCell>
+                      <TableCell>{task.paymentStatus || '-'}</TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {parsedRows.map((row, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell className="font-medium">{row.clientName}</TableCell>
-                        <TableCell>{row.taskCategory}</TableCell>
-                        <TableCell>{row.subCategory}</TableCell>
-                        <TableCell>{row.status || '-'}</TableCell>
-                        <TableCell>{row.assignedName || '-'}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
+                  ))}
+                </TableBody>
+              </Table>
+              {parsedTasks.length > 10 && (
+                <div className="p-2 text-sm text-muted-foreground text-center border-t">
+                  ... and {parsedTasks.length - 10} more task{parsedTasks.length - 10 !== 1 ? 's' : ''}
+                </div>
+              )}
             </div>
           )}
         </div>
 
         <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => handleClose(false)}
-            disabled={isPending}
-          >
+          <Button type="button" variant="outline" onClick={handleClose} disabled={isPending}>
             Cancel
           </Button>
           <Button
             type="button"
             onClick={handleSubmit}
-            disabled={isPending || parsedRows.length === 0 || validationErrors.length > 0}
-            className="bg-[oklch(0.50_0.08_130)] hover:bg-[oklch(0.45_0.08_130)] dark:bg-[oklch(0.65_0.08_130)] dark:hover:bg-[oklch(0.70_0.08_130)]"
+            disabled={parsedTasks.length === 0 || validationErrors.length > 0 || isPending}
           >
-            {isPending ? (
-              <>
-                <Upload className="mr-2 h-4 w-4 animate-spin" />
-                Uploading...
-              </>
-            ) : (
-              <>
-                <Upload className="mr-2 h-4 w-4" />
-                Upload {parsedRows.length} Tasks
-              </>
-            )}
+            {isPending ? 'Uploading...' : `Upload ${parsedTasks.length} Task${parsedTasks.length !== 1 ? 's' : ''}`}
           </Button>
         </DialogFooter>
       </DialogContent>

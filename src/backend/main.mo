@@ -4,18 +4,18 @@ import Array "mo:core/Array";
 import Runtime "mo:core/Runtime";
 import Time "mo:core/Time";
 import Principal "mo:core/Principal";
+import Iter "mo:core/Iter";
+import Nat "mo:core/Nat";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
-import Migration "migration";
-import Iter "mo:core/Iter";
 
-(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
   type ClientId = Nat;
   type TaskId = Nat;
+  type AssigneeId = Nat;
 
   public type Client = {
     id : ClientId;
@@ -42,6 +42,12 @@ actor {
     outstandingAmount : ?Float;
     paymentStatus : ?Text;
     createdAt : Int;
+  };
+
+  public type Assignee = {
+    id : AssigneeId;
+    name : Text;
+    captain : ?Text;
   };
 
   public type PartialTaskUpdate = {
@@ -77,11 +83,18 @@ actor {
     notes : ?Text;
   };
 
+  public type PartialAssigneeInput = {
+    name : Text;
+    captain : ?Text;
+  };
+
   let clients = Map.empty<Principal, Map.Map<ClientId, Client>>();
   let tasks = Map.empty<Principal, Map.Map<TaskId, Task>>();
+  let assignees = Map.empty<Principal, Map.Map<AssigneeId, Assignee>>();
   let userProfiles = Map.empty<Principal, UserProfile>();
   var nextClientId = 0;
   var nextTaskId = 0;
+  var nextAssigneeId = 0;
 
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
@@ -125,6 +138,128 @@ actor {
       };
     };
   };
+
+  func getAssigneeStorage(caller : Principal) : Map.Map<AssigneeId, Assignee> {
+    switch (assignees.get(caller)) {
+      case (?assigMap) { assigMap };
+      case (null) {
+        let newAssigMap = Map.empty<AssigneeId, Assignee>();
+        assignees.add(caller, newAssigMap);
+        newAssigMap;
+      };
+    };
+  };
+
+  // ===== ASSIGNEE CRUD OPERATIONS =====
+
+  public shared ({ caller }) func createAssignee(assignee : PartialAssigneeInput) : async AssigneeId {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Please sign in to continue");
+    };
+
+    let assigneeId = nextAssigneeId;
+    nextAssigneeId += 1;
+
+    let newAssignee : Assignee = {
+      id = assigneeId;
+      name = assignee.name;
+      captain = assignee.captain;
+    };
+
+    let assigneeStorage = getAssigneeStorage(caller);
+    assigneeStorage.add(assigneeId, newAssignee);
+    assigneeId;
+  };
+
+  public shared ({ caller }) func updateAssignee(assigneeId : AssigneeId, assignee : PartialAssigneeInput) : async () {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Please sign in to continue");
+    };
+
+    let assigneeStorage = getAssigneeStorage(caller);
+    switch (assigneeStorage.get(assigneeId)) {
+      case (null) { Runtime.trap("Assignee does not exist") };
+      case (?_) {
+        let updatedAssignee : Assignee = {
+          id = assigneeId;
+          name = assignee.name;
+          captain = assignee.captain;
+        };
+        assigneeStorage.add(assigneeId, updatedAssignee);
+      };
+    };
+  };
+
+  public shared ({ caller }) func deleteAssignee(assigneeId : AssigneeId) : async () {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Please sign in to continue");
+    };
+
+    let assigneeStorage = getAssigneeStorage(caller);
+    if (not assigneeStorage.containsKey(assigneeId)) {
+      Runtime.trap("Assignee does not exist");
+    };
+    assigneeStorage.remove(assigneeId);
+  };
+
+  public query ({ caller }) func getAssignee(assigneeId : AssigneeId) : async ?Assignee {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Please sign in to continue");
+    };
+    let assigneeStorage = getAssigneeStorage(caller);
+    assigneeStorage.get(assigneeId);
+  };
+
+  public query ({ caller }) func getAllAssignees() : async [Assignee] {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can view data, please sign in to continue");
+    };
+
+    let assigneeStorage = getAssigneeStorage(caller);
+    assigneeStorage.values().toArray();
+  };
+
+  // ===== ASSIGNEE BULK OPERATIONS =====
+
+  public shared ({ caller }) func bulkCreateAssignees(assigneeInputs : [PartialAssigneeInput]) : async [AssigneeId] {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Only users can create assignees");
+    };
+
+    let assigneeStorage = getAssigneeStorage(caller);
+    let createdAssigneeIds = List.empty<AssigneeId>();
+
+    for (input in assigneeInputs.values()) {
+      let assigneeId = nextAssigneeId;
+      nextAssigneeId += 1;
+
+      let newAssignee : Assignee = {
+        id = assigneeId;
+        name = input.name;
+        captain = input.captain;
+      };
+
+      assigneeStorage.add(assigneeId, newAssignee);
+      createdAssigneeIds.add(assigneeId);
+    };
+
+    createdAssigneeIds.toArray();
+  };
+
+  public shared ({ caller }) func bulkDeleteAssignees(assigneeIds : [AssigneeId]) : async () {
+    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+      Runtime.trap("Unauthorized: Please sign in to continue");
+    };
+
+    let assigneeStorage = getAssigneeStorage(caller);
+    for (assigneeId in assigneeIds.values()) {
+      if (assigneeStorage.containsKey(assigneeId)) {
+        assigneeStorage.remove(assigneeId);
+      };
+    };
+  };
+
+  // ===== CLIENT CRUD OPERATIONS =====
 
   public shared ({ caller }) func createClient(client : PartialClientInput) : async ClientId {
     if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
@@ -238,6 +373,8 @@ actor {
       };
     };
   };
+
+  // ===== TASK CRUD OPERATIONS =====
 
   public shared ({ caller }) func createTask(
     clientName : Text,

@@ -10,6 +10,12 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
+export interface Assignee {
+  'id' : AssigneeId,
+  'name' : string,
+  'captain' : [] | [string],
+}
+export type AssigneeId = bigint;
 export interface Client {
   'id' : ClientId,
   'pan' : [] | [string],
@@ -19,6 +25,10 @@ export interface Client {
   'timestamp' : bigint,
 }
 export type ClientId = bigint;
+export interface PartialAssigneeInput {
+  'name' : string,
+  'captain' : [] | [string],
+}
 export interface PartialClientInput {
   'pan' : [] | [string],
   'name' : string,
@@ -70,23 +80,32 @@ export type UserRole = { 'admin' : null } |
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'bulkCreateAssignees' : ActorMethod<
+    [Array<PartialAssigneeInput>],
+    Array<AssigneeId>
+  >,
   'bulkCreateClients' : ActorMethod<
     [Array<PartialClientInput>],
     Array<ClientId>
   >,
   'bulkCreateTasks' : ActorMethod<[Array<TaskInput>], Array<TaskId>>,
+  'bulkDeleteAssignees' : ActorMethod<[Array<AssigneeId>], undefined>,
   'bulkDeleteClients' : ActorMethod<[Array<ClientId>], undefined>,
   'bulkDeleteTasks' : ActorMethod<[Array<TaskId>], undefined>,
   'bulkUpdateTasks' : ActorMethod<
     [Array<[TaskId, PartialTaskUpdate]>],
     undefined
   >,
+  'createAssignee' : ActorMethod<[PartialAssigneeInput], AssigneeId>,
   'createClient' : ActorMethod<[PartialClientInput], ClientId>,
   'createTask' : ActorMethod<[string, string, string], TaskId>,
+  'deleteAssignee' : ActorMethod<[AssigneeId], undefined>,
   'deleteClient' : ActorMethod<[ClientId], undefined>,
   'deleteTask' : ActorMethod<[TaskId], undefined>,
+  'getAllAssignees' : ActorMethod<[], Array<Assignee>>,
   'getAllClients' : ActorMethod<[], Array<Client>>,
   'getAllTasks' : ActorMethod<[], Array<Task>>,
+  'getAssignee' : ActorMethod<[AssigneeId], [] | [Assignee]>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getClient' : ActorMethod<[ClientId], [] | [Client]>,
@@ -94,6 +113,7 @@ export interface _SERVICE {
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'updateAssignee' : ActorMethod<[AssigneeId, PartialAssigneeInput], undefined>,
   'updateClient' : ActorMethod<[ClientId, PartialClientInput], undefined>,
   'updateTask' : ActorMethod<
     [
