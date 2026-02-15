@@ -10,6 +10,7 @@ import { useGetAllTasks } from '../hooks/tasks';
 import ClientFormDialog from '../components/clients/ClientFormDialog';
 import TaskFormDialog from '../components/tasks/TaskFormDialog';
 import TaskQuickStatus from '../components/tasks/TaskQuickStatus';
+import TaskDetailsPanel from '../components/tasks/TaskDetailsPanel';
 import { useState, useMemo } from 'react';
 import type { Task } from '../backend';
 
@@ -29,7 +30,7 @@ export default function ClientDetailPage() {
 
   const taskStats = useMemo(() => {
     const total = clientTasks.length;
-    const completed = clientTasks.filter((t: Task) => t.status === 'Done').length;
+    const completed = clientTasks.filter((t: Task) => t.status === 'Done' || t.status === 'Completed').length;
     const inProgress = clientTasks.filter((t: Task) => t.status === 'In Progress').length;
     const pending = clientTasks.filter((t: Task) => !t.status || t.status === 'Pending').length;
     return { total, completed, inProgress, pending };
@@ -173,7 +174,7 @@ export default function ClientDetailPage() {
           {tasksLoading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-16 w-full" />
+                <Skeleton key={i} className="h-32 w-full" />
               ))}
             </div>
           ) : clientTasks.length === 0 ? (
@@ -182,32 +183,27 @@ export default function ClientDetailPage() {
               <p>No tasks yet for this client</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {clientTasks.map((task: Task) => (
-                <div
+                <Card
                   key={task.id.toString()}
-                  className="p-4 rounded-lg border border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)] hover:bg-muted/50 transition-colors"
+                  className="border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)]"
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-medium truncate">{task.taskCategory}</h4>
-                        <Badge variant="secondary" className="text-xs">
-                          {task.subCategory}
-                        </Badge>
+                  <CardContent className="pt-6">
+                    <div className="flex items-start justify-between gap-4 mb-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h4 className="font-semibold text-lg">{task.taskCategory}</h4>
+                          <Badge variant="secondary">
+                            {task.subCategory}
+                          </Badge>
+                        </div>
                       </div>
-                      {task.comment && (
-                        <p className="text-sm text-muted-foreground line-clamp-2">{task.comment}</p>
-                      )}
-                      {task.assignedName && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Assigned to: {task.assignedName}
-                        </p>
-                      )}
+                      <TaskQuickStatus task={task} />
                     </div>
-                    <TaskQuickStatus task={task} />
-                  </div>
-                </div>
+                    <TaskDetailsPanel task={task} showClientName={false} />
+                  </CardContent>
+                </Card>
               ))}
             </div>
           )}

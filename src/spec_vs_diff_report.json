@@ -1,23 +1,41 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T16:47:18.022Z",
-  "summary": "TaskFormDialog.tsx was updated to use a non-empty sentinel value for an unset Status Select (addressing the Radix empty-string crash) and appears to move Client/Assignee to free-text fields per the diff summary. However, the provided truncated diff does not show the JSX where required markers/HTML required validation would be removed, so REQ-42 cannot be fully verified from the available evidence.",
+  "generatedAt": "2026-02-15T18:46:06.556Z",
+  "summary": "REQ-52 is partially implemented: taskSort.ts adds an assignee sort field and sorting case, but the null/empty-string behavior for assignedName and the TasksPage UI wiring cannot be fully verified from the truncated diff. There are also unrequested metadata/documentation updates.",
   "missing_requirements": [
     {
-      "id": "REQ-42",
-      "requirement": "Make all fields optional in the single Task create flow UI (including Client Name, Task Category, and Sub Category) by removing required markers and HTML required validation, while keeping the existing backend API calls functional.",
-      "reason": "The diff snippet does not include the JSX for the inputs/labels (where required asterisks and `required` attributes would be present/removed), so it’s not verifiable from the truncated content that required markers/HTML validation were removed and that blank submits produce a clear inline/user-visible error on backend rejection.",
+      "id": "REQ-52",
+      "requirement": "sortTasks() can sort by assignedName using the existing null-safe, case-insensitive string comparison behavior, with tasks with missing/empty assignedName sorting to the end.",
+      "reason": "The implemented compareValues() only pushes null/undefined to the end; empty strings (\"\") are treated as valid values and would sort before non-empty names, violating the 'missing/empty sorts to the end' requirement unless empty values are represented as null/undefined upstream (not shown).",
       "evidence": [
-        "frontend/src/components/tasks/TaskFormDialog.tsx (truncated)"
+        "frontend/src/utils/taskSort.ts"
+      ]
+    },
+    {
+      "id": "REQ-52",
+      "requirement": "In TasksPage.tsx, the \"Sort by\" Select includes an option for the new assignee sort field, and selecting it updates the rendered task ordering accordingly.",
+      "reason": "TasksPage.tsx is truncated before the sorting Select rendering and before any sortTasks() invocation/wiring is shown, so the presence of the new SelectItem option and the state-to-sorting behavior cannot be confirmed from the provided diff summary.",
+      "evidence": [
+        "frontend/src/pages/TasksPage.tsx (truncated)"
       ]
     }
   ],
-  "hallucinated_features": [],
-  "confidence": 0.63,
+  "hallucinated_features": [
+    {
+      "description": "Updates to project metadata/state and file summary documentation not requested as part of REQ-52.",
+      "reason": "BuildRequest only asks for client-side sorting changes on the Tasks page; modifying project_state.json and frontend-file-summaries.txt is not part of the stated requirements.",
+      "evidence": [
+        "project_state.json (truncated)",
+        "frontend-file-summaries.txt (truncated)"
+      ]
+    }
+  ],
+  "confidence": 0.72,
   "changed_files": [
     "frontend-file-summaries.txt",
-    "frontend/src/components/tasks/TaskFormDialog.tsx",
+    "frontend/src/pages/TasksPage.tsx",
+    "frontend/src/utils/taskSort.ts",
     "project_state.json"
   ]
 }

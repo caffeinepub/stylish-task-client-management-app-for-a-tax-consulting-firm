@@ -69,9 +69,19 @@ export interface Task {
 }
 export type TaskId = bigint;
 export interface TaskInput {
+  'status' : [] | [string],
   'subCategory' : string,
+  'paymentStatus' : [] | [string],
+  'completionDate' : [] | [bigint],
   'clientName' : string,
+  'assignmentDate' : [] | [bigint],
+  'bill' : [] | [number],
+  'advanceReceived' : [] | [number],
+  'dueDate' : [] | [bigint],
+  'comment' : [] | [string],
+  'outstandingAmount' : [] | [number],
   'taskCategory' : string,
+  'assignedName' : [] | [string],
 }
 export interface UserProfile { 'name' : string }
 export type UserRole = { 'admin' : null } |

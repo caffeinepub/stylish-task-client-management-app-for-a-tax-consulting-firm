@@ -8,19 +8,19 @@ export interface None {
 }
 export type Option<T> = Some<T> | None;
 export interface TaskInput {
-    subCategory: string;
-    clientName: string;
-    taskCategory: string;
     status?: string;
-    comment?: string;
-    assignedName?: string;
-    dueDate?: bigint;
-    assignmentDate?: bigint;
+    subCategory: string;
+    paymentStatus?: string;
     completionDate?: bigint;
+    clientName: string;
+    assignmentDate?: bigint;
     bill?: number;
     advanceReceived?: number;
+    dueDate?: bigint;
+    comment?: string;
     outstandingAmount?: number;
-    paymentStatus?: string;
+    taskCategory: string;
+    assignedName?: string;
 }
 export interface PartialClientInput {
     pan?: string;

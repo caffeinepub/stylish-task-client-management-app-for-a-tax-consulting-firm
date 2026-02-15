@@ -1,76 +1,48 @@
 {
   "kind": "build_request",
-  "title": "Remove Client/Assignee dropdowns in Add Task and make fields optional (fix single-task dialog crash)",
+  "title": "Add assignee-wise sorting to Tasks list",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-41",
-      "text": "Update the single Task create/edit dialog to remove the Client and Assignee dropdown (Select) controls, and use free-text inputs only for Client Name and Assigned Name.",
+      "id": "REQ-52",
+      "text": "Extend the Tasks page sorting controls and sorting logic to support assignee-wise sorting (i.e., sort by Task.assignedName) in addition to the existing sort fields (including the already-supported client-wise sorting).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-last"
+          "msg-1"
         ],
         "quotes": [
-          "remove drop down systrem in client and assignee while add task all are optional"
+          "clinet wise,assignee wise sorting also needed"
         ]
       },
       "acceptanceCriteria": [
-        "In the Task create/edit dialog (frontend/src/components/tasks/TaskFormDialog.tsx), there is no dropdown/select UI for Client Name.",
-        "In the Task create/edit dialog (frontend/src/components/tasks/TaskFormDialog.tsx), there is no dropdown/select UI for Assignee/Assigned Name.",
-        "Client Name is editable via a text input only.",
-        "Assigned Name is editable via a text input only."
-      ]
-    },
-    {
-      "id": "REQ-42",
-      "text": "Make all fields optional in the single Task create flow UI (including Client Name, Task Category, and Sub Category) by removing required markers and HTML required validation, while keeping the existing backend API calls functional.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-user-last"
-        ],
-        "quotes": [
-          "while add task all are optional"
-        ]
-      },
-      "acceptanceCriteria": [
-        "In the Task create dialog UI, Client Name, Task Category, and Sub Category inputs do not show required asterisks and do not enforce HTML 'required' validation.",
-        "Submitting the Task create dialog with blank values does not crash the UI; it either successfully creates a task (with empty strings) or shows a clear inline/user-visible error if the backend rejects it.",
-        "No changes are made to the Tasks bulk upload flow behavior."
-      ]
-    },
-    {
-      "id": "REQ-43",
-      "text": "Fix the single Add Task dialog crash caused by Radix Select empty-string values by ensuring no SelectItem uses an empty string value, and by ensuring Select components never receive \"\" as a controlled value.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-user-last"
-        ],
-        "quotes": [
-          "A <Select.Item /> must have a value prop that is not an empty string."
-        ]
-      },
-      "acceptanceCriteria": [
-        "Opening the Create New Task dialog on /tasks no longer shows the error banner: \"A <Select.Item /> must have a value prop that is not an empty string.\"",
-        "The Status selector does not render any <SelectItem> with value=\"\" (use a non-empty sentinel value for 'None' or a different UI pattern).",
-        "If any Select remains in the Task form (e.g., Status), clearing/unsetting it does not set the Select value to an empty string and does not crash the dialog."
+        "In frontend/src/utils/taskSort.ts, the SortField union includes an assignee sort field (e.g., \"assignedName\") and SORT_FIELD_LABELS includes an English label for it.",
+        "In frontend/src/utils/taskSort.ts, sortTasks() can sort by assignedName using the existing null-safe, case-insensitive string comparison behavior (tasks with missing/empty assignedName sort to the end).",
+        "In frontend/src/pages/TasksPage.tsx, the \"Sort by\" Select includes an option for the new assignee sort field, and selecting it updates the rendered task ordering accordingly.",
+        "Existing sort options (Due Date, Status, Task Category, Client Name, Bill Amount, Created At) continue to work as before."
       ]
     }
   ],
   "constraints": [
-    "Do not modify any files under frontend/src/components/ui (shadcn/Radix wrappers are read-only).",
-    "Keep the backend as a single Motoko actor in backend/main.mo.",
-    "Do not introduce new authentication providers; Internet Identity remains the only auth mechanism."
+    "Do not modify any files under frontend/src/components/ui (read-only shadcn components).",
+    "Do not introduce backend schema/API changes for this request; sorting must remain client-side on the Tasks page."
   ],
   "nonGoals": [
-    "Changing Tasks bulk upload CSV parsing, validation rules, or template format.",
-    "Adding new backend task fields or changing the task persistence schema.",
-    "Changing Clients or Assignees list pages beyond what is required to support the Task dialog changes."
+    "Adding new filters or grouping views (e.g., grouped-by-client or grouped-by-assignee sections).",
+    "Changing the meaning of the existing \"Client Name\" sorting behavior."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

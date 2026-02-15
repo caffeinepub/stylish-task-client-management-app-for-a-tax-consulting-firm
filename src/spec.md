@@ -1,11 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Fix the single-task Add/Edit Task dialog to stop crashing, remove Client/Assignee dropdowns, and make all task fields optional during creation/editing.
+**Goal:** Add assignee-wise sorting to the Tasks list alongside existing sort options.
 
 **Planned changes:**
-- Update the single Task create/edit dialog to remove the Client and Assignee dropdown/select controls and replace them with free-text inputs for Client Name and Assigned Name.
-- Make all fields optional in the single Task create flow UI by removing required markers and HTML `required` validation (including Client Name, Task Category, and Sub Category), while keeping existing backend API calls unchanged.
-- Fix the Add Task dialog crash by ensuring no Radix SelectItem uses an empty-string value and Select components in the task form never receive `""` as a controlled value (e.g., use a non-empty sentinel for “None” or avoid empty selection patterns).
+- Update `frontend/src/utils/taskSort.ts` to add an assignee sort field (e.g., `assignedName`) to the sort field type/labels and implement sorting by `Task.assignedName` using the existing null-safe, case-insensitive string comparison (missing/empty values sort last).
+- Update `frontend/src/pages/TasksPage.tsx` to include the new "Assignee" option in the “Sort by” select and apply it to the rendered task ordering.
+- Ensure all existing sort options (Due Date, Status, Task Category, Client Name, Bill Amount, Created At) continue working unchanged.
 
-**User-visible outcome:** Users can open the Create/Edit Task dialog without errors, type client/assignee names directly (no dropdowns), and submit tasks with any fields left blank without the UI crashing (showing a clear error only if the backend rejects the submission).
+**User-visible outcome:** Users can sort the Tasks list by assignee name from the “Sort by” control, in addition to the current sorting options.

@@ -10,13 +10,16 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, Search, AlertCircle, CheckSquare, Upload, Edit, Trash2, X } from 'lucide-react';
+import { Plus, Search, AlertCircle, CheckSquare, Upload, Edit, Trash2, X, Download, ArrowUpDown } from 'lucide-react';
 import { useGetAllTasks, useBulkDeleteTasks } from '../hooks/tasks';
 import TaskFormDialog from '../components/tasks/TaskFormDialog';
 import TaskQuickStatus from '../components/tasks/TaskQuickStatus';
 import TaskBulkUploadDialog from '../components/tasks/TaskBulkUploadDialog';
 import TaskBulkEditDialog from '../components/tasks/TaskBulkEditDialog';
 import { ALLOWED_TASK_STATUSES, isCompletedStatus, getStatusDisplayLabel } from '../constants/taskStatus';
+import { exportTasksToExcel } from '../utils/taskExcel';
+import { SortField, SortDirection, sortTasks } from '../utils/taskSort';
+import { formatTaskDate, formatCurrency, formatOptionalText } from '../utils/taskDisplay';
 import type { Task } from '../backend';
 
 export default function TasksPage() {
@@ -28,11 +31,15 @@ export default function TasksPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [overdueFilter, setOverdueFilter] = useState<boolean>(false);
+  const [sortField, setSortField] = useState<SortField>('dueDate');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const { mutate: bulkDeleteTasks, isPending: isDeleting } = useBulkDeleteTasks();
 
@@ -104,13 +111,8 @@ export default function TasksPage() {
   }, [tasks, searchQuery, statusFilter, categoryFilter, overdueFilter]);
 
   const sortedTasks = useMemo(() => {
-    return [...filteredTasks].sort((a, b) => {
-      if (!a.dueDate && !b.dueDate) return 0;
-      if (!a.dueDate) return 1;
-      if (!b.dueDate) return -1;
-      return Number(a.dueDate) - Number(b.dueDate);
-    });
-  }, [filteredTasks]);
+    return sortTasks(filteredTasks, sortField, sortDirection);
+  }, [filteredTasks, sortField, sortDirection]);
 
   const selectedTasks = useMemo(() => {
     return sortedTasks.filter(task => selectedTaskIds.has(task.id.toString()));
@@ -147,6 +149,21 @@ export default function TasksPage() {
     });
   };
 
+  const handleExportToExcel = async () => {
+    setIsExporting(true);
+    try {
+      await exportTasksToExcel(sortedTasks);
+    } catch (error) {
+      console.error('Export failed:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const toggleSortDirection = () => {
+    setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+  };
+
   const clearFilters = () => {
     setStatusFilter('all');
     setCategoryFilter('all');
@@ -154,22 +171,16 @@ export default function TasksPage() {
     navigate({ to: '/tasks', search: {} });
   };
 
-  const formatDate = (timestamp: bigint | undefined) => {
-    if (!timestamp) return 'N/A';
-    return new Date(Number(timestamp)).toLocaleDateString('en-IN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setDialogOpen(true);
   };
 
-  const formatCurrency = (amount: number | undefined) => {
-    if (amount === undefined || amount === null) return 'N/A';
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0,
-    }).format(amount);
+  const handleDialogOpenChange = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      setEditingTask(undefined);
+    }
   };
 
   if (tasksError) {
@@ -221,6 +232,14 @@ export default function TasksPage() {
           <p className="text-muted-foreground">Manage your task workflow</p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            onClick={handleExportToExcel}
+            variant="outline"
+            disabled={isExporting || sortedTasks.length === 0}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            {isExporting ? 'Exporting...' : 'Export to Excel'}
+          </Button>
           <Button 
             onClick={() => setBulkUploadOpen(true)}
             variant="outline"
@@ -312,43 +331,71 @@ export default function TasksPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search tasks..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
+          <div className="flex flex-col gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search tasks..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="open">Open</SelectItem>
+                  {ALLOWED_TASK_STATUSES.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Filter by category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {uniqueCategories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="open">Open</SelectItem>
-                {ALLOWED_TASK_STATUSES.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {status}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Filter by category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {uniqueCategories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Select value={sortField} onValueChange={(value) => setSortField(value as SortField)}>
+                <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dueDate">Due Date</SelectItem>
+                  <SelectItem value="status">Status</SelectItem>
+                  <SelectItem value="taskCategory">Task Category</SelectItem>
+                  <SelectItem value="clientName">Client Name</SelectItem>
+                  <SelectItem value="assignedName">Assignee</SelectItem>
+                  <SelectItem value="bill">Bill Amount</SelectItem>
+                  <SelectItem value="createdAt">Created At</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="default"
+                onClick={toggleSortDirection}
+                className="w-full sm:w-auto"
+              >
+                <ArrowUpDown className="mr-2 h-4 w-4" />
+                {sortDirection === 'asc' ? 'Ascending' : 'Descending'}
+              </Button>
+            </div>
           </div>
 
           {sortedTasks.length === 0 ? (
@@ -370,60 +417,71 @@ export default function TasksPage() {
               )}
             </div>
           ) : (
-            <div className="rounded-md border border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)] overflow-x-auto">
+            <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-12">
                       <Checkbox
-                        checked={sortedTasks.length > 0 && selectedTaskIds.size === sortedTasks.length}
+                        checked={selectedTaskIds.size === sortedTasks.length && sortedTasks.length > 0}
                         onCheckedChange={handleSelectAll}
+                        aria-label="Select all tasks"
                       />
                     </TableHead>
-                    <TableHead>Client Name</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead className="hidden md:table-cell">Sub Category</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="hidden lg:table-cell">Assigned</TableHead>
-                    <TableHead className="hidden xl:table-cell">Due Date</TableHead>
-                    <TableHead className="hidden xl:table-cell">Bill</TableHead>
+                    <TableHead className="min-w-[150px]">Client Name</TableHead>
+                    <TableHead className="min-w-[120px]">Category</TableHead>
+                    <TableHead className="min-w-[120px]">Sub Category</TableHead>
+                    <TableHead className="min-w-[140px]">Status</TableHead>
+                    <TableHead className="min-w-[150px]">Comment</TableHead>
+                    <TableHead className="min-w-[120px]">Assigned</TableHead>
+                    <TableHead className="min-w-[110px]">Due Date</TableHead>
+                    <TableHead className="min-w-[130px]">Assignment Date</TableHead>
+                    <TableHead className="min-w-[140px]">Completion Date</TableHead>
+                    <TableHead className="min-w-[100px]">Bill</TableHead>
+                    <TableHead className="min-w-[130px]">Advance Received</TableHead>
+                    <TableHead className="min-w-[150px]">Outstanding Amount</TableHead>
+                    <TableHead className="min-w-[130px]">Payment Status</TableHead>
+                    <TableHead className="w-[80px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sortedTasks.map((task) => {
-                    const isOverdue = task.dueDate && Number(task.dueDate) < Date.now() && !isCompletedStatus(task.status);
-                    return (
-                      <TableRow key={task.id.toString()}>
-                        <TableCell>
-                          <Checkbox
-                            checked={selectedTaskIds.has(task.id.toString())}
-                            onCheckedChange={(checked) => handleSelectTask(task.id.toString(), checked as boolean)}
-                          />
-                        </TableCell>
-                        <TableCell className="font-medium">{task.clientName}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{task.taskCategory}</Badge>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">{task.subCategory}</TableCell>
-                        <TableCell>
-                          <TaskQuickStatus task={task} />
-                        </TableCell>
-                        <TableCell className="hidden lg:table-cell">
-                          {task.assignedName || <span className="text-muted-foreground">Unassigned</span>}
-                        </TableCell>
-                        <TableCell className="hidden xl:table-cell">
-                          {isOverdue ? (
-                            <Badge variant="destructive">{formatDate(task.dueDate)}</Badge>
-                          ) : (
-                            formatDate(task.dueDate)
-                          )}
-                        </TableCell>
-                        <TableCell className="hidden xl:table-cell">
-                          {formatCurrency(task.bill)}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                  {sortedTasks.map((task) => (
+                    <TableRow key={task.id.toString()}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedTaskIds.has(task.id.toString())}
+                          onCheckedChange={(checked) => handleSelectTask(task.id.toString(), checked as boolean)}
+                          aria-label={`Select task ${task.clientName}`}
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium">{task.clientName}</TableCell>
+                      <TableCell>{task.taskCategory}</TableCell>
+                      <TableCell>{task.subCategory}</TableCell>
+                      <TableCell>
+                        <TaskQuickStatus task={task} />
+                      </TableCell>
+                      <TableCell className="max-w-[200px] truncate">
+                        {formatOptionalText(task.comment)}
+                      </TableCell>
+                      <TableCell>{formatOptionalText(task.assignedName)}</TableCell>
+                      <TableCell>{formatTaskDate(task.dueDate)}</TableCell>
+                      <TableCell>{formatTaskDate(task.assignmentDate)}</TableCell>
+                      <TableCell>{formatTaskDate(task.completionDate)}</TableCell>
+                      <TableCell>{formatCurrency(task.bill)}</TableCell>
+                      <TableCell>{formatCurrency(task.advanceReceived)}</TableCell>
+                      <TableCell>{formatCurrency(task.outstandingAmount)}</TableCell>
+                      <TableCell>{formatOptionalText(task.paymentStatus)}</TableCell>
+                      <TableCell>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEditTask(task)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </div>
@@ -431,10 +489,14 @@ export default function TasksPage() {
         </CardContent>
       </Card>
 
-      <TaskFormDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <TaskFormDialog 
+        open={dialogOpen} 
+        onOpenChange={handleDialogOpenChange}
+        task={editingTask}
+      />
       <TaskBulkUploadDialog open={bulkUploadOpen} onOpenChange={setBulkUploadOpen} />
-      <TaskBulkEditDialog 
-        open={bulkEditOpen} 
+      <TaskBulkEditDialog
+        open={bulkEditOpen}
         onOpenChange={setBulkEditOpen}
         selectedTasks={selectedTasks}
       />
@@ -444,12 +506,12 @@ export default function TasksPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Selected Tasks</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete {selectedTaskIds.size} task{selectedTaskIds.size !== 1 ? 's' : ''}? 
+              Are you sure you want to delete {selectedTaskIds.size} task{selectedTaskIds.size !== 1 ? 's' : ''}?
               This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBulkDelete}
               disabled={isDeleting}

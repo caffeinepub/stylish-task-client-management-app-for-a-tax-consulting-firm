@@ -1,46 +1,26 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T16:47:18.025Z",
+  "generatedAt": "2026-02-15T18:46:06.559Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 3,
+    "total": 1,
+    "implemented": 1,
     "items": [
       {
-        "id": "REQ-41",
-        "summary": "Update the single Task create/edit dialog to remove the Client and Assignee dropdown (Select) controls, and use free-text inputs only for Client Name and Assigned Name.",
+        "id": "REQ-52",
+        "summary": "Extend the Tasks page sorting controls and sorting logic to support assignee-wise sorting (i.e., sort by Task.assignedName) in addition to the existing sort fields (including the already-supported client-wise sorting).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/tasks/TaskFormDialog.tsx"
+          "frontend/src/utils/taskSort.ts",
+          "frontend/src/pages/TasksPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/tasks/TaskFormDialog.tsx"
-        ]
-      },
-      {
-        "id": "REQ-42",
-        "summary": "Make all fields optional in the single Task create flow UI (including Client Name, Task Category, and Sub Category) by removing required markers and HTML required validation, while keeping the existing backend API calls functional.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/tasks/TaskFormDialog.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/tasks/TaskFormDialog.tsx"
-        ]
-      },
-      {
-        "id": "REQ-43",
-        "summary": "Fix the single Add Task dialog crash caused by Radix Select empty-string values by ensuring no SelectItem uses an empty string value, and by ensuring Select components never receive \"\" as a controlled value.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/tasks/TaskFormDialog.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/tasks/TaskFormDialog.tsx"
+          "frontend/src/utils/taskSort.ts",
+          "frontend/src/pages/TasksPage.tsx"
         ]
       }
     ]
@@ -50,7 +30,8 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/tasks/TaskFormDialog.tsx",
+    "frontend/src/pages/TasksPage.tsx",
+    "frontend/src/utils/taskSort.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

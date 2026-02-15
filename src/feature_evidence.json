@@ -2,10 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-the-single-task-create-edit-dialog-to-remove-the-client-and-assignee-dropdown-select-controls-and-use-free-text-inputs-only-for-client-name-and-assigned-name",
-      "featureTitle": "Update the single Task create/edit dialog to remove the Client and Assignee dropdown (Select) controls, and use free-text inputs only for Client Name and Assigned Name.",
+      "featureId": "feature-extend-the-tasks-page-sorting-controls-and-sorting-logic-to-support-assignee-wise-sorting-i-e-sort-by-task-assignedname-in-addition-to-the-existing-sort-fields-including-the-already-supported-client-wise-sorting",
+      "featureTitle": "Extend the Tasks page sorting controls and sorting logic to support assignee-wise sorting (i.e., sort by Task.assignedName) in addition to the existing sort fields (including the already-supported client-wise sorting).",
       "files": [
-        "frontend/src/components/tasks/TaskFormDialog.tsx"
+        "frontend/src/pages/TasksPage.tsx",
+        "frontend/src/utils/taskSort.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -16,45 +17,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-41"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-make-all-fields-optional-in-the-single-task-create-flow-ui-including-client-name-task-category-and-sub-category-by-removing-required-markers-and-html-required-validation-while-keeping-the-existing-backend-api-calls-functional",
-      "featureTitle": "Make all fields optional in the single Task create flow UI (including Client Name, Task Category, and Sub Category) by removing required markers and HTML required validation, while keeping the existing backend API calls functional.",
-      "files": [
-        "frontend/src/components/tasks/TaskFormDialog.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-42"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-fix-the-single-add-task-dialog-crash-caused-by-radix-select-empty-string-values-by-ensuring-no-selectitem-uses-an-empty-string-value-and-by-ensuring-select-components-never-receive-as-a-controlled-value",
-      "featureTitle": "Fix the single Add Task dialog crash caused by Radix Select empty-string values by ensuring no SelectItem uses an empty string value, and by ensuring Select components never receive \"\" as a controlled value.",
-      "files": [
-        "frontend/src/components/tasks/TaskFormDialog.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-43"
+        "REQ-52"
       ],
       "confidence": "high"
     }

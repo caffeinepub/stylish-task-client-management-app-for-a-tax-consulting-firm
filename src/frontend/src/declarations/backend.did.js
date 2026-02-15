@@ -26,9 +26,19 @@ export const PartialClientInput = IDL.Record({
 });
 export const ClientId = IDL.Nat;
 export const TaskInput = IDL.Record({
+  'status' : IDL.Opt(IDL.Text),
   'subCategory' : IDL.Text,
+  'paymentStatus' : IDL.Opt(IDL.Text),
+  'completionDate' : IDL.Opt(IDL.Int),
   'clientName' : IDL.Text,
+  'assignmentDate' : IDL.Opt(IDL.Int),
+  'bill' : IDL.Opt(IDL.Float64),
+  'advanceReceived' : IDL.Opt(IDL.Float64),
+  'dueDate' : IDL.Opt(IDL.Int),
+  'comment' : IDL.Opt(IDL.Text),
+  'outstandingAmount' : IDL.Opt(IDL.Float64),
   'taskCategory' : IDL.Text,
+  'assignedName' : IDL.Opt(IDL.Text),
 });
 export const TaskId = IDL.Nat;
 export const PartialTaskUpdate = IDL.Record({
@@ -166,9 +176,19 @@ export const idlFactory = ({ IDL }) => {
   });
   const ClientId = IDL.Nat;
   const TaskInput = IDL.Record({
+    'status' : IDL.Opt(IDL.Text),
     'subCategory' : IDL.Text,
+    'paymentStatus' : IDL.Opt(IDL.Text),
+    'completionDate' : IDL.Opt(IDL.Int),
     'clientName' : IDL.Text,
+    'assignmentDate' : IDL.Opt(IDL.Int),
+    'bill' : IDL.Opt(IDL.Float64),
+    'advanceReceived' : IDL.Opt(IDL.Float64),
+    'dueDate' : IDL.Opt(IDL.Int),
+    'comment' : IDL.Opt(IDL.Text),
+    'outstandingAmount' : IDL.Opt(IDL.Float64),
     'taskCategory' : IDL.Text,
+    'assignedName' : IDL.Opt(IDL.Text),
   });
   const TaskId = IDL.Nat;
   const PartialTaskUpdate = IDL.Record({

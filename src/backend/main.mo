@@ -9,6 +9,8 @@ import Nat "mo:core/Nat";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
+
+
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -74,6 +76,16 @@ actor {
     clientName : Text;
     taskCategory : Text;
     subCategory : Text;
+    status : ?Text;
+    comment : ?Text;
+    assignedName : ?Text;
+    dueDate : ?Int;
+    assignmentDate : ?Int;
+    completionDate : ?Int;
+    bill : ?Float;
+    advanceReceived : ?Float;
+    outstandingAmount : ?Float;
+    paymentStatus : ?Text;
   };
 
   public type PartialClientInput = {
@@ -502,16 +514,16 @@ actor {
         clientName = taskInput.clientName;
         taskCategory = taskInput.taskCategory;
         subCategory = taskInput.subCategory;
-        status = null;
-        comment = null;
-        assignedName = null;
-        dueDate = null;
-        assignmentDate = null;
-        completionDate = null;
-        bill = null;
-        advanceReceived = null;
-        outstandingAmount = null;
-        paymentStatus = null;
+        status = taskInput.status;
+        comment = taskInput.comment;
+        assignedName = taskInput.assignedName;
+        dueDate = taskInput.dueDate;
+        assignmentDate = taskInput.assignmentDate;
+        completionDate = taskInput.completionDate;
+        bill = taskInput.bill;
+        advanceReceived = taskInput.advanceReceived;
+        outstandingAmount = taskInput.outstandingAmount;
+        paymentStatus = taskInput.paymentStatus;
         createdAt = Time.now();
       };
 

@@ -53,10 +53,10 @@ export function generateTaskCsvTemplate(): string {
     'GST Return',
     'GSTR-1',
     'Pending',
-    'Urgent filing required',
+    '"Up to Dec Sales, purchase and Bank Completed"',
     'John Doe',
     '2026-03-15',
-    '2026-02-15',
+    '2026-02-01',
     '',
     '5000',
     '2000',
@@ -96,6 +96,31 @@ function parseNumber(numStr: string): number | null {
 }
 
 /**
+ * Parse a CSV line respecting quoted fields (commas inside quotes are preserved)
+ */
+function parseCsvLine(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  
+  result.push(current.trim());
+  return result;
+}
+
+/**
  * Parse CSV file content and validate task data with all optional fields
  */
 export function parseCsvFile(csvContent: string): ParsedCsvData {
@@ -112,7 +137,7 @@ export function parseCsvFile(csvContent: string): ParsedCsvData {
     return { tasks, errors };
   }
 
-  const headers = lines[0].split(',').map(h => h.trim());
+  const headers = parseCsvLine(lines[0]).map(h => h.trim());
   
   // Validate required headers
   const requiredHeaders = ['Client Name', 'Task Category', 'Sub Category'];
@@ -147,7 +172,7 @@ export function parseCsvFile(csvContent: string): ParsedCsvData {
     const line = lines[i].trim();
     if (!line) continue;
 
-    const values = line.split(',').map(v => v.trim());
+    const values = parseCsvLine(line).map(v => v.trim());
     const rowNumber = i + 1;
 
     // Extract required fields

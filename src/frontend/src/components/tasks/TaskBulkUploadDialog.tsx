@@ -69,12 +69,28 @@ export default function TaskBulkUploadDialog({ open, onOpenChange }: TaskBulkUpl
   const handleSubmit = () => {
     if (parsedTasks.length === 0 || validationErrors.length > 0) return;
 
-    // Convert ExtendedTaskInput to backend TaskInput (only required fields)
-    const backendTasks: TaskInput[] = parsedTasks.map(task => ({
-      clientName: task.clientName,
-      taskCategory: task.taskCategory,
-      subCategory: task.subCategory,
-    }));
+    // Convert ExtendedTaskInput to backend TaskInput with all optional fields
+    const backendTasks: TaskInput[] = parsedTasks.map(task => {
+      const backendTask: TaskInput = {
+        clientName: task.clientName,
+        taskCategory: task.taskCategory,
+        subCategory: task.subCategory,
+      };
+
+      // Include optional fields when present
+      if (task.status) backendTask.status = task.status;
+      if (task.comment) backendTask.comment = task.comment;
+      if (task.assignedName) backendTask.assignedName = task.assignedName;
+      if (task.dueDate !== undefined) backendTask.dueDate = task.dueDate;
+      if (task.assignmentDate !== undefined) backendTask.assignmentDate = task.assignmentDate;
+      if (task.completionDate !== undefined) backendTask.completionDate = task.completionDate;
+      if (task.bill !== undefined) backendTask.bill = task.bill;
+      if (task.advanceReceived !== undefined) backendTask.advanceReceived = task.advanceReceived;
+      if (task.outstandingAmount !== undefined) backendTask.outstandingAmount = task.outstandingAmount;
+      if (task.paymentStatus) backendTask.paymentStatus = task.paymentStatus;
+
+      return backendTask;
+    });
 
     bulkCreateTasks(backendTasks, {
       onSuccess: () => {

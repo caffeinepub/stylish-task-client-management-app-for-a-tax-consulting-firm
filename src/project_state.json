@@ -1,16 +1,18 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 19,
+  "projectStateVersion": 29,
   "summary": "Build a stylish Task/Client Management app for a tax consulting firm.",
   "architectural_notes": [
     "Dashboard should support interactive drill-down: clicking an aggregate metric navigates/filters to the corresponding Tasks list view (e.g., by category/status) and shows the matching items.",
     "Task.status should be constrained to the allowed set: Pending, Docs Pending, In Progress, Checking, Payment Pending, Completed, Hold; UI and dashboard aggregations should treat these as the canonical statuses.",
-    "Single Add Task form should not depend on dropdown/select components for Client Name or Assigned Name; treat them as optional free-text fields."
+    "Single Add Task form should not depend on dropdown/select components for Client Name or Assigned Name; treat them as optional free-text fields.",
+    "Tasks list view (Task view) should display the full set of task components/fields as columns (not a truncated subset), with sensible responsive behavior if needed (e.g., horizontal scroll/column hiding on small screens).",
+    "Tasks list sorting controls should include sort by Client Name and by Assigned Name (assignee/team)."
   ],
   "known_issues": [
     "Single task addition (Add Task dialog) is not working while bulk task addition works; likely due to Add Task form crash related to dropdown/select rendering/default values."
   ],
-  "isFixRequest": true,
+  "isFixRequest": false,
   "existing_features": [
     {
       "id": "feature-create-an-authenticated-single-tenant-experience-using-internet-identity-so-a-signed-in-user-can-access-their-own-data-require-sign-in-before-viewing-or-editing-any-clients-tasks",
@@ -291,6 +293,78 @@
         "REQ-43"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-update-the-tasks-bulk-upload-csv-template-generator-to-remove-all-date-related-columns-due-date-assignment-date-completion-date-from-the-downloaded-template-including-removing-any-date-values-from-the-example-row-so-the-number-of-example-values-matches-the-header-count",
+      "title": "Update the Tasks bulk upload CSV template generator to remove all date-related columns (Due Date, Assignment Date, Completion Date) from the downloaded template, including removing any date values from the example row so the number of example values matches the header count.",
+      "reqIds": [
+        "REQ-44"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-user-controllable-sorting-options-to-the-tasks-list-view-so-users-can-choose-a-sort-field-and-sort-direction-and-the-task-table-updates-accordingly",
+      "title": "Add user-controllable sorting options to the Tasks list view so users can choose a sort field and sort direction, and the task table updates accordingly.",
+      "reqIds": [
+        "REQ-45"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-an-export-to-excel-option-on-the-tasks-page-that-downloads-the-currently-visible-tasks-after-applying-current-filters-and-sorting-as-a-xlsx-file",
+      "title": "Add an \"Export to Excel\" option on the Tasks page that downloads the currently visible tasks (after applying current filters and sorting) as a .xlsx file.",
+      "reqIds": [
+        "REQ-46"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-tasks-bulk-upload-csv-template-generator-so-the-downloaded-template-columns-match-the-task-add-edit-components-including-date-and-amount-fields-client-name-task-category-sub-category-status-comment-assigned-name-due-date-assignment-date-completion-date-bill-advance-received-outstanding-amount-payment-status",
+      "title": "Update the Tasks bulk upload CSV template generator so the downloaded template columns match the Task add/edit components (including date and amount fields): Client Name, Task Category, Sub Category, Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, Payment Status.",
+      "reqIds": [
+        "REQ-47"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-tasks-csv-parsing-so-fields-containing-commas-notably-the-comment-column-do-not-break-column-alignment-by-implementing-a-quote-aware-csv-row-parser-similar-to-the-existing-parsecsvline-logic-used-in-frontend-src-utils-clientcsv-ts-and-frontend-src-utils-assigneecsv-ts-and-using-it-for-both-header-and-data-row-parsing-in-frontend-src-utils-taskcsv-ts",
+      "title": "Fix Tasks CSV parsing so fields containing commas (notably the Comment column) do not break column alignment by implementing a quote-aware CSV row parser (similar to the existing parseCsvLine logic used in frontend/src/utils/clientCsv.ts and frontend/src/utils/assigneeCsv.ts) and using it for both header and data row parsing in frontend/src/utils/taskCsv.ts.",
+      "reqIds": [
+        "REQ-48"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-bulk-task-creation-to-persist-all-task-component-fields-provided-by-the-csv-status-comment-assigned-name-due-date-assignment-date-completion-date-bill-advance-received-outstanding-amount-payment-status-by-extending-the-backend-taskinput-type-and-bulkcreatetasks-api-accordingly-and-wiring-the-frontend-bulk-upload-submit-path-to-send-these-optional-fields-when-present",
+      "title": "Update bulk task creation to persist all task component fields provided by the CSV (Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, Payment Status) by extending the backend TaskInput type and bulkCreateTasks API accordingly, and wiring the frontend bulk upload submit path to send these optional fields when present.",
+      "reqIds": [
+        "REQ-49"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-tasks-page-table-frontend-src-pages-taskspage-tsx-to-show-all-task-component-fields-as-visible-columns-in-the-main-tasks-list-view-rather-than-only-a-subset",
+      "title": "Update the Tasks page table (frontend/src/pages/TasksPage.tsx) to show all Task component fields as visible columns in the main Tasks list view, rather than only a subset.",
+      "reqIds": [
+        "REQ-50"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-task-list-shown-on-the-client-detail-page-frontend-src-pages-clientdetailpage-tsx-so-each-task-item-surfaces-the-full-set-of-task-components-all-supported-fields-in-a-readable-way",
+      "title": "Update the task list shown on the Client Detail page (frontend/src/pages/ClientDetailPage.tsx) so each task item surfaces the full set of task components (all supported fields) in a readable way.",
+      "reqIds": [
+        "REQ-51"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-extend-the-tasks-page-sorting-controls-and-sorting-logic-to-support-assignee-wise-sorting-i-e-sort-by-task-assignedname-in-addition-to-the-existing-sort-fields-including-the-already-supported-client-wise-sorting",
+      "title": "Extend the Tasks page sorting controls and sorting logic to support assignee-wise sorting (i.e., sort by Task.assignedName) in addition to the existing sort fields (including the already-supported client-wise sorting).",
+      "reqIds": [
+        "REQ-52"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -427,6 +501,30 @@
     {
       "id": "AR-22",
       "summary": "Remove the Client and Assignee dropdown selectors from the single Add Task flow; make Client Name and Assigned Name optional free-text inputs instead of list-based selection.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-23",
+      "summary": "Remove date columns from the Tasks bulk addition (CSV) template (e.g., Due Date, Assignment Date, Completion Date).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-24",
+      "summary": "Add sorting options in the Tasks view (e.g., sort by due date, status, category, client, amount).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-25",
+      "summary": "Add an export-to-Excel option for Tasks (download tasks list as .xlsx).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-26",
+      "summary": "Extend Tasks list sorting options to include Client-wise and Assignee-wise sorting (in addition to other sort fields).",
       "reqIds": [],
       "status": "pending"
     }

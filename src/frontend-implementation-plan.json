@@ -1,54 +1,27 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Make single Task dialog free-text only, optional fields, and fix Radix Select empty-string crash",
+  "title": "Add assignee-wise sorting to Tasks list",
   "requirements": [
     {
-      "id": "REQ-41",
-      "summary": "Remove Client and Assignee dropdowns from the single Task create/edit dialog and use free-text inputs only.",
+      "id": "REQ-52",
+      "summary": "Add an assignee-wise sort option to the Tasks page and implement client-side sorting by Task.assignedName while preserving existing sort behavior.",
       "acceptanceCriteria": [
-        "In the Task create/edit dialog (frontend/src/components/tasks/TaskFormDialog.tsx), there is no dropdown/select UI for Client Name.",
-        "In the Task create/edit dialog (frontend/src/components/tasks/TaskFormDialog.tsx), there is no dropdown/select UI for Assignee/Assigned Name.",
-        "Client Name is editable via a text input only.",
-        "Assigned Name is editable via a text input only."
+        "In frontend/src/utils/taskSort.ts, the SortField union includes an assignee sort field (e.g., \"assignedName\") and SORT_FIELD_LABELS includes an English label for it.",
+        "In frontend/src/utils/taskSort.ts, sortTasks() can sort by assignedName using the existing null-safe, case-insensitive string comparison behavior (tasks with missing/empty assignedName sort to the end).",
+        "In frontend/src/pages/TasksPage.tsx, the \"Sort by\" Select includes an option for the new assignee sort field, and selecting it updates the rendered task ordering accordingly.",
+        "Existing sort options (Due Date, Status, Task Category, Client Name, Bill Amount, Created At) continue to work as before."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/tasks/TaskFormDialog.tsx",
+          "path": "frontend/src/utils/taskSort.ts",
           "operation": "modify",
-          "description": "Remove the Client Name and Assignee Select controls and related data-loading hooks (useGetAllClients/useGetAllAssignees) from the Task dialog UI, leaving only <Input> fields for clientName and assignedName. Ensure no orphaned imports remain and the dialog layout remains usable."
-        }
-      ]
-    },
-    {
-      "id": "REQ-42",
-      "summary": "Make all fields optional in the single Task create flow UI and prevent crashes on blank submission while keeping backend calls working.",
-      "acceptanceCriteria": [
-        "In the Task create dialog UI, Client Name, Task Category, and Sub Category inputs do not show required asterisks and do not enforce HTML 'required' validation.",
-        "Submitting the Task create dialog with blank values does not crash the UI; it either successfully creates a task (with empty strings) or shows a clear inline/user-visible error if the backend rejects it.",
-        "No changes are made to the Tasks bulk upload flow behavior."
-      ],
-      "file_operations": [
+          "description": "Extend SortField to include an assignee sort field (\"assignedName\"), add its label to SORT_FIELD_LABELS, and update sortTasks() to support sorting by Task.assignedName using the existing null-safe, case-insensitive string comparison (ensuring missing/empty assignedName values sort to the end). Keep all sorting client-side and do not introduce backend changes."
+        },
         {
-          "path": "frontend/src/components/tasks/TaskFormDialog.tsx",
+          "path": "frontend/src/pages/TasksPage.tsx",
           "operation": "modify",
-          "description": "Remove required asterisks and HTML required validation from Client Name, Task Category, and Sub Category. Ensure submit uses safe defaults (e.g., empty strings) so the backend call remains functional. Add a dialog-local, user-visible error state for failed create/update mutations to prevent any UI crash when backend rejects blank values."
-        }
-      ]
-    },
-    {
-      "id": "REQ-43",
-      "summary": "Fix Add Task dialog crash by eliminating empty-string values in Radix Select items and controlled values (e.g., Status).",
-      "acceptanceCriteria": [
-        "Opening the Create New Task dialog on /tasks no longer shows the error banner: \"A <Select.Item /> must have a value prop that is not an empty string.\"",
-        "The Status selector does not render any <SelectItem> with value=\"\" (use a non-empty sentinel value for 'None' or a different UI pattern).",
-        "If any Select remains in the Task form (e.g., Status), clearing/unsetting it does not set the Select value to an empty string and does not crash the dialog."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/tasks/TaskFormDialog.tsx",
-          "operation": "modify",
-          "description": "Update any remaining Select usage in the Task dialog (notably Status) to use a non-empty sentinel value for the 'None' option and ensure the controlled Select value is never \"\". Map the sentinel to null when calling updateTask, and ensure initialization/reset paths also avoid \"\" to prevent Radix Select runtime errors."
+          "description": "Add the new assignee sort option to the existing \"Sort by\" Select (without modifying any files under frontend/src/components/ui) and ensure selecting it updates sortField so the rendered task table order changes accordingly via the existing sortTasks(filteredTasks, sortField, sortDirection) flow. Preserve all existing sort options and their behavior."
         }
       ]
     }
