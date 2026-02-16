@@ -1,67 +1,40 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T19:00:54.208Z",
+  "generatedAt": "2026-02-16T01:13:38.493Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 4,
+    "total": 2,
+    "implemented": 2,
     "items": [
       {
-        "id": "REQ-53",
-        "summary": "Fix the app’s blank-screen on initial load across all routes by preventing URL mutation during initial router/app bootstrap (currently caused by reading the admin token via getSecretParameter('caffeineAdminToken') which clears/modifies window.location via history.replaceState). Ensure the router can render the root route reliably before any URL cleanup occurs.",
+        "id": "REQ-57",
+        "summary": "Fix the single-task edit flow so that clicking Edit on a task reliably opens the edit dialog, pre-fills the form with the selected task’s current values, and successfully saves updates via the existing updateTask API (including optional fields like status, comment, assignedName, dates, and amounts).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/utils/urlParams.ts",
-          "frontend/src/hooks/useDeferredUrlCleanup.ts",
-          "frontend/src/App.tsx"
+          "frontend/src/pages/TasksPage.tsx",
+          "frontend/src/components/tasks/TaskFormDialog.tsx",
+          "frontend/src/hooks/tasks.ts"
         ],
         "matchedFiles": [
-          "frontend/src/utils/urlParams.ts",
-          "frontend/src/hooks/useDeferredUrlCleanup.ts",
-          "frontend/src/App.tsx"
+          "frontend/src/pages/TasksPage.tsx",
+          "frontend/src/components/tasks/TaskFormDialog.tsx"
         ]
       },
       {
-        "id": "REQ-54",
-        "summary": "Make root initialization resilient by ensuring user profile fetching cannot crash the root route during unauthenticated or pre-actor states. Specifically, ensure the current-user-profile query is never invoked (or never throws) in a way that can crash initial rendering when the actor/identity is not ready.",
+        "id": "REQ-58",
+        "summary": "Ensure task sorting supports both client-wise and assignee-wise sorting in the Tasks page UI and that selecting these sort options actually reorders the visible task table accordingly.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useCurrentUserProfile.ts",
-          "frontend/src/App.tsx"
+          "frontend/src/utils/taskSort.ts",
+          "frontend/src/pages/TasksPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useCurrentUserProfile.ts",
-          "frontend/src/App.tsx"
-        ]
-      },
-      {
-        "id": "REQ-55",
-        "summary": "Harden TanStack Router search-param validation so it cannot contribute to startup hangs/crashes. Ensure validateSearch on the /tasks route is fully defensive (does not throw for unexpected types/values) and returns safe defaults when search params are missing or malformed.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/App.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/App.tsx"
-        ]
-      },
-      {
-        "id": "REQ-56",
-        "summary": "Add a user-visible fallback for unexpected initialization errors at the top level so the UI never remains fully blank. The fallback should display a clear English error message and a reload action, without exposing sensitive details.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/errors/AppStartupErrorBoundary.tsx",
-          "frontend/src/components/errors/StartupErrorScreen.tsx",
-          "frontend/src/App.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/errors/AppStartupErrorBoundary.tsx",
-          "frontend/src/components/errors/StartupErrorScreen.tsx",
-          "frontend/src/App.tsx"
+          "frontend/src/utils/taskSort.ts",
+          "frontend/src/pages/TasksPage.tsx"
         ]
       }
     ]
@@ -72,10 +45,10 @@
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/App.tsx",
-    "frontend/src/components/errors/AppStartupErrorBoundary.tsx",
-    "frontend/src/components/errors/StartupErrorScreen.tsx",
-    "frontend/src/hooks/useCurrentUserProfile.ts",
+    "frontend/src/components/tasks/TaskFormDialog.tsx",
     "frontend/src/hooks/useDeferredUrlCleanup.ts",
+    "frontend/src/pages/TasksPage.tsx",
+    "frontend/src/utils/taskSort.ts",
     "frontend/src/utils/urlParams.ts",
     "project_state.json",
     "scratch/component-selection.json",

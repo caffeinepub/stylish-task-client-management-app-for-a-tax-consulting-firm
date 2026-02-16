@@ -85,8 +85,12 @@ export function sortTasks(
       case 'clientName':
         return compareValues(a.clientName, b.clientName, direction, compareString);
 
-      case 'assignedName':
-        return compareValues(a.assignedName, b.assignedName, direction, compareString);
+      case 'assignedName': {
+        // Treat empty strings as null/undefined for sorting
+        const assigneeA = a.assignedName && a.assignedName.trim() !== '' ? a.assignedName : null;
+        const assigneeB = b.assignedName && b.assignedName.trim() !== '' ? b.assignedName : null;
+        return compareValues(assigneeA, assigneeB, direction, compareString);
+      }
 
       case 'bill':
         return compareValues(a.bill, b.bill, direction, compareNumber);

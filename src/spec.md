@@ -1,12 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Fix the TanStack Router initial-load blank-screen crash by making app/router bootstrap safe (no early URL mutation), hardening startup queries/validation, and adding a top-level error fallback.
+**Goal:** Fix the Tasks page so editing a task works reliably and task sorting correctly supports client-wise and assignee-wise ordering.
 
 **Planned changes:**
-- Prevent URL mutation (e.g., history.replaceState triggered by admin-token parsing) during initial bootstrap so the root route can render at least once before any URL cleanup occurs.
-- Make root initialization resilient by guarding current-user-profile fetching so it cannot throw/crash when unauthenticated or when actor/identity is not ready.
-- Harden `/tasks` route `validateSearch` to be fully defensive against missing/malformed/unexpected search param shapes and return safe defaults.
-- Add a top-level user-visible error fallback (error screen with plain-English message + reload action) to avoid fully blank pages on unexpected startup errors.
+- Repair the single-task edit flow: ensure the Edit action opens the TaskFormDialog in “Edit Task” mode, pre-fills fields from the selected task (including optional fields), and saves via the existing updateTask API.
+- Ensure the Tasks table updates immediately after a successful edit (no manual refresh required) and displays an error message in the dialog if the update fails.
+- Update the Tasks page sorting UI/logic to include “Client Name” and “Assignee” sort options and apply the selected sort (including direction toggle) to reorder the visible task table, handling missing assignedName consistently.
 
-**User-visible outcome:** Loading the app at `/`, `/dashboard`, `/tasks`, or `/clients` reliably renders either the Signed Out screen or the authenticated layout (with existing loading states as needed) without blank screens or requiring a hard refresh; unexpected startup errors show an error screen with a reload option.
+**User-visible outcome:** Users can click Edit on any task to modify it in a pre-filled dialog and see changes reflected immediately, and they can sort tasks by Client Name or Assignee (with ascending/descending) directly in the Tasks page.

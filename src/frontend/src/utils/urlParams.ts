@@ -3,9 +3,6 @@
  * Works with both hash-based and browser-based routing
  */
 
-// Track pending URL cleanups to defer them until after initial render
-const pendingCleanups = new Set<string>();
-
 /**
  * Extracts a URL parameter from the current URL
  * Works with both query strings (?param=value) and hash-based routing (#/?param=value)
@@ -157,7 +154,7 @@ function clearParamFromHash(paramName: string): void {
 /**
  * Gets a secret from the URL hash fragment only (more secure than query params)
  * Hash fragments aren't sent to servers or logged in access logs
- * The hash is marked for deferred cleanup to avoid interfering with router initialization
+ * The hash is immediately cleared from the URL after extraction to prevent history leakage
  *
  * Usage: https://yourapp.com/#secret=xxx
  *
@@ -185,8 +182,8 @@ export function getSecretFromHash(paramName: string): string | null {
     if (secret) {
         // Store in session for persistence
         storeSessionParameter(paramName, secret);
-        // Mark for deferred cleanup instead of immediate removal
-        pendingCleanups.add(paramName);
+        // Immediately clear the secret parameter from URL to avoid history leakage
+        clearParamFromHash(paramName);
         return secret;
     }
 
@@ -201,27 +198,11 @@ export function getSecretFromHash(paramName: string): string | null {
  * - Hash fragments are not sent to the server
  * - Not logged in server access logs
  * - Not sent in HTTP Referer headers
- * - Automatically cleared from URL after extraction (deferred to avoid router conflicts)
+ * - Automatically cleared from URL after extraction
  *
  * @param paramName - The name of the secret parameter
  * @returns The secret value if found, null otherwise
  */
 export function getSecretParameter(paramName: string): string | null {
     return getSecretFromHash(paramName);
-}
-
-/**
- * Flushes all pending URL cleanups
- * Should be called after the app has rendered at least once to avoid router conflicts
- */
-export function flushPendingUrlCleanups(): void {
-    if (pendingCleanups.size === 0) {
-        return;
-    }
-
-    for (const paramName of pendingCleanups) {
-        clearParamFromHash(paramName);
-    }
-
-    pendingCleanups.clear();
 }

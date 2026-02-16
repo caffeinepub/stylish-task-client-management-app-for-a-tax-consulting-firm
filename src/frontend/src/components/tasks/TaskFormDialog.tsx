@@ -19,8 +19,8 @@ const STATUS_NONE_SENTINEL = '__none__';
 
 export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDialogProps) {
   const isEditing = !!task;
-  const { mutate: createTask, isPending: isCreating, error: createError } = useCreateTask();
-  const { mutate: updateTask, isPending: isUpdating, error: updateError } = useUpdateTask();
+  const { mutate: createTask, isPending: isCreating, error: createError, reset: resetCreate } = useCreateTask();
+  const { mutate: updateTask, isPending: isUpdating, error: updateError, reset: resetUpdate } = useUpdateTask();
 
   const [clientName, setClientName] = useState('');
   const [taskCategory, setTaskCategory] = useState('');
@@ -36,37 +36,46 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
   const [outstandingAmount, setOutstandingAmount] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('');
 
+  // Reset form when dialog opens/closes or task changes
   useEffect(() => {
-    if (task) {
-      setClientName(task.clientName);
-      setTaskCategory(task.taskCategory);
-      setSubCategory(task.subCategory);
-      setStatus(task.status || STATUS_NONE_SENTINEL);
-      setComment(task.comment || '');
-      setAssignedName(task.assignedName || '');
-      setDueDate(task.dueDate ? new Date(Number(task.dueDate)).toISOString().split('T')[0] : '');
-      setAssignmentDate(task.assignmentDate ? new Date(Number(task.assignmentDate)).toISOString().split('T')[0] : '');
-      setCompletionDate(task.completionDate ? new Date(Number(task.completionDate)).toISOString().split('T')[0] : '');
-      setBill(task.bill !== undefined && task.bill !== null ? task.bill.toString() : '');
-      setAdvanceReceived(task.advanceReceived !== undefined && task.advanceReceived !== null ? task.advanceReceived.toString() : '');
-      setOutstandingAmount(task.outstandingAmount !== undefined && task.outstandingAmount !== null ? task.outstandingAmount.toString() : '');
-      setPaymentStatus(task.paymentStatus || '');
-    } else {
-      setClientName('');
-      setTaskCategory('');
-      setSubCategory('');
-      setStatus(STATUS_NONE_SENTINEL);
-      setComment('');
-      setAssignedName('');
-      setDueDate('');
-      setAssignmentDate('');
-      setCompletionDate('');
-      setBill('');
-      setAdvanceReceived('');
-      setOutstandingAmount('');
-      setPaymentStatus('');
+    if (open) {
+      // Reset errors when opening
+      resetCreate();
+      resetUpdate();
+
+      if (task) {
+        // Edit mode: populate all fields from task
+        setClientName(task.clientName);
+        setTaskCategory(task.taskCategory);
+        setSubCategory(task.subCategory);
+        setStatus(task.status || STATUS_NONE_SENTINEL);
+        setComment(task.comment || '');
+        setAssignedName(task.assignedName || '');
+        setDueDate(task.dueDate ? new Date(Number(task.dueDate)).toISOString().split('T')[0] : '');
+        setAssignmentDate(task.assignmentDate ? new Date(Number(task.assignmentDate)).toISOString().split('T')[0] : '');
+        setCompletionDate(task.completionDate ? new Date(Number(task.completionDate)).toISOString().split('T')[0] : '');
+        setBill(task.bill !== undefined && task.bill !== null ? task.bill.toString() : '');
+        setAdvanceReceived(task.advanceReceived !== undefined && task.advanceReceived !== null ? task.advanceReceived.toString() : '');
+        setOutstandingAmount(task.outstandingAmount !== undefined && task.outstandingAmount !== null ? task.outstandingAmount.toString() : '');
+        setPaymentStatus(task.paymentStatus || '');
+      } else {
+        // Create mode: clear all fields
+        setClientName('');
+        setTaskCategory('');
+        setSubCategory('');
+        setStatus(STATUS_NONE_SENTINEL);
+        setComment('');
+        setAssignedName('');
+        setDueDate('');
+        setAssignmentDate('');
+        setCompletionDate('');
+        setBill('');
+        setAdvanceReceived('');
+        setOutstandingAmount('');
+        setPaymentStatus('');
+      }
     }
-  }, [task, open]);
+  }, [task, open, resetCreate, resetUpdate]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,32 +142,35 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="clientName">Client Name</Label>
+              <Label htmlFor="clientName">Client Name *</Label>
               <Input
                 id="clientName"
                 value={clientName}
                 onChange={(e) => setClientName(e.target.value)}
                 placeholder="Enter client name"
+                required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="taskCategory">Task Category</Label>
+              <Label htmlFor="taskCategory">Task Category *</Label>
               <Input
                 id="taskCategory"
                 value={taskCategory}
                 onChange={(e) => setTaskCategory(e.target.value)}
                 placeholder="e.g., GST Return, Income Tax"
+                required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="subCategory">Sub Category</Label>
+              <Label htmlFor="subCategory">Sub Category *</Label>
               <Input
                 id="subCategory"
                 value={subCategory}
                 onChange={(e) => setSubCategory(e.target.value)}
                 placeholder="e.g., GSTR-1, ITR-4"
+                required
               />
             </div>
 

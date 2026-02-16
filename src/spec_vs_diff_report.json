@@ -1,37 +1,42 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-15T19:00:54.204Z",
-  "summary": "Diff implements a startup error fallback (error boundary + error screen), hardens /tasks validateSearch defensively, and gates current-user-profile fetching on authenticated+actor-ready. It also introduces deferred URL cleanup infrastructure, but the diff summary does not show the specific change that prevents getSecretParameter('caffeineAdminToken') from mutating the URL during initial bootstrap or that preserves admin-token initialization behavior.",
-  "missing_requirements": [
-    {
-      "id": "REQ-53",
-      "requirement": "Prevent URL mutation during initial router/app bootstrap caused by reading caffeineAdminToken via getSecretParameter(...) (history.replaceState), ensuring root route renders before any URL cleanup; admin-token initialization must still work and token cleared only after at least one render.",
-      "reason": "While a deferred URL cleanup hook and pending cleanup tracking are added, the diff summary does not show changes to the actual admin-token read/cleanup path (e.g., getSecretParameter('caffeineAdminToken') behavior) to guarantee no history.replaceState runs during initial bootstrap and that token initialization + post-render clearing still occurs.",
-      "evidence": [
-        "frontend/src/hooks/useDeferredUrlCleanup.ts",
-        "frontend/src/utils/urlParams.ts (truncated)",
-        "frontend/src/App.tsx"
-      ]
-    }
-  ],
+  "generatedAt": "2026-02-16T01:13:38.490Z",
+  "summary": "Diff implements task edit dialog state initialization/population for edit mode and introduces explicit clientName/assignedName sort support via a shared sort utility and Tasks page wiring. Diff also adds unrelated router/search validation and startup/error-handling changes, plus URL param utilities and an Assignees route/nav not requested by the BuildRequest.",
+  "missing_requirements": [],
   "hallucinated_features": [
     {
-      "description": "Added a new /assignees route (AssigneesPage) to the router.",
-      "reason": "BuildRequest is narrowly scoped to fixing root-route startup crash/blank screen and does not request adding new routes/pages.",
+      "description": "Added defensive TanStack Router search validation for /tasks and startup error boundary/error screens behavior not requested by REQ-57/REQ-58.",
+      "reason": "BuildRequest only asks to fix task edit flow and sorting; it does not request router-level validation or startup error handling changes.",
       "evidence": [
         "frontend/src/App.tsx"
       ]
+    },
+    {
+      "description": "Introduced/modified URL parameter persistence and hash cleanup utilities unrelated to task edit flow or sorting.",
+      "reason": "BuildRequest does not mention URL param persistence/cleanup beyond the tasks edit/sort fixes.",
+      "evidence": [
+        "frontend/src/utils/urlParams.ts",
+        "frontend/src/hooks/useDeferredUrlCleanup.ts"
+      ]
+    },
+    {
+      "description": "Added/connected an Assignees page route (and referenced nav item in summaries) beyond the requested sorting behavior.",
+      "reason": "REQ-58 requires assignee-wise sorting in Tasks page UI, not adding a dedicated Assignees route/page.",
+      "evidence": [
+        "frontend/src/App.tsx",
+        "frontend-file-summaries.txt"
+      ]
     }
   ],
-  "confidence": 0.68,
+  "confidence": 0.72,
   "changed_files": [
     "frontend-file-summaries.txt",
     "frontend/src/App.tsx",
-    "frontend/src/components/errors/AppStartupErrorBoundary.tsx",
-    "frontend/src/components/errors/StartupErrorScreen.tsx",
-    "frontend/src/hooks/useCurrentUserProfile.ts",
+    "frontend/src/components/tasks/TaskFormDialog.tsx",
     "frontend/src/hooks/useDeferredUrlCleanup.ts",
+    "frontend/src/pages/TasksPage.tsx",
+    "frontend/src/utils/taskSort.ts",
     "frontend/src/utils/urlParams.ts",
     "project_state.json"
   ]

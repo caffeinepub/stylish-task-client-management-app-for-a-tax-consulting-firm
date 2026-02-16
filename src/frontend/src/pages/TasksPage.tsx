@@ -176,6 +176,11 @@ export default function TasksPage() {
     setDialogOpen(true);
   };
 
+  const handleAddTask = () => {
+    setEditingTask(undefined);
+    setDialogOpen(true);
+  };
+
   const handleDialogOpenChange = (open: boolean) => {
     setDialogOpen(open);
     if (!open) {
@@ -248,7 +253,7 @@ export default function TasksPage() {
             Bulk Upload
           </Button>
           <Button 
-            onClick={() => setDialogOpen(true)}
+            onClick={handleAddTask}
             className="bg-[oklch(0.50_0.08_130)] hover:bg-[oklch(0.45_0.08_130)] dark:bg-[oklch(0.65_0.08_130)] dark:hover:bg-[oklch(0.70_0.08_130)]"
           >
             <Plus className="mr-2 h-4 w-4" />
@@ -410,7 +415,7 @@ export default function TasksPage() {
                   : 'Try adjusting your search or filters'}
               </p>
               {tasks && tasks.length === 0 && (
-                <Button onClick={() => setDialogOpen(true)}>
+                <Button onClick={handleAddTask}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add Your First Task
                 </Button>
@@ -451,7 +456,7 @@ export default function TasksPage() {
                         <Checkbox
                           checked={selectedTaskIds.has(task.id.toString())}
                           onCheckedChange={(checked) => handleSelectTask(task.id.toString(), checked as boolean)}
-                          aria-label={`Select task ${task.clientName}`}
+                          aria-label={`Select task ${task.id}`}
                         />
                       </TableCell>
                       <TableCell className="font-medium">{task.clientName}</TableCell>
@@ -472,8 +477,8 @@ export default function TasksPage() {
                       <TableCell>{formatCurrency(task.outstandingAmount)}</TableCell>
                       <TableCell>{formatOptionalText(task.paymentStatus)}</TableCell>
                       <TableCell>
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           size="sm"
                           onClick={() => handleEditTask(task)}
                         >
@@ -489,12 +494,17 @@ export default function TasksPage() {
         </CardContent>
       </Card>
 
-      <TaskFormDialog 
-        open={dialogOpen} 
+      <TaskFormDialog
+        open={dialogOpen}
         onOpenChange={handleDialogOpenChange}
         task={editingTask}
       />
-      <TaskBulkUploadDialog open={bulkUploadOpen} onOpenChange={setBulkUploadOpen} />
+
+      <TaskBulkUploadDialog
+        open={bulkUploadOpen}
+        onOpenChange={setBulkUploadOpen}
+      />
+
       <TaskBulkEditDialog
         open={bulkEditOpen}
         onOpenChange={setBulkEditOpen}
@@ -504,10 +514,9 @@ export default function TasksPage() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Selected Tasks</AlertDialogTitle>
+            <AlertDialogTitle>Delete Tasks</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete {selectedTaskIds.size} task{selectedTaskIds.size !== 1 ? 's' : ''}?
-              This action cannot be undone.
+              Are you sure you want to delete {selectedTaskIds.size} task{selectedTaskIds.size !== 1 ? 's' : ''}? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

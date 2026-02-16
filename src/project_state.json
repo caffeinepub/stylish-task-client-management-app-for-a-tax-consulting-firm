@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 31,
+  "projectStateVersion": 33,
   "summary": "Build a stylish Task/Client Management app for a tax consulting firm.",
   "architectural_notes": [
     "Dashboard should support interactive drill-down: clicking an aggregate metric navigates/filters to the corresponding Tasks list view (e.g., by category/status) and shows the matching items.",
@@ -12,7 +12,8 @@
   ],
   "known_issues": [
     "Single task addition (Add Task dialog) is not working while bulk task addition works; likely due to Add Task form crash related to dropdown/select rendering/default values.",
-    "Production app shows a fully blank page (not loading) across routes (e.g., /tasks and /dashboard), consistent with a root route crash/hang before initial render (TanStack Router + async root init + validateSearch interaction suspected)."
+    "Production app shows a fully blank page (not loading) across routes (e.g., /tasks and /dashboard), consistent with a root route crash/hang before initial render (TanStack Router + async root init + validateSearch interaction suspected).",
+    "Task edit flow is not working (user reports cannot edit tasks)."
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -397,6 +398,22 @@
       "title": "Add a user-visible fallback for unexpected initialization errors at the top level so the UI never remains fully blank. The fallback should display a clear English error message and a reload action, without exposing sensitive details.",
       "reqIds": [
         "REQ-56"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-single-task-edit-flow-so-that-clicking-edit-on-a-task-reliably-opens-the-edit-dialog-pre-fills-the-form-with-the-selected-task-s-current-values-and-successfully-saves-updates-via-the-existing-updatetask-api-including-optional-fields-like-status-comment-assignedname-dates-and-amounts",
+      "title": "Fix the single-task edit flow so that clicking Edit on a task reliably opens the edit dialog, pre-fills the form with the selected task’s current values, and successfully saves updates via the existing updateTask API (including optional fields like status, comment, assignedName, dates, and amounts).",
+      "reqIds": [
+        "REQ-57"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-task-sorting-supports-both-client-wise-and-assignee-wise-sorting-in-the-tasks-page-ui-and-that-selecting-these-sort-options-actually-reorders-the-visible-task-table-accordingly",
+      "title": "Ensure task sorting supports both client-wise and assignee-wise sorting in the Tasks page UI and that selecting these sort options actually reorders the visible task table accordingly.",
+      "reqIds": [
+        "REQ-58"
       ],
       "version": 1
     }

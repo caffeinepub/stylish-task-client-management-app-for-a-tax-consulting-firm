@@ -1,94 +1,55 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix TanStack Router startup blank-screen by deferring URL cleanup, hardening init queries and search validation, and adding top-level fallback UI",
+  "title": "Fix Tasks edit dialog flow and client/assignee sorting",
   "requirements": [
     {
-      "id": "REQ-53",
-      "summary": "Prevent URL mutation during initial router/bootstrap by deferring caffeineAdminToken hash cleanup until after first render while preserving admin-token initialization.",
+      "id": "REQ-57",
+      "summary": "Make single-task Edit reliably open TaskFormDialog in edit mode, prefill values, and persist updates through updateTask with good success/error UX.",
       "acceptanceCriteria": [
-        "Loading the app at /, /dashboard, /tasks, or /clients no longer results in a fully blank screen.",
-        "The app renders either the Signed Out screen (when not authenticated) or the authenticated layout (when authenticated) without requiring a hard refresh.",
-        "Admin-token initialization still works: if caffeineAdminToken is present in the URL hash, access control is initialized successfully, and the token is cleared only after the app has rendered at least once (no router hang).",
-        "No new console errors are introduced during initial load."
+        "From the Tasks page, clicking a task row’s Edit action opens the TaskFormDialog in 'Edit Task' mode (not 'Create New Task').",
+        "The edit dialog fields are populated with the existing task values (including optional fields when present).",
+        "Submitting the edit dialog calls the updateTask mutation and closes the dialog on success.",
+        "After a successful update, the updated values are visible in the Tasks table without requiring a manual page refresh.",
+        "If the update fails (e.g., backend trap), a clear error message is shown in the dialog and the dialog remains open."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/utils/urlParams.ts",
+          "path": "frontend/src/pages/TasksPage.tsx",
           "operation": "modify",
-          "description": "Change secret-parameter handling so getSecretParameter('caffeineAdminToken') never calls history.replaceState during synchronous startup; instead mark the secret for later removal (after it has been persisted to sessionStorage) and provide an exported helper to flush/clear pending secret params from the URL hash safely after initial render."
+          "description": "Fix dialog wiring so Edit always opens TaskFormDialog with the selected task bound (pass task={editingTask}), and ensure Add Task explicitly clears any previous editingTask before opening. Use a single onOpenChange handler that clears editingTask on close to prevent stale state causing 'Create New Task' mode or incorrect prefills."
         },
         {
-          "path": "frontend/src/hooks/useDeferredUrlCleanup.ts",
-          "operation": "create",
-          "description": "Add a small hook that runs in a post-render effect to flush pending URL secret cleanup (e.g., caffeineAdminToken) using the new helper from utils/urlParams, ensuring cleanup occurs only after the app has rendered at least once."
+          "path": "frontend/src/components/tasks/TaskFormDialog.tsx",
+          "operation": "modify",
+          "description": "Harden edit-mode form initialization and submission: ensure the form always re-initializes from the provided task when opening for edit (including optional fields like status/comment/assignedName/dates/amounts), and improve in-dialog error rendering so backend failures produce a clear message while keeping the dialog open."
         },
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/hooks/tasks.ts",
           "operation": "modify",
-          "description": "Wire deferred URL cleanup into RootComponent by calling the new useDeferredUrlCleanup hook early in the component lifecycle so the router/root route can render before any hash cleanup occurs."
+          "description": "Ensure the updateTask mutation reliably refreshes the Tasks table after a successful update by keeping React Query cache invalidation/refetch behavior consistent for both the tasks list and the edited task detail query."
         }
       ]
     },
     {
-      "id": "REQ-54",
-      "summary": "Make root initialization resilient by gating current-user-profile fetching so it cannot throw or run in unauthenticated/pre-actor states.",
+      "id": "REQ-58",
+      "summary": "Ensure Tasks page sorting supports client-wise and assignee-wise ordering and visibly reorders the table, handling missing assignees consistently.",
       "acceptanceCriteria": [
-        "When not authenticated, the Signed Out screen renders without any runtime exceptions related to current user profile fetching.",
-        "When authenticated, the root route shows the existing loading state while profile is loading and then renders the app layout normally.",
-        "The app does not throw 'Actor not available' (or any other uncaught error) that results in a blank screen during startup."
+        "The Tasks page 'Sort by' control includes options for 'Client Name' and 'Assignee'.",
+        "When 'Client Name' is selected, the tasks table ordering changes based on clientName (ascending/descending based on the current direction toggle).",
+        "When 'Assignee' is selected, the tasks table ordering changes based on assignedName (ascending/descending based on the current direction toggle).",
+        "Tasks with missing assignedName do not break sorting and are consistently placed after tasks with an assignedName."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useCurrentUserProfile.ts",
+          "path": "frontend/src/utils/taskSort.ts",
           "operation": "modify",
-          "description": "Update useGetCallerUserProfile to be fully defensive: gate the React Query enablement on authenticated identity readiness (not just actor existence), and ensure the query function never throws on missing actor/identity; instead avoid running or return a safe value without triggering uncaught exceptions during startup."
+          "description": "Adjust assignee sorting to treat empty-string assignedName values as missing (in addition to null/undefined) so they sort consistently after real assignees in both directions, without breaking comparisons."
         },
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/pages/TasksPage.tsx",
           "operation": "modify",
-          "description": "Align RootComponent loading and profile-setup gating with the updated profile hook semantics (authenticated-only fetching), ensuring SignedOutScreen renders without triggering profile query execution in guest/anonymous mode."
-        }
-      ]
-    },
-    {
-      "id": "REQ-55",
-      "summary": "Harden /tasks validateSearch to be fully defensive and return safe defaults for missing/malformed search params.",
-      "acceptanceCriteria": [
-        "Navigating to /tasks with no search params, partial params, or malformed params (e.g., overdue=123, status[]=x) does not crash or hang the app.",
-        "The tasks page still receives the expected optional search parameters when they are present (overdue/status/taskCategory)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Replace the current unsafe casts in the /tasks route validateSearch with defensive normalization (accept only expected primitive string values, ignore arrays/objects/unexpected types, and return undefined defaults when invalid) so route validation cannot throw or block rendering."
-        }
-      ]
-    },
-    {
-      "id": "REQ-56",
-      "summary": "Add a user-visible top-level error fallback so unexpected initialization errors show a clear message and reload action instead of a blank screen.",
-      "acceptanceCriteria": [
-        "If an unexpected error occurs during startup, the user sees an error screen instead of a blank page.",
-        "The error screen includes a clear message (English) and a button/link to reload the page.",
-        "Normal operation is unchanged when no error occurs."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/errors/AppStartupErrorBoundary.tsx",
-          "operation": "create",
-          "description": "Create a top-level React error boundary component that renders a minimal, non-sensitive English error screen with a Reload action (e.g., triggers window.location.reload) to prevent fully blank UI on startup failures."
-        },
-        {
-          "path": "frontend/src/components/errors/StartupErrorScreen.tsx",
-          "operation": "create",
-          "description": "Create a presentational error screen used by the error boundary with a clear generic message and reload control; avoid exposing stack traces or sensitive details."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Wrap RouterProvider with the new AppStartupErrorBoundary and (optionally) attach a router/root-level errorComponent for route render errors so any unexpected initialization error results in the fallback UI rather than a blank screen."
+          "description": "Verify the 'Sort by' control is wired to the SortField values used by sortTasks for both 'Client Name' (clientName) and 'Assignee' (assignedName), so changing the selection triggers a visible reorder of the rendered task rows."
         }
       ]
     }
