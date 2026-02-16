@@ -110,7 +110,7 @@ export function clearSessionParameter(key: string): void {
  * // After clearParamFromHash('caffeineAdminToken')
  * // URL: https://app.com/#/dashboard?other=value
  */
-function clearParamFromHash(paramName: string): void {
+export function clearParamFromHash(paramName: string): void {
     if (!window.history.replaceState) {
         return;
     }
@@ -149,6 +149,26 @@ function clearParamFromHash(paramName: string): void {
     // If we still have content in the hash, keep it; otherwise remove the hash entirely
     const newUrl = window.location.pathname + window.location.search + (newHash ? '#' + newHash : '');
     window.history.replaceState(null, '', newUrl);
+}
+
+/**
+ * Reads a secret from the URL hash fragment WITHOUT mutating the URL
+ * This is a non-mutating version that only reads the value without clearing it
+ * Used for deferred URL cleanup where we want to read first, then clean up later
+ *
+ * @param paramName - The name of the secret parameter
+ * @returns The secret value if found in hash, null otherwise
+ */
+export function readSecretFromHashNonMutating(paramName: string): string | null {
+    const hash = window.location.hash;
+    if (!hash || hash.length <= 1) {
+        return null;
+    }
+
+    // Remove the leading #
+    const hashContent = hash.substring(1);
+    const params = new URLSearchParams(hashContent);
+    return params.get(paramName);
 }
 
 /**

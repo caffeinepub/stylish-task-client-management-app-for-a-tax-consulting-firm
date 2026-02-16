@@ -1,55 +1,33 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix Tasks edit dialog flow and client/assignee sorting",
+  "title": "Fix Radix Select crash for empty/invalid task status in Task edit flow",
   "requirements": [
     {
-      "id": "REQ-57",
-      "summary": "Make single-task Edit reliably open TaskFormDialog in edit mode, prefill values, and persist updates through updateTask with good success/error UX.",
+      "id": "REQ-63",
+      "summary": "Harden Task status Select so empty/whitespace/invalid stored statuses never control Radix Select with an empty string and always fall back to a safe non-empty sentinel; ensure sentinel submits status: null.",
       "acceptanceCriteria": [
-        "From the Tasks page, clicking a task row’s Edit action opens the TaskFormDialog in 'Edit Task' mode (not 'Create New Task').",
-        "The edit dialog fields are populated with the existing task values (including optional fields when present).",
-        "Submitting the edit dialog calls the updateTask mutation and closes the dialog on success.",
-        "After a successful update, the updated values are visible in the Tasks table without requiring a manual page refresh.",
-        "If the update fails (e.g., backend trap), a clear error message is shown in the dialog and the dialog remains open."
+        "Opening the Edit Task dialog for a task with status === \"\" does not crash and renders the dialog normally.",
+        "In frontend/src/components/tasks/TaskFormDialog.tsx, when initializing edit-mode state, empty-string/whitespace status values are mapped to the existing STATUS_NONE_SENTINEL (\"__none__\") instead of being passed through to the Select as \"\".",
+        "If an existing task has a status value that is not in ALLOWED_TASK_STATUSES (e.g., legacy or malformed), the dialog does not crash and the status field falls back to the sentinel (\"None\") or a normalized allowed value (if normalization is applied).",
+        "Submitting an edited task with the sentinel selected results in sending status: null (i.e., clearing status) rather than sending an empty string.",
+        "No SelectItem in the Task edit flow uses value=\"\" and no Select component in the Task edit flow receives \"\" as its controlled value."
       ],
       "file_operations": [
-        {
-          "path": "frontend/src/pages/TasksPage.tsx",
-          "operation": "modify",
-          "description": "Fix dialog wiring so Edit always opens TaskFormDialog with the selected task bound (pass task={editingTask}), and ensure Add Task explicitly clears any previous editingTask before opening. Use a single onOpenChange handler that clears editingTask on close to prevent stale state causing 'Create New Task' mode or incorrect prefills."
-        },
         {
           "path": "frontend/src/components/tasks/TaskFormDialog.tsx",
           "operation": "modify",
-          "description": "Harden edit-mode form initialization and submission: ensure the form always re-initializes from the provided task when opening for edit (including optional fields like status/comment/assignedName/dates/amounts), and improve in-dialog error rendering so backend failures produce a clear message while keeping the dialog open."
+          "description": "Add a small status coercion/normalization step when populating edit-mode state so task.status values that are empty/whitespace or not in ALLOWED_TASK_STATUSES never reach the <Select> as \"\" or an invalid value; map them to STATUS_NONE_SENTINEL (\"__none__\") or a normalized allowed value. Ensure submit logic continues to translate STATUS_NONE_SENTINEL to status: null (never an empty string)."
         },
         {
-          "path": "frontend/src/hooks/tasks.ts",
+          "path": "frontend/src/constants/taskStatus.ts",
           "operation": "modify",
-          "description": "Ensure the updateTask mutation reliably refreshes the Tasks table after a successful update by keeping React Query cache invalidation/refetch behavior consistent for both the tasks list and the edited task detail query."
-        }
-      ]
-    },
-    {
-      "id": "REQ-58",
-      "summary": "Ensure Tasks page sorting supports client-wise and assignee-wise ordering and visibly reorders the table, handling missing assignees consistently.",
-      "acceptanceCriteria": [
-        "The Tasks page 'Sort by' control includes options for 'Client Name' and 'Assignee'.",
-        "When 'Client Name' is selected, the tasks table ordering changes based on clientName (ascending/descending based on the current direction toggle).",
-        "When 'Assignee' is selected, the tasks table ordering changes based on assignedName (ascending/descending based on the current direction toggle).",
-        "Tasks with missing assignedName do not break sorting and are consistently placed after tasks with an assignedName."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/utils/taskSort.ts",
-          "operation": "modify",
-          "description": "Adjust assignee sorting to treat empty-string assignedName values as missing (in addition to null/undefined) so they sort consistently after real assignees in both directions, without breaking comparisons."
+          "description": "Improve status normalization/validation utilities to be null/whitespace-safe (e.g., trim input before mapping) so TaskFormDialog can reliably normalize legacy values and detect unknown/invalid statuses for fallback to the sentinel."
         },
         {
-          "path": "frontend/src/pages/TasksPage.tsx",
+          "path": "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
           "operation": "modify",
-          "description": "Verify the 'Sort by' control is wired to the SortField values used by sortTasks for both 'Client Name' (clientName) and 'Assignee' (assignedName), so changing the selection triggers a visible reorder of the rendered task rows."
+          "description": "Remove any Radix <SelectItem> that uses value=\"\" by introducing a non-empty sentinel for the bulk-edit 'Leave unchanged' option, and ensure the controlled <Select> value never becomes \"\". Keep behavior the same (no status update applied when 'Leave unchanged' is selected)."
         }
       ]
     }

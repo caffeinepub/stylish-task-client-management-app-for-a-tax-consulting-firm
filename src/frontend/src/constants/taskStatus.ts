@@ -21,10 +21,12 @@ const LEGACY_STATUS_MAP: Record<string, AllowedTaskStatus> = {
 /**
  * Normalize a status value to one of the allowed statuses
  * Maps legacy values (To Do, Done, Blocked) to new equivalents
+ * Returns empty string for null/undefined/whitespace-only values
  */
 export function normalizeStatus(status: string | undefined | null): string {
-  if (!status) return '';
-  return LEGACY_STATUS_MAP[status] || status;
+  if (!status || status.trim() === '') return '';
+  const trimmed = status.trim();
+  return LEGACY_STATUS_MAP[trimmed] || trimmed;
 }
 
 /**
@@ -40,7 +42,9 @@ export function isCompletedStatus(status: string | undefined | null): boolean {
  * Check if a status value is valid (one of the allowed statuses)
  */
 export function isValidStatus(status: string): boolean {
-  return ALLOWED_TASK_STATUSES.includes(status as AllowedTaskStatus);
+  if (!status || status.trim() === '') return false;
+  const normalized = normalizeStatus(status);
+  return ALLOWED_TASK_STATUSES.includes(normalized as AllowedTaskStatus);
 }
 
 /**
@@ -49,4 +53,18 @@ export function isValidStatus(status: string): boolean {
 export function getStatusDisplayLabel(status: string | undefined | null): string {
   if (!status) return 'Pending';
   return normalizeStatus(status);
+}
+
+/**
+ * Safely coerce a status value to a non-empty string suitable for Select components
+ * Returns the sentinel value for null/undefined/empty/whitespace/invalid statuses
+ */
+export function coerceStatusForSelect(status: string | undefined | null, sentinel: string): string {
+  if (!status || status.trim() === '') return sentinel;
+  const normalized = normalizeStatus(status);
+  // If normalized is empty or not in allowed list, use sentinel
+  if (!normalized || !ALLOWED_TASK_STATUSES.includes(normalized as AllowedTaskStatus)) {
+    return sentinel;
+  }
+  return normalized;
 }

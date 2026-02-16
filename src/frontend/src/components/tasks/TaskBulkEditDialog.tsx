@@ -15,10 +15,12 @@ interface TaskBulkEditDialogProps {
   selectedTasks: Task[];
 }
 
+const STATUS_UNCHANGED_SENTINEL = '__unchanged__';
+
 export default function TaskBulkEditDialog({ open, onOpenChange, selectedTasks }: TaskBulkEditDialogProps) {
   const { mutate: bulkUpdateTasks, isPending } = useBulkUpdateTasks();
 
-  const [status, setStatus] = useState<string>('');
+  const [status, setStatus] = useState<string>(STATUS_UNCHANGED_SENTINEL);
   const [comment, setComment] = useState('');
   const [assignedName, setAssignedName] = useState('');
   const [dueDate, setDueDate] = useState('');
@@ -31,7 +33,7 @@ export default function TaskBulkEditDialog({ open, onOpenChange, selectedTasks }
 
   useEffect(() => {
     if (!open) {
-      setStatus('');
+      setStatus(STATUS_UNCHANGED_SENTINEL);
       setComment('');
       setAssignedName('');
       setDueDate('');
@@ -50,7 +52,10 @@ export default function TaskBulkEditDialog({ open, onOpenChange, selectedTasks }
     const updates = selectedTasks.map((task) => {
       const update: any = {};
 
-      if (status) update.status = status;
+      // Only apply status if user selected a real status (not the unchanged sentinel)
+      if (status !== STATUS_UNCHANGED_SENTINEL) {
+        update.status = status;
+      }
       if (comment) update.comment = comment;
       if (assignedName) update.assignedName = assignedName;
       if (dueDate) update.dueDate = BigInt(new Date(dueDate).getTime());
@@ -90,7 +95,7 @@ export default function TaskBulkEditDialog({ open, onOpenChange, selectedTasks }
                   <SelectValue placeholder="Leave unchanged" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Leave unchanged</SelectItem>
+                  <SelectItem value={STATUS_UNCHANGED_SENTINEL}>Leave unchanged</SelectItem>
                   {ALLOWED_TASK_STATUSES.map((statusOption) => (
                     <SelectItem key={statusOption} value={statusOption}>
                       {statusOption}
@@ -176,7 +181,7 @@ export default function TaskBulkEditDialog({ open, onOpenChange, selectedTasks }
               />
             </div>
 
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-2">
               <Label htmlFor="paymentStatus">Payment Status</Label>
               <Input
                 id="paymentStatus"
@@ -203,7 +208,7 @@ export default function TaskBulkEditDialog({ open, onOpenChange, selectedTasks }
               Cancel
             </Button>
             <Button type="submit" disabled={isPending}>
-              {isPending ? 'Updating...' : `Update ${selectedTasks.length} Task${selectedTasks.length !== 1 ? 's' : ''}`}
+              {isPending ? 'Updating...' : 'Update Tasks'}
             </Button>
           </DialogFooter>
         </form>

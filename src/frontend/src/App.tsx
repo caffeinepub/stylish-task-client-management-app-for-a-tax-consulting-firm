@@ -1,6 +1,7 @@
 import { createRouter, RouterProvider, createRoute, createRootRoute, Outlet } from '@tanstack/react-router';
 import { useInternetIdentity } from './hooks/useInternetIdentity';
 import { useGetCallerUserProfile } from './hooks/useCurrentUserProfile';
+import { useDeferredUrlCleanup } from './hooks/useDeferredUrlCleanup';
 import AppLayout from './components/layout/AppLayout';
 import ProfileSetupModal from './components/auth/ProfileSetupModal';
 import DashboardPage from './pages/DashboardPage';
@@ -16,6 +17,9 @@ import StartupErrorScreen from './components/errors/StartupErrorScreen';
 function RootComponent() {
   const { identity, isInitializing } = useInternetIdentity();
   const { data: userProfile, isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
+  
+  // Perform deferred URL cleanup in post-mount effect
+  useDeferredUrlCleanup();
 
   const isAuthenticated = !!identity;
 

@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 33,
+  "projectStateVersion": 37,
   "summary": "Build a stylish Task/Client Management app for a tax consulting firm.",
   "architectural_notes": [
     "Dashboard should support interactive drill-down: clicking an aggregate metric navigates/filters to the corresponding Tasks list view (e.g., by category/status) and shows the matching items.",
@@ -8,12 +8,16 @@
     "Single Add Task form should not depend on dropdown/select components for Client Name or Assigned Name; treat them as optional free-text fields.",
     "Tasks list view (Task view) should display the full set of task components/fields as columns (not a truncated subset), with sensible responsive behavior if needed (e.g., horizontal scroll/column hiding on small screens).",
     "Tasks list sorting controls should include sort by Client Name and by Assigned Name (assignee/team).",
-    "TanStack Router may hang on a blank screen if routes use validateSearch while the root route performs async initialization (e.g., Internet Identity/user loading); ensure root-route initialization and search validation are wired to avoid pre-render hangs."
+    "TanStack Router may hang on a blank screen if routes use validateSearch while the root route performs async initialization (e.g., Internet Identity/user loading); ensure root-route initialization and search validation are wired to avoid pre-render hangs.",
+    "Avoid reading/mutating URL (e.g., via getSecretParameter('caffeineAdminToken')/history.replaceState) during initial router bootstrap; ensure useActor/root init defers any URL cleanup until after the router has rendered.",
+    "When opening the Task edit dialog, treat stored task.status === \"\" (empty string) the same as null/undefined and map it to a safe non-empty sentinel value so Radix Select never receives \"\" as its controlled value."
   ],
   "known_issues": [
     "Single task addition (Add Task dialog) is not working while bulk task addition works; likely due to Add Task form crash related to dropdown/select rendering/default values.",
     "Production app shows a fully blank page (not loading) across routes (e.g., /tasks and /dashboard), consistent with a root route crash/hang before initial render (TanStack Router + async root init + validateSearch interaction suspected).",
-    "Task edit flow is not working (user reports cannot edit tasks)."
+    "Task edit flow is not working (user reports cannot edit tasks).",
+    "App stuck on Loading screen/blank UI again due to root route initialization hang caused by getSecretParameter('caffeineAdminToken') running at startup and mutating the URL (history.replaceState), triggering TanStack Router freeze.",
+    "Task edit dialog can crash / fail to open when a stored task has status set to an empty string (\"\"), triggering Radix Select error: \"A Select.Item must have a value prop that is not an empty string.\""
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -414,6 +418,46 @@
       "title": "Ensure task sorting supports both client-wise and assignee-wise sorting in the Tasks page UI and that selecting these sort options actually reorders the visible task table accordingly.",
       "reqIds": [
         "REQ-58"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-stop-mutating-the-browser-url-during-initial-app-router-bootstrap-so-the-app-cannot-freeze-on-the-loading-screen-specifically-ensure-the-admin-token-handling-caffeineadmintoken-never-calls-history-replacestate-or-otherwise-changes-window-location-during-the-initial-render-route-creation-path",
+      "title": "Stop mutating the browser URL during initial app/router bootstrap so the app cannot freeze on the Loading screen. Specifically, ensure the admin-token handling (caffeineAdminToken) never calls history.replaceState (or otherwise changes window.location) during the initial render/route creation path.",
+      "reqIds": [
+        "REQ-59"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-refactor-frontend-src-hooks-useactor-ts-so-actor-creation-does-not-read-secrets-in-a-way-that-triggers-url-cleanup-during-startup-remove-the-direct-call-to-getsecretparameter-caffeineadmintoken-from-the-react-query-actor-queryfn-and-instead-obtain-the-token-from-a-non-mutating-source-e-g-sessionstorage-during-actor-initialization",
+      "title": "Refactor frontend/src/hooks/useActor.ts so actor creation does not read secrets in a way that triggers URL cleanup during startup. Remove the direct call to getSecretParameter('caffeineAdminToken') from the React Query actor queryFn, and instead obtain the token from a non-mutating source (e.g., sessionStorage) during actor initialization.",
+      "reqIds": [
+        "REQ-60"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-deferred-admin-token-capture-url-cleanup-after-first-paint-by-using-the-existing-placeholder-hook-file-frontend-src-hooks-usedeferredurlcleanup-ts-the-deferred-flow-must-a-safely-extract-caffeineadmintoken-from-the-url-without-mutating-history-during-bootstrap-b-persist-it-to-sessionstorage-for-later-reads-by-useactor-and-c-then-clear-it-from-the-url-only-after-the-app-has-mounted-in-an-effect",
+      "title": "Implement deferred admin-token capture + URL cleanup after first paint by using the existing placeholder hook file frontend/src/hooks/useDeferredUrlCleanup.ts. The deferred flow must (a) safely extract caffeineAdminToken from the URL without mutating history during bootstrap, (b) persist it to sessionStorage for later reads by useActor, and (c) then clear it from the URL only after the app has mounted (in an effect).",
+      "reqIds": [
+        "REQ-61"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-frontend-src-utils-urlparams-ts-to-support-a-non-mutating-read-of-secrets-from-the-hash-i-e-a-function-that-can-read-caffeineadmintoken-without-calling-clearparamfromhash-history-replacestate-keep-all-user-facing-text-in-english-and-ensure-url-parsing-remains-defensive-for-both-hash-based-and-query-string-usage",
+      "title": "Update frontend/src/utils/urlParams.ts to support a non-mutating read of secrets from the hash (i.e., a function that can read caffeineAdminToken without calling clearParamFromHash / history.replaceState). Keep all user-facing text in English and ensure URL parsing remains defensive for both hash-based and query-string usage.",
+      "reqIds": [
+        "REQ-62"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-prevent-radix-select-crashes-in-the-task-create-edit-dialog-when-a-task-s-stored-status-is-an-empty-string-or-otherwise-missing-invalid-by-ensuring-the-status-select-is-never-controlled-with-and-always-maps-empty-whitespace-unknown-status-values-to-a-safe-non-empty-sentinel-option",
+      "title": "Prevent Radix Select crashes in the Task create/edit dialog when a task’s stored status is an empty string (\"\") or otherwise missing/invalid by ensuring the Status <Select> is never controlled with \"\" and always maps empty/whitespace/unknown status values to a safe non-empty sentinel option.",
+      "reqIds": [
+        "REQ-63"
       ],
       "version": 1
     }

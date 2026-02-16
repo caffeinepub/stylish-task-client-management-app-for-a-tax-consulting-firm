@@ -1,69 +1,41 @@
 {
   "kind": "build_request",
-  "title": "Fix Task edit flow and ensure client/assignee-wise task sorting works",
+  "title": "Fix Task edit crash when status is empty string",
   "priority": "high",
   "requirements": [
     {
-      "id": "REQ-57",
-      "text": "Fix the single-task edit flow so that clicking Edit on a task reliably opens the edit dialog, pre-fills the form with the selected task’s current values, and successfully saves updates via the existing updateTask API (including optional fields like status, comment, assignedName, dates, and amounts).",
+      "id": "REQ-63",
+      "text": "Prevent Radix Select crashes in the Task create/edit dialog when a task’s stored status is an empty string (\"\") or otherwise missing/invalid by ensuring the Status <Select> is never controlled with \"\" and always maps empty/whitespace/unknown status values to a safe non-empty sentinel option.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "recent-messages"
         ],
         "quotes": [
-          "edit task is not workimg"
+          "User: Apply the empty-status fix",
+          "User: while try to edit the task ,not working",
+          "A Select.Item must have a value prop that is not an empty string."
         ]
       },
       "acceptanceCriteria": [
-        "From the Tasks page, clicking a task row’s Edit action opens the TaskFormDialog in 'Edit Task' mode (not 'Create New Task').",
-        "The edit dialog fields are populated with the existing task values (including optional fields when present).",
-        "Submitting the edit dialog calls the updateTask mutation and closes the dialog on success.",
-        "After a successful update, the updated values are visible in the Tasks table without requiring a manual page refresh.",
-        "If the update fails (e.g., backend trap), a clear error message is shown in the dialog and the dialog remains open."
-      ]
-    },
-    {
-      "id": "REQ-58",
-      "text": "Ensure task sorting supports both client-wise and assignee-wise sorting in the Tasks page UI and that selecting these sort options actually reorders the visible task table accordingly.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-5"
-        ],
-        "quotes": [
-          "need assignee ,client wise sorting  of task needed"
-        ]
-      },
-      "acceptanceCriteria": [
-        "The Tasks page 'Sort by' control includes options for 'Client Name' and 'Assignee'.",
-        "When 'Client Name' is selected, the tasks table ordering changes based on clientName (ascending/descending based on the current direction toggle).",
-        "When 'Assignee' is selected, the tasks table ordering changes based on assignedName (ascending/descending based on the current direction toggle).",
-        "Tasks with missing assignedName do not break sorting and are consistently placed after tasks with an assignedName."
+        "Opening the Edit Task dialog for a task with status === \"\" does not crash and renders the dialog normally.",
+        "In frontend/src/components/tasks/TaskFormDialog.tsx, when initializing edit-mode state, empty-string/whitespace status values are mapped to the existing STATUS_NONE_SENTINEL (\"__none__\") instead of being passed through to the Select as \"\".",
+        "If an existing task has a status value that is not in ALLOWED_TASK_STATUSES (e.g., legacy or malformed), the dialog does not crash and the status field falls back to the sentinel (\"None\") or a normalized allowed value (if normalization is applied).",
+        "Submitting an edited task with the sentinel selected results in sending status: null (i.e., clearing status) rather than sending an empty string.",
+        "No SelectItem in the Task edit flow uses value=\"\" and no Select component in the Task edit flow receives \"\" as its controlled value."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under frontend/src/components/ui (read-only components must be composed, not modified).",
-    "Respect the existing single-actor backend architecture; no new backend services."
+    "Use English for any user-facing text.",
+    "Do not edit files under frontend/src/components/ui (compose existing UI components instead)."
   ],
   "nonGoals": [
-    "Adding new backend task fields or changing the backend updateTask signature.",
-    "Implementing new real-time syncing or WebSocket-based updates.",
-    "Adding new authentication providers (Internet Identity remains the only auth method)."
+    "Changing the backend task schema or writing a data migration to rewrite stored task statuses.",
+    "Adding new task status options beyond the existing allowed status set."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

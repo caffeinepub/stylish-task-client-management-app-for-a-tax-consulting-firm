@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useCreateTask, useUpdateTask } from '../../hooks/tasks';
-import { ALLOWED_TASK_STATUSES } from '../../constants/taskStatus';
+import { ALLOWED_TASK_STATUSES, coerceStatusForSelect } from '../../constants/taskStatus';
 import type { Task } from '../../backend';
 
 interface TaskFormDialogProps {
@@ -48,7 +48,8 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
         setClientName(task.clientName);
         setTaskCategory(task.taskCategory);
         setSubCategory(task.subCategory);
-        setStatus(task.status || STATUS_NONE_SENTINEL);
+        // Safely coerce status to prevent empty string from reaching Select
+        setStatus(coerceStatusForSelect(task.status, STATUS_NONE_SENTINEL));
         setComment(task.comment || '');
         setAssignedName(task.assignedName || '');
         setDueDate(task.dueDate ? new Date(Number(task.dueDate)).toISOString().split('T')[0] : '');

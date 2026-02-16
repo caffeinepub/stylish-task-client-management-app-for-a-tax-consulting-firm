@@ -2,11 +2,12 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-fix-the-single-task-edit-flow-so-that-clicking-edit-on-a-task-reliably-opens-the-edit-dialog-pre-fills-the-form-with-the-selected-task-s-current-values-and-successfully-saves-updates-via-the-existing-updatetask-api-including-optional-fields-like-status-comment-assignedname-dates-and-amounts",
-      "featureTitle": "Fix the single-task edit flow so that clicking Edit on a task reliably opens the edit dialog, pre-fills the form with the selected task’s current values, and successfully saves updates via the existing updateTask API (including optional fields like status, comment, assignedName, dates, and amounts).",
+      "featureId": "feature-prevent-radix-select-crashes-in-the-task-create-edit-dialog-when-a-task-s-stored-status-is-an-empty-string-or-otherwise-missing-invalid-by-ensuring-the-status-select-is-never-controlled-with-and-always-maps-empty-whitespace-unknown-status-values-to-a-safe-non-empty-sentinel-option",
+      "featureTitle": "Prevent Radix Select crashes in the Task create/edit dialog when a task’s stored status is an empty string (\"\") or otherwise missing/invalid by ensuring the Status <Select> is never controlled with \"\" and always maps empty/whitespace/unknown status values to a safe non-empty sentinel option.",
       "files": [
+        "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
         "frontend/src/components/tasks/TaskFormDialog.tsx",
-        "frontend/src/pages/TasksPage.tsx"
+        "frontend/src/constants/taskStatus.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -17,27 +18,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-57"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-ensure-task-sorting-supports-both-client-wise-and-assignee-wise-sorting-in-the-tasks-page-ui-and-that-selecting-these-sort-options-actually-reorders-the-visible-task-table-accordingly",
-      "featureTitle": "Ensure task sorting supports both client-wise and assignee-wise sorting in the Tasks page UI and that selecting these sort options actually reorders the visible task table accordingly.",
-      "files": [
-        "frontend/src/pages/TasksPage.tsx",
-        "frontend/src/utils/taskSort.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-58"
+        "REQ-63"
       ],
       "confidence": "high"
     }
