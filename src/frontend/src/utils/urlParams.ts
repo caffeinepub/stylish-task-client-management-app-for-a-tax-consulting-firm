@@ -152,11 +152,13 @@ export function clearParamFromHash(paramName: string): void {
 }
 
 /**
- * Reads a secret from the URL hash fragment without mutating the URL
- * This is a non-mutating version that only reads the value
- *
- * @param paramName - The name of the secret parameter
- * @returns The secret value if found in hash, null otherwise
+ * Reads a secret parameter from the URL hash WITHOUT mutating the URL
+ * Supports both direct hash params (#caffeineAdminToken=xxx) and route+query (#/route?caffeineAdminToken=xxx)
+ * 
+ * This function is safe to call during router initialization because it never calls history.replaceState
+ * 
+ * @param paramName - The name of the secret parameter to read
+ * @returns The secret value if found in the hash, null otherwise
  */
 export function readSecretFromHashNonMutating(paramName: string): string | null {
     const hash = window.location.hash;
@@ -166,8 +168,34 @@ export function readSecretFromHashNonMutating(paramName: string): string | null 
 
     // Remove the leading #
     const hashContent = hash.substring(1);
-    const params = new URLSearchParams(hashContent);
-    return params.get(paramName);
+
+    // Try parsing as direct params first (#key=value&...)
+    try {
+        const directParams = new URLSearchParams(hashContent);
+        const directValue = directParams.get(paramName);
+        if (directValue) {
+            return directValue;
+        }
+    } catch (error) {
+        // Ignore parse errors for direct params
+    }
+
+    // Try parsing as route+query (#/route?key=value&...)
+    const queryStartIndex = hashContent.indexOf('?');
+    if (queryStartIndex !== -1) {
+        try {
+            const queryString = hashContent.substring(queryStartIndex + 1);
+            const queryParams = new URLSearchParams(queryString);
+            const queryValue = queryParams.get(paramName);
+            if (queryValue) {
+                return queryValue;
+            }
+        } catch (error) {
+            // Ignore parse errors for query params
+        }
+    }
+
+    return null;
 }
 
 /**

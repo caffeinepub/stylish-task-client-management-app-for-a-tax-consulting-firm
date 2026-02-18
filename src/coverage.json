@@ -1,74 +1,66 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-18T01:44:01.708Z",
+  "generatedAt": "2026-02-18T01:53:54.172Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
+    "total": 4,
     "implemented": 3,
     "items": [
       {
-        "id": "REQ-67",
-        "summary": "Extend the Dashboard to include three new breakdown sections based on Task Sub Category: (A) a \"Revenue by Sub Category\" table that sums each task’s Bill amount (treat missing/null Bill as 0) grouped by Sub Category, sorted by highest revenue first; (B) a \"Tasks by Sub Category\" table that shows task counts grouped by Sub Category, sorted by highest count first; and (C) a combined \"Category + Sub Category\" grouped table that groups by (Task Category, Sub Category) pair and shows at least task count and total revenue for each pair, sorted by highest revenue first.",
+        "id": "REQ-70",
+        "summary": "Stop mutating or reading the browser URL for caffeineAdminToken during initial actor creation so the app cannot hang on the startup \"Loading...\" screen.",
+        "status": "missing",
+        "plannedFiles": [
+          "frontend/src/hooks/useActor.ts"
+        ],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-71",
+        "summary": "Update actor initialization to read caffeineAdminToken only from sessionStorage and call `_initializeAccessControlWithSecret` only when a non-empty token exists.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/utils/taskAggregations.ts",
-          "frontend/src/pages/DashboardPage.tsx"
+          "frontend/src/hooks/useActor.ts",
+          "frontend/src/utils/urlParams.ts"
         ],
         "matchedFiles": [
-          "frontend/src/utils/taskAggregations.ts",
-          "frontend/src/pages/DashboardPage.tsx"
+          "frontend/src/utils/urlParams.ts"
         ]
       },
       {
-        "id": "REQ-68",
-        "summary": "Add drill-down navigation from the new Dashboard Sub Category tables into the Tasks page by applying appropriate route search parameters, and extend Tasks route search-param validation and Tasks page filtering to support sub-category filtering. Specifically: clicking a Sub Category row navigates to /tasks with a subCategory search param; clicking a combined Category + Sub Category row navigates to /tasks with both taskCategory and subCategory search params applied.",
+        "id": "REQ-72",
+        "summary": "Make `readSecretFromHashNonMutating('caffeineAdminToken')` robust for both hash styles: (1) `#caffeineAdminToken=...` and (2) `#/route?caffeineAdminToken=...`, without mutating the URL.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/pages/DashboardPage.tsx",
-          "frontend/src/pages/TasksPage.tsx"
+          "frontend/src/utils/urlParams.ts"
         ],
         "matchedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/pages/DashboardPage.tsx",
-          "frontend/src/pages/TasksPage.tsx"
+          "frontend/src/utils/urlParams.ts"
         ]
       },
       {
-        "id": "REQ-69",
-        "summary": "Add inline editing of a task’s Comment directly in the Tasks list table (Comment column) so users can update the comment without opening the Task edit dialog. The inline edit must save via existing task update APIs and show clear loading/error feedback in English.",
+        "id": "REQ-73",
+        "summary": "Ensure deferred token capture + URL cleanup (useDeferredUrlCleanup) is the only code path that reads caffeineAdminToken from the URL and that the cleanup runs only after mount.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/tasks.ts",
-          "frontend/src/components/tasks/InlineCommentEditor.tsx",
-          "frontend/src/pages/TasksPage.tsx"
+          "frontend/src/hooks/useDeferredUrlCleanup.ts",
+          "frontend/src/utils/urlParams.ts",
+          "frontend/src/App.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/tasks.ts",
-          "frontend/src/components/tasks/InlineCommentEditor.tsx",
-          "frontend/src/pages/TasksPage.tsx"
+          "frontend/src/utils/urlParams.ts"
         ]
       }
     ]
   },
   "changedFiles": [
     "build-request.json",
-    "caffeine.lock.json",
     "feature_evidence.json",
-    "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/App.tsx",
-    "frontend/src/components/tasks/InlineCommentEditor.tsx",
-    "frontend/src/config.ts",
-    "frontend/src/hooks/tasks.ts",
-    "frontend/src/pages/DashboardPage.tsx",
-    "frontend/src/pages/TasksPage.tsx",
-    "frontend/src/utils/taskAggregations.ts",
-    "frontend/src/utils/taskSort.ts",
     "frontend/src/utils/urlParams.ts",
     "project_state.json",
     "scratch/component-selection.json",

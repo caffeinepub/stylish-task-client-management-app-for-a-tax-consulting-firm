@@ -1,85 +1,85 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Dashboard Sub-Category Analytics + Tasks Inline Comment Editing",
+  "title": "Defer caffeineAdminToken URL handling to prevent startup Loading hang",
   "requirements": [
     {
-      "id": "REQ-67",
-      "summary": "Add three Dashboard breakdown sections for Task Sub Category and Category+Sub Category with revenue/count aggregations and responsive empty-state tables.",
+      "id": "REQ-70",
+      "summary": "Prevent actor initialization from reading/mutating the URL for caffeineAdminToken so startup cannot hang.",
       "acceptanceCriteria": [
-        "Dashboard page renders three new sections for Sub Category analytics: Revenue by Sub Category, Tasks by Sub Category, and Category + Sub Category grouped table.",
-        "Revenue aggregation uses Task.bill as the revenue amount and treats null/undefined as 0.",
-        "All new tables are sorted descending by their primary metric (Revenue tables by revenue; Count tables by count).",
-        "If there are no tasks (or no data for a table), show a clear empty state message in English rather than an empty table.",
-        "Dashboard remains responsive (tables are usable on small screens via horizontal scroll and/or sensible column sizing)."
+        "`frontend/src/hooks/useActor.ts` no longer calls `getSecretParameter('caffeineAdminToken')` (or any other URL-reading helper) during actor initialization.",
+        "Actor initialization does not call any helper that can invoke `history.replaceState` (directly or indirectly) during the `useQuery` `queryFn` in `useActor`.",
+        "With a URL containing `#caffeineAdminToken=<token>`, the app renders past the startup Loading screen and the router can render the root route reliably before any URL cleanup occurs."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/utils/taskAggregations.ts",
+          "path": "frontend/src/hooks/useActor.ts",
           "operation": "modify",
-          "description": "Add new aggregation helpers/types to compute: (1) revenue grouped by subCategory, (2) task counts grouped by subCategory, and (3) grouped rows by (taskCategory, subCategory) with at least count + revenue, all sorted descending by their primary metric; ensure bill null/undefined is treated as 0."
-        },
-        {
-          "path": "frontend/src/pages/DashboardPage.tsx",
-          "operation": "modify",
-          "description": "Render three new dashboard sections (cards + tables) for Sub Category analytics using existing shadcn-ui Table/Card components (verify the component's usage instructions before implementing.); add clear English empty states when no rows exist; wrap tables in responsive horizontal scroll containers and apply sensible min column widths."
+          "description": "Remove all caffeineAdminToken URL access from the actor `useQuery` initialization path (including `getSecretParameter`). Ensure the queryFn cannot trigger any hash/URL cleanup (e.g., history.replaceState) before the app mounts. Use the authorization component’s intended access-control initialization flow; verify the component's usage instructions before implementing."
         }
       ]
     },
     {
-      "id": "REQ-68",
-      "summary": "Enable drill-down navigation from Dashboard Sub Category tables to Tasks with subCategory search param and extend /tasks search validation + filtering for subCategory.",
+      "id": "REQ-71",
+      "summary": "Read caffeineAdminToken only from sessionStorage and initialize access control only when a non-empty token exists.",
       "acceptanceCriteria": [
-        "Clicking a row in Revenue by Sub Category navigates to /tasks with the selected Sub Category filter applied.",
-        "Clicking a row in Tasks by Sub Category navigates to /tasks with the selected Sub Category filter applied.",
-        "Clicking a row in the combined Category + Sub Category table navigates to /tasks with both the selected Task Category and Sub Category filters applied.",
-        "/tasks route validateSearch (in frontend/src/App.tsx) defensively accepts the new subCategory search param (string only) and ignores malformed values without throwing.",
-        "TasksPage initializes and applies subCategory filtering when the subCategory search param is present."
+        "`useActor` reads caffeineAdminToken via a sessionStorage-based helper (e.g., `getSessionParameter('caffeineAdminToken')`) and never from the URL.",
+        "`_initializeAccessControlWithSecret` is not called when the token is missing, null, empty string, or whitespace-only.",
+        "When a valid token is present in sessionStorage, `_initializeAccessControlWithSecret` is called exactly once per actor creation and the authenticated experience functions as before."
       ],
       "file_operations": [
+        {
+          "path": "frontend/src/hooks/useActor.ts",
+          "operation": "modify",
+          "description": "Update actor initialization to read `caffeineAdminToken` exclusively via a sessionStorage helper (e.g., `getSessionParameter`). Normalize by trimming and only call `actor._initializeAccessControlWithSecret` when the trimmed token is non-empty; otherwise skip the call. Use the authorization component’s access-control behavior as-is; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/utils/urlParams.ts",
+          "operation": "modify",
+          "description": "Add/adjust a small sessionStorage-only helper (or enhance `getSessionParameter` usage) to support retrieving a trimmed token safely (treat missing/empty/whitespace as null) without touching `window.location`. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-72",
+      "summary": "Implement non-mutating hash token reader that supports both `#caffeineAdminToken=...` and `#/route?caffeineAdminToken=...` styles.",
+      "acceptanceCriteria": [
+        "`readSecretFromHashNonMutating` correctly returns the token for `window.location.hash` equal to `#caffeineAdminToken=<token>`.",
+        "`readSecretFromHashNonMutating` correctly returns the token for `window.location.hash` equal to `#/tasks?caffeineAdminToken=<token>` (and similar routes).",
+        "`readSecretFromHashNonMutating` never calls `clearParamFromHash` or any API that mutates `window.location`/`window.history`.",
+        "If the token is not present, the function returns null and does not throw for malformed/unexpected hash contents."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/utils/urlParams.ts",
+          "operation": "modify",
+          "description": "Create/repair and export `readSecretFromHashNonMutating(paramName)` that parses `window.location.hash` safely for both hash styles: direct params (`#key=value&...`) and route+query (`#/route?key=value&...`). Ensure it never mutates URL/history and always returns `string | null` without throwing on malformed hashes. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-73",
+      "summary": "Ensure only useDeferredUrlCleanup reads caffeineAdminToken from the URL and that URL cleanup runs only after mount.",
+      "acceptanceCriteria": [
+        "The only place in the codebase that reads caffeineAdminToken from `window.location` is `frontend/src/hooks/useDeferredUrlCleanup.ts` (via `readSecretFromHashNonMutating`).",
+        "URL cleanup (`clearParamFromHash('caffeineAdminToken')`) happens only inside the post-mount effect in `useDeferredUrlCleanup`, never during router creation or initial route validation.",
+        "After mount, if caffeineAdminToken was present in the URL, it is persisted to sessionStorage and removed from the address bar without a page reload."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useDeferredUrlCleanup.ts",
+          "operation": "modify",
+          "description": "Ensure the post-mount effect is the single code path that (a) reads `caffeineAdminToken` from `window.location` via `readSecretFromHashNonMutating`, (b) persists it via `storeSessionParameter`, and (c) performs URL cleanup via `clearParamFromHash` without reload. Keep all URL mutation confined to this hook’s useEffect. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/utils/urlParams.ts",
+          "operation": "modify",
+          "description": "Export `clearParamFromHash` for use by `useDeferredUrlCleanup`, and ensure no other exported helper used during startup/actor creation performs URL mutation. If `getSecretParameter/getSecretFromHash` remain, ensure they are not used for caffeineAdminToken outside `useDeferredUrlCleanup`. Verify the component's usage instructions before implementing."
+        },
         {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Extend the /tasks route validateSearch to defensively accept a new subCategory search param (string only) and ignore malformed values without throwing."
-        },
-        {
-          "path": "frontend/src/pages/DashboardPage.tsx",
-          "operation": "modify",
-          "description": "Add row click handlers on the new Sub Category analytics tables to navigate to /tasks with search params: { subCategory } for Sub Category rows and { taskCategory, subCategory } for Category+Sub Category rows."
-        },
-        {
-          "path": "frontend/src/pages/TasksPage.tsx",
-          "operation": "modify",
-          "description": "Update TasksPage to read the new validated subCategory search param, initialize a subCategory filter from it, include subCategory in filtering logic, and reflect it in active-filter UI (using existing shadcn-ui Select/Badge components; verify the component's usage instructions before implementing.)."
-        }
-      ]
-    },
-    {
-      "id": "REQ-69",
-      "summary": "Add inline editing for Task Comment within the Tasks table with save/cancel, loading state, and retryable error feedback using existing task update APIs.",
-      "acceptanceCriteria": [
-        "In the Tasks table, the Comment cell can be switched into an editing state (e.g., click-to-edit or an edit icon in the cell).",
-        "User can edit the comment text and either Save or Cancel without opening TaskFormDialog.",
-        "Saving updates the task’s comment via an existing mutation (e.g., bulkUpdateTasks with a single task patch, or the existing updateTask call) and refreshes the tasks list so the updated comment is visible.",
-        "While saving, the UI shows an in-progress state for that row/cell and prevents duplicate submissions.",
-        "On failure, the UI shows a clear English error message and keeps the edited text available so the user can retry.",
-        "Clearing the comment is supported (user can set comment to empty/none) and the displayed value updates accordingly."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/tasks.ts",
-          "operation": "modify",
-          "description": "Add a focused React Query mutation hook for updating only a task's comment via existing backend capabilities (prefer bulkUpdateTasks with a single patch); ensure tasks query invalidation occurs after success."
-        },
-        {
-          "path": "frontend/src/components/tasks/InlineCommentEditor.tsx",
-          "operation": "create",
-          "description": "Create a reusable Tasks table cell editor for Comment with view/edit modes, Save/Cancel actions, per-cell loading/disabled state, and clear English error messaging on failure; implement using existing shadcn-ui Input/Button components (verify the component's usage instructions before implementing.)."
-        },
-        {
-          "path": "frontend/src/pages/TasksPage.tsx",
-          "operation": "modify",
-          "description": "Wire InlineCommentEditor into the Tasks table Comment column so each row can edit/save/cancel comment inline without opening TaskFormDialog; ensure saving refreshes the list, prevents duplicate submissions while pending, supports clearing to empty, and preserves edited text on error for retry."
+          "description": "Confirm `useDeferredUrlCleanup()` is called from a mounted route component (RootComponent) so cleanup runs only after mount, and avoid introducing any pre-mount router/search validation that reads or mutates the hash for caffeineAdminToken. Verify the component's usage instructions before implementing."
         }
       ]
     }

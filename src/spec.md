@@ -1,12 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Add Sub Category analytics to the Dashboard with drill-down into filtered Tasks, and enable inline Comment editing directly in the Tasks table.
+**Goal:** Prevent the CSWA Task Manager frontend from hanging on the startup “Loading...” screen by deferring caffeineAdminToken URL handling until after mount and using sessionStorage during actor initialization.
 
 **Planned changes:**
-- Extend the Dashboard with three new Sub Category breakdown sections: Revenue by Sub Category (sum of Bill, treating missing/null as 0), Tasks by Sub Category (count), and a combined Category + Sub Category table (count + total revenue), each sorted descending by its primary metric and showing a clear English empty state when no data.
-- Add row click drill-down from the new Dashboard tables to `/tasks` using route search params: `subCategory` alone, or `taskCategory` + `subCategory` for the combined table.
-- Update `/tasks` route search-param validation to defensively accept `subCategory` (string only) and update Tasks page filtering to apply `subCategory` when present.
-- Add inline editing for the Comment column in the Tasks list table with Save/Cancel, saving via existing task update APIs, including row-level loading state, clear English error messaging, retry support, and allowing clearing the comment to empty.
+- Update `useActor` so actor initialization does not read or mutate the browser URL (and does not call any helper that can trigger `history.replaceState`) during the `useQuery` `queryFn`.
+- Change actor initialization to read `caffeineAdminToken` only from sessionStorage and call `_initializeAccessControlWithSecret` only when a non-empty, non-whitespace token exists.
+- Make `readSecretFromHashNonMutating('caffeineAdminToken')` reliably parse tokens from both `#caffeineAdminToken=<token>` and `#/route?caffeineAdminToken=<token>` hash styles without mutating the URL and returning `null` safely when missing/malformed.
+- Ensure `useDeferredUrlCleanup` is the only code path that reads `caffeineAdminToken` from `window.location`, captures it post-mount, persists it to sessionStorage, and then clears it from the address bar without reload.
 
-**User-visible outcome:** Users can view new Sub Category analytics on the Dashboard, click rows to jump into the Tasks page with Sub Category (and optionally Category) filters applied, and edit a task’s Comment inline in the Tasks table without opening the edit dialog.
+**User-visible outcome:** Visiting the app with a URL containing `#caffeineAdminToken=<token>` no longer gets stuck on “Loading...”; the app loads the root route reliably, and the token is captured after mount and then removed from the URL while authenticated behavior continues to work as before.

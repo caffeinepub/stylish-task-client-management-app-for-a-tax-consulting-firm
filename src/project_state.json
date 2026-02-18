@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 41,
+  "projectStateVersion": 43,
   "summary": "Build a stylish Task/Client Management app for a tax consulting firm.",
   "architectural_notes": [
     "Dashboard should support interactive drill-down: clicking an aggregate metric navigates/filters to the corresponding Tasks list view (e.g., by category/status) and shows the matching items.",
@@ -20,7 +20,7 @@
     "App stuck on Loading screen/blank UI again due to root route initialization hang caused by getSecretParameter('caffeineAdminToken') running at startup and mutating the URL (history.replaceState), triggering TanStack Router freeze.",
     "Task edit dialog can crash / fail to open when a stored task has status set to an empty string (\"\"), triggering Radix Select error: \"A Select.Item must have a value prop that is not an empty string.\""
   ],
-  "isFixRequest": false,
+  "isFixRequest": true,
   "existing_features": [
     {
       "id": "feature-create-an-authenticated-single-tenant-experience-using-internet-identity-so-a-signed-in-user-can-access-their-own-data-require-sign-in-before-viewing-or-editing-any-clients-tasks",
@@ -493,6 +493,30 @@
         "REQ-69"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-update-actor-initialization-to-read-caffeineadmintoken-only-from-sessionstorage-and-call-initializeaccesscontrolwithsecret-only-when-a-non-empty-token-exists",
+      "title": "Update actor initialization to read caffeineAdminToken only from sessionStorage and call `_initializeAccessControlWithSecret` only when a non-empty token exists.",
+      "reqIds": [
+        "REQ-71"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-make-readsecretfromhashnonmutating-caffeineadmintoken-robust-for-both-hash-styles-1-caffeineadmintoken-and-2-route-caffeineadmintoken-without-mutating-the-url",
+      "title": "Make `readSecretFromHashNonMutating('caffeineAdminToken')` robust for both hash styles: (1) `#caffeineAdminToken=...` and (2) `#/route?caffeineAdminToken=...`, without mutating the URL.",
+      "reqIds": [
+        "REQ-72"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-deferred-token-capture-url-cleanup-usedeferredurlcleanup-is-the-only-code-path-that-reads-caffeineadmintoken-from-the-url-and-that-the-cleanup-runs-only-after-mount",
+      "title": "Ensure deferred token capture + URL cleanup (useDeferredUrlCleanup) is the only code path that reads caffeineAdminToken from the URL and that the cleanup runs only after mount.",
+      "reqIds": [
+        "REQ-73"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -682,6 +706,14 @@
       "id": "AR-30",
       "summary": "Add inline editing of Task Comment directly from the Tasks list view (task table) without opening the Edit Task dialog.",
       "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-31",
+      "summary": "Stop mutating or reading the browser URL for caffeineAdminToken during initial actor creation so the app cannot hang on the startup \"Loading...\" screen.",
+      "reqIds": [
+        "REQ-70"
+      ],
       "status": "pending"
     }
   ],

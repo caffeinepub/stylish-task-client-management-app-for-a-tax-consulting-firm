@@ -1,83 +1,95 @@
 {
   "kind": "build_request",
-  "title": "Dashboard sub-category analytics + inline comment editing in Tasks table",
-  "projectName": "CSWA Tasks",
-  "priority": "normal",
+  "title": "Fix startup Loading-screen hang by deferring admin-token URL handling",
+  "projectName": "CSWA Task Manager",
+  "priority": "high",
   "requirements": [
     {
-      "id": "REQ-67",
-      "text": "Extend the Dashboard to include three new breakdown sections based on Task Sub Category: (A) a \"Revenue by Sub Category\" table that sums each task’s Bill amount (treat missing/null Bill as 0) grouped by Sub Category, sorted by highest revenue first; (B) a \"Tasks by Sub Category\" table that shows task counts grouped by Sub Category, sorted by highest count first; and (C) a combined \"Category + Sub Category\" grouped table that groups by (Task Category, Sub Category) pair and shows at least task count and total revenue for each pair, sorted by highest revenue first.",
+      "id": "REQ-70",
+      "text": "Stop mutating or reading the browser URL for caffeineAdminToken during initial actor creation so the app cannot hang on the startup \"Loading...\" screen.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-USER-1"
+          "msg-6",
+          "msg-7"
         ],
         "quotes": [
-          "add Task typy,sub type  also in dashboard",
-          "A,B and C"
+          "fix now",
+          "the problem is caused by this line in `useActor.ts`: `const adminToken = getSecretParameter('caffeineAdminToken')`"
         ]
       },
       "acceptanceCriteria": [
-        "Dashboard page renders three new sections for Sub Category analytics: Revenue by Sub Category, Tasks by Sub Category, and Category + Sub Category grouped table.",
-        "Revenue aggregation uses Task.bill as the revenue amount and treats null/undefined as 0.",
-        "All new tables are sorted descending by their primary metric (Revenue tables by revenue; Count tables by count).",
-        "If there are no tasks (or no data for a table), show a clear empty state message in English rather than an empty table.",
-        "Dashboard remains responsive (tables are usable on small screens via horizontal scroll and/or sensible column sizing)."
+        "`frontend/src/hooks/useActor.ts` no longer calls `getSecretParameter('caffeineAdminToken')` (or any other URL-reading helper) during actor initialization.",
+        "Actor initialization does not call any helper that can invoke `history.replaceState` (directly or indirectly) during the `useQuery` `queryFn` in `useActor`.",
+        "With a URL containing `#caffeineAdminToken=<token>`, the app renders past the startup Loading screen and the router can render the root route reliably before any URL cleanup occurs."
       ]
     },
     {
-      "id": "REQ-68",
-      "text": "Add drill-down navigation from the new Dashboard Sub Category tables into the Tasks page by applying appropriate route search parameters, and extend Tasks route search-param validation and Tasks page filtering to support sub-category filtering. Specifically: clicking a Sub Category row navigates to /tasks with a subCategory search param; clicking a combined Category + Sub Category row navigates to /tasks with both taskCategory and subCategory search params applied.",
+      "id": "REQ-71",
+      "text": "Update actor initialization to read caffeineAdminToken only from sessionStorage and call `_initializeAccessControlWithSecret` only when a non-empty token exists.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-USER-1"
+          "msg-6"
         ],
         "quotes": [
-          "add Task typy,sub type  also in dashboard",
-          "A,B and C"
+          "Switching it to read the token only from sessionStorage",
+          "Ensuring the token is captured only after mount via `useDeferredUrlCleanup`"
         ]
       },
       "acceptanceCriteria": [
-        "Clicking a row in Revenue by Sub Category navigates to /tasks with the selected Sub Category filter applied.",
-        "Clicking a row in Tasks by Sub Category navigates to /tasks with the selected Sub Category filter applied.",
-        "Clicking a row in the combined Category + Sub Category table navigates to /tasks with both the selected Task Category and Sub Category filters applied.",
-        "/tasks route validateSearch (in frontend/src/App.tsx) defensively accepts the new subCategory search param (string only) and ignores malformed values without throwing.",
-        "TasksPage initializes and applies subCategory filtering when the subCategory search param is present."
+        "`useActor` reads caffeineAdminToken via a sessionStorage-based helper (e.g., `getSessionParameter('caffeineAdminToken')`) and never from the URL.",
+        "`_initializeAccessControlWithSecret` is not called when the token is missing, null, empty string, or whitespace-only.",
+        "When a valid token is present in sessionStorage, `_initializeAccessControlWithSecret` is called exactly once per actor creation and the authenticated experience functions as before."
       ]
     },
     {
-      "id": "REQ-69",
-      "text": "Add inline editing of a task’s Comment directly in the Tasks list table (Comment column) so users can update the comment without opening the Task edit dialog. The inline edit must save via existing task update APIs and show clear loading/error feedback in English.",
+      "id": "REQ-72",
+      "text": "Make `readSecretFromHashNonMutating('caffeineAdminToken')` robust for both hash styles: (1) `#caffeineAdminToken=...` and (2) `#/route?caffeineAdminToken=...`, without mutating the URL.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-USER-1"
+          "msg-6"
         ],
         "quotes": [
-          "add option to edit  comment  from task view itself"
+          "This matches your screenshot: the URL still contains `#caffeineAdminToken=...` while the page is stuck."
         ]
       },
       "acceptanceCriteria": [
-        "In the Tasks table, the Comment cell can be switched into an editing state (e.g., click-to-edit or an edit icon in the cell).",
-        "User can edit the comment text and either Save or Cancel without opening TaskFormDialog.",
-        "Saving updates the task’s comment via an existing mutation (e.g., bulkUpdateTasks with a single task patch, or the existing updateTask call) and refreshes the tasks list so the updated comment is visible.",
-        "While saving, the UI shows an in-progress state for that row/cell and prevents duplicate submissions.",
-        "On failure, the UI shows a clear English error message and keeps the edited text available so the user can retry.",
-        "Clearing the comment is supported (user can set comment to empty/none) and the displayed value updates accordingly."
+        "`readSecretFromHashNonMutating` correctly returns the token for `window.location.hash` equal to `#caffeineAdminToken=<token>`.",
+        "`readSecretFromHashNonMutating` correctly returns the token for `window.location.hash` equal to `#/tasks?caffeineAdminToken=<token>` (and similar routes).",
+        "`readSecretFromHashNonMutating` never calls `clearParamFromHash` or any API that mutates `window.location`/`window.history`.",
+        "If the token is not present, the function returns null and does not throw for malformed/unexpected hash contents."
+      ]
+    },
+    {
+      "id": "REQ-73",
+      "text": "Ensure deferred token capture + URL cleanup (useDeferredUrlCleanup) is the only code path that reads caffeineAdminToken from the URL and that the cleanup runs only after mount.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-6"
+        ],
+        "quotes": [
+          "Ensuring the token is captured only after mount via `useDeferredUrlCleanup`"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The only place in the codebase that reads caffeineAdminToken from `window.location` is `frontend/src/hooks/useDeferredUrlCleanup.ts` (via `readSecretFromHashNonMutating`).",
+        "URL cleanup (`clearParamFromHash('caffeineAdminToken')`) happens only inside the post-mount effect in `useDeferredUrlCleanup`, never during router creation or initial route validation.",
+        "After mount, if caffeineAdminToken was present in the URL, it is persisted to sessionStorage and removed from the address bar without a page reload."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain single-actor (backend/main.mo); only add backend changes if strictly required by the UI change.",
-    "Do not edit files under frontend/src/components/ui (read-only).",
-    "Do not edit frontend/src/hooks/useInternetIdentity.ts(x), frontend/src/hooks/useActor.ts, or frontend/src/main.tsx (immutable paths).",
-    "Use English for any user-facing text."
+    "Frontend immutable paths must not be modified: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui (compose instead).",
+    "Keep all user-facing text in English.",
+    "Do not introduce additional backend services or external databases; remain within the existing Internet Computer single-canister architecture."
   ],
   "nonGoals": [
-    "Do not redesign the overall Dashboard layout beyond adding the requested Sub Category sections.",
-    "Do not add new backend storage fields or schema changes solely for analytics; compute breakdowns from existing Task fields.",
-    "Do not implement real-time collaboration or live updates beyond existing React Query refetch/invalidation patterns."
+    "Changing backend Motoko access control logic or APIs beyond what is required for the frontend startup fix.",
+    "Implementing new authentication providers beyond Internet Identity.",
+    "Addressing unrelated console warnings unless they are directly causing the startup hang."
   ],
   "imageRequirements": {
     "required": [],

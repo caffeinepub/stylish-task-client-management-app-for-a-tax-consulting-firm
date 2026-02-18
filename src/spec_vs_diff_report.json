@@ -1,36 +1,67 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-18T01:44:01.703Z",
-  "summary": "Implemented requested Sub Category analytics on Dashboard (including new aggregation utilities), drill-down navigation to /tasks via subCategory/taskCategory search params with defensive validation, and inline comment editing in the Tasks table via a new InlineCommentEditor component and a comment-only mutation hook. Also includes additional unrelated utility/sorting changes not explicitly requested.",
-  "missing_requirements": [],
-  "hallucinated_features": [
+  "generatedAt": "2026-02-18T01:53:54.168Z",
+  "summary": "The diff only modifies `frontend/src/utils/urlParams.ts` (adding/expanding generic URL + sessionStorage parameter helpers and a hash-cleanup helper) and updates `project_state.json`. None of the requested frontend hook changes (useActor changes, deferred URL cleanup hook, or a non-mutating hash reader) are evidenced in the diff, and the diff appears to introduce additional URL-reading pathways that conflict with the requirement to centralize caffeineAdminToken URL access.",
+  "missing_requirements": [
     {
-      "description": "Added/modified general URL parameter + sessionStorage helper utilities (not required for sub-category dashboard drilldowns or inline comment editing per the BuildRequest).",
-      "reason": "REQ-67/68/69 do not request new URL/sessionStorage utilities; TanStack Router navigation + validateSearch were the specified mechanism.",
+      "id": "REQ-70",
+      "requirement": "Stop mutating or reading the browser URL for caffeineAdminToken during initial actor creation so the app cannot hang on the startup \"Loading...\" screen.",
+      "reason": "No changes are shown to `frontend/src/hooks/useActor.ts` or actor initialization logic; the diff only changes a URL/session parameter utility file and does not demonstrate removing URL access during actor initialization.",
       "evidence": [
         "frontend/src/utils/urlParams.ts"
       ]
     },
     {
-      "description": "Extended/added task sorting support including subCategory and other sort fields/labels (not explicitly requested as part of sub-category analytics or inline comment editing).",
-      "reason": "REQ-67/68/69 do not mention adding new sorting capabilities; this appears to be extra functionality beyond the stated requirements.",
+      "id": "REQ-71",
+      "requirement": "Update actor initialization to read caffeineAdminToken only from sessionStorage and call `_initializeAccessControlWithSecret` only when a non-empty token exists.",
+      "reason": "There is no evidence of updates to actor initialization (`useActor`) or gating `_initializeAccessControlWithSecret` on a non-empty/whitespace-trimmed token; the diff does not include `useActor` at all.",
       "evidence": [
-        "frontend/src/utils/taskSort.ts",
-        "frontend/src/pages/TasksPage.tsx (imports SortField/SortDirection/sortTasks)"
+        "frontend/src/utils/urlParams.ts"
+      ]
+    },
+    {
+      "id": "REQ-72",
+      "requirement": "Make `readSecretFromHashNonMutating('caffeineAdminToken')` robust for both hash styles (`#caffeineAdminToken=...` and `#/route?caffeineAdminToken=...`) without mutating the URL.",
+      "reason": "No function named `readSecretFromHashNonMutating` is shown added/modified. The existing `getUrlParameter` only extracts from `window.location.search` or from the hash query portion after `?` and does not cover the `#caffeineAdminToken=...` (no `?`) style per the diff shown.",
+      "evidence": [
+        "frontend/src/utils/urlParams.ts"
+      ]
+    },
+    {
+      "id": "REQ-73",
+      "requirement": "Ensure deferred token capture + URL cleanup (`useDeferredUrlCleanup`) is the only code path that reads caffeineAdminToken from the URL and that the cleanup runs only after mount.",
+      "reason": "No `frontend/src/hooks/useDeferredUrlCleanup.ts` is added or modified in the diff. Additionally, the modified utilities include general-purpose URL-reading functions (`getUrlParameter`, `getPersistedUrlParameter`) that read from `window.location`, creating additional code paths for reading URL parameters beyond the specified single hook.",
+      "evidence": [
+        "frontend/src/utils/urlParams.ts"
       ]
     }
   ],
-  "confidence": 0.72,
+  "hallucinated_features": [
+    {
+      "description": "Introduced generic URL-reading helpers (`getUrlParameter`, `getPersistedUrlParameter`) that read from `window.location.search` and `window.location.hash`, creating additional pathways to read parameters from the URL.",
+      "reason": "The BuildRequest requires that caffeineAdminToken URL reading be centralized to `useDeferredUrlCleanup` and that actor initialization not read/mutate the URL. Adding general URL-reading utilities is not requested and may conflict with the constraint that only the deferred cleanup path reads the token from the URL.",
+      "evidence": [
+        "frontend/src/utils/urlParams.ts"
+      ]
+    },
+    {
+      "description": "Added sessionStorage convenience helpers (`storeSessionParameter`, `getSessionParameter`, `clearSessionParameter`) and a combined URL→session persistence helper (`getPersistedUrlParameter`).",
+      "reason": "While sessionStorage usage is mentioned for actor initialization, the BuildRequest does not request introducing new generic persistence utilities, and `getPersistedUrlParameter` explicitly prioritizes URL reads (which conflicts with the requirement to avoid URL reads outside deferred cleanup).",
+      "evidence": [
+        "frontend/src/utils/urlParams.ts"
+      ]
+    },
+    {
+      "description": "Implemented/expanded `clearParamFromHash` which uses `window.history.replaceState` to mutate the URL hash.",
+      "reason": "URL cleanup is required to occur only inside a post-mount effect in `useDeferredUrlCleanup`. The diff adds/changes a URL-mutating utility without showing it being confined to the required hook/effect, and the BuildRequest did not ask to modify `urlParams.ts` specifically for this behavior.",
+      "evidence": [
+        "frontend/src/utils/urlParams.ts"
+      ]
+    }
+  ],
+  "confidence": 0.74,
   "changed_files": [
-    "frontend-file-summaries.txt",
-    "frontend/src/App.tsx",
-    "frontend/src/components/tasks/InlineCommentEditor.tsx",
-    "frontend/src/hooks/tasks.ts",
-    "frontend/src/pages/DashboardPage.tsx",
-    "frontend/src/pages/TasksPage.tsx",
-    "frontend/src/utils/taskAggregations.ts",
-    "frontend/src/utils/taskSort.ts",
     "frontend/src/utils/urlParams.ts",
     "project_state.json"
   ]

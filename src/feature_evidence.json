@@ -2,11 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-extend-the-dashboard-to-include-three-new-breakdown-sections-based-on-task-sub-category-a-a-revenue-by-sub-category-table-that-sums-each-task-s-bill-amount-treat-missing-null-bill-as-0-grouped-by-sub-category-sorted-by-highest-revenue-first-b-a-tasks-by-sub-category-table-that-shows-task-counts-grouped-by-sub-category-sorted-by-highest-count-first-and-c-a-combined-category-sub-category-grouped-table-that-groups-by-task-category-sub-category-pair-and-shows-at-least-task-count-and-total-revenue-for-each-pair-sorted-by-highest-revenue-first",
-      "featureTitle": "Extend the Dashboard to include three new breakdown sections based on Task Sub Category: (A) a \"Revenue by Sub Category\" table that sums each task’s Bill amount (treat missing/null Bill as 0) grouped by Sub Category, sorted by highest revenue first; (B) a \"Tasks by Sub Category\" table that shows task counts grouped by Sub Category, sorted by highest count first; and (C) a combined \"Category + Sub Category\" grouped table that groups by (Task Category, Sub Category) pair and shows at least task count and total revenue for each pair, sorted by highest revenue first.",
+      "featureId": "feature-update-actor-initialization-to-read-caffeineadmintoken-only-from-sessionstorage-and-call-initializeaccesscontrolwithsecret-only-when-a-non-empty-token-exists",
+      "featureTitle": "Update actor initialization to read caffeineAdminToken only from sessionStorage and call `_initializeAccessControlWithSecret` only when a non-empty token exists.",
       "files": [
-        "frontend/src/pages/DashboardPage.tsx",
-        "frontend/src/utils/taskAggregations.ts"
+        "frontend/src/utils/urlParams.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -17,17 +16,15 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-67"
+        "REQ-71"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-drill-down-navigation-from-the-new-dashboard-sub-category-tables-into-the-tasks-page-by-applying-appropriate-route-search-parameters-and-extend-tasks-route-search-param-validation-and-tasks-page-filtering-to-support-sub-category-filtering-specifically-clicking-a-sub-category-row-navigates-to-tasks-with-a-subcategory-search-param-clicking-a-combined-category-sub-category-row-navigates-to-tasks-with-both-taskcategory-and-subcategory-search-params-applied",
-      "featureTitle": "Add drill-down navigation from the new Dashboard Sub Category tables into the Tasks page by applying appropriate route search parameters, and extend Tasks route search-param validation and Tasks page filtering to support sub-category filtering. Specifically: clicking a Sub Category row navigates to /tasks with a subCategory search param; clicking a combined Category + Sub Category row navigates to /tasks with both taskCategory and subCategory search params applied.",
+      "featureId": "feature-make-readsecretfromhashnonmutating-caffeineadmintoken-robust-for-both-hash-styles-1-caffeineadmintoken-and-2-route-caffeineadmintoken-without-mutating-the-url",
+      "featureTitle": "Make `readSecretFromHashNonMutating('caffeineAdminToken')` robust for both hash styles: (1) `#caffeineAdminToken=...` and (2) `#/route?caffeineAdminToken=...`, without mutating the URL.",
       "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/pages/DashboardPage.tsx",
-        "frontend/src/pages/TasksPage.tsx"
+        "frontend/src/utils/urlParams.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -38,17 +35,15 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-68"
+        "REQ-72"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-inline-editing-of-a-task-s-comment-directly-in-the-tasks-list-table-comment-column-so-users-can-update-the-comment-without-opening-the-task-edit-dialog-the-inline-edit-must-save-via-existing-task-update-apis-and-show-clear-loading-error-feedback-in-english",
-      "featureTitle": "Add inline editing of a task’s Comment directly in the Tasks list table (Comment column) so users can update the comment without opening the Task edit dialog. The inline edit must save via existing task update APIs and show clear loading/error feedback in English.",
+      "featureId": "feature-ensure-deferred-token-capture-url-cleanup-usedeferredurlcleanup-is-the-only-code-path-that-reads-caffeineadmintoken-from-the-url-and-that-the-cleanup-runs-only-after-mount",
+      "featureTitle": "Ensure deferred token capture + URL cleanup (useDeferredUrlCleanup) is the only code path that reads caffeineAdminToken from the URL and that the cleanup runs only after mount.",
       "files": [
-        "frontend/src/components/tasks/InlineCommentEditor.tsx",
-        "frontend/src/hooks/tasks.ts",
-        "frontend/src/pages/TasksPage.tsx"
+        "frontend/src/utils/urlParams.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -59,7 +54,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-69"
+        "REQ-73"
       ],
       "confidence": "high"
     }
