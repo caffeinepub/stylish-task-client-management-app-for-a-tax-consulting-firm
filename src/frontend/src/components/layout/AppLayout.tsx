@@ -89,9 +89,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3">
               <img 
-                src="/assets/generated/cswa-logo.dim_256x256.png" 
+                src="/assets/generated/cswa-logo-new.dim_800x200.png" 
                 alt="CSWA Group of Companies Logo" 
-                className="h-9 w-9"
+                className="h-9"
               />
               <span className="hidden sm:inline-block font-semibold text-lg text-[oklch(0.25_0_0)] dark:text-[oklch(0.95_0_0)]">
                 CSWA Group of Companies

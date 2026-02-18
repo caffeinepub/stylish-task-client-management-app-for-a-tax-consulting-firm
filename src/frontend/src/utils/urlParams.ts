@@ -152,9 +152,9 @@ export function clearParamFromHash(paramName: string): void {
 }
 
 /**
- * Reads a secret from the URL hash fragment WITHOUT mutating the URL
- * This is a non-mutating version that only reads the value without calling history.replaceState
- * Safe to call during router initialization
+ * Reads a secret parameter from the URL hash without mutating the URL
+ * This is a non-mutating version that only reads the value without clearing it
+ * Used for deferred URL cleanup where we want to read first, then clean up later
  *
  * @param paramName - The name of the secret parameter
  * @returns The secret value if found in hash, null otherwise
@@ -170,12 +170,10 @@ export function readSecretFromHashNonMutating(paramName: string): string | null 
     
     // Split route path from query string
     const queryStartIndex = hashContent.indexOf('?');
-    
     if (queryStartIndex === -1) {
-        // No query string in hash
         return null;
     }
-    
+
     const queryString = hashContent.substring(queryStartIndex + 1);
     const params = new URLSearchParams(queryString);
     return params.get(paramName);

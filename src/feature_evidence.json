@@ -2,10 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-ensure-deferred-token-capture-url-cleanup-remains-the-only-code-path-that-reads-caffeineadmintoken-from-the-url-and-it-runs-only-after-mount-via-usedeferredurlcleanup-keep-all-user-facing-text-in-english",
-      "featureTitle": "Ensure deferred token capture + URL cleanup remains the only code path that reads `caffeineAdminToken` from the URL, and it runs only after mount via `useDeferredUrlCleanup` (keep all user-facing text in English).",
+      "featureId": "feature-replace-the-existing-cswa-group-of-companies-logo-assets-in-frontend-public-assets-generated-with-the-user-provided-logo-image-whatsapp-image-2026-01-25-at-8-23-55-am-1-jpeg-and-ensure-it-is-used-consistently-across-all-branding-surfaces-including-the-signed-out-landing-screen-the-in-app-header-and-anywhere-the-current-logo-appears",
+      "featureTitle": "Replace the existing CSWA Group of Companies logo assets in frontend/public/assets/generated with the user-provided logo image (WhatsApp Image 2026-01-25 at 8.23.55 AM-1.jpeg) and ensure it is used consistently across all branding surfaces including the signed-out landing screen, the in-app header, and anywhere the current logo appears.",
       "files": [
-        "frontend/src/utils/urlParams.ts"
+        "frontend/src/components/auth/SignedOutScreen.tsx",
+        "frontend/src/components/layout/AppLayout.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -16,7 +17,70 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-76"
+        "REQ-77"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-optimize-react-query-mutation-and-cache-invalidation-patterns-to-reduce-perceived-delay-when-updating-tasks-clients-or-assignees-ensure-mutations-provide-immediate-optimistic-updates-where-safe-and-that-success-callbacks-trigger-precise-cache-invalidation-without-unnecessary-full-page-refetches",
+      "featureTitle": "Optimize React Query mutation and cache invalidation patterns to reduce perceived delay when updating tasks, clients, or assignees. Ensure mutations provide immediate optimistic updates where safe, and that success callbacks trigger precise cache invalidation without unnecessary full-page refetches.",
+      "files": [
+        "frontend/src/hooks/assignees.ts",
+        "frontend/src/hooks/clients.ts",
+        "frontend/src/hooks/tasks.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-78"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-review-and-optimize-all-react-query-mutation-hooks-in-frontend-src-hooks-tasks-ts-frontend-src-hooks-clients-ts-and-frontend-src-hooks-assignees-ts-to-ensure-onsuccess-callbacks-use-targeted-queryclient-invalidatequeries-with-specific-query-keys-rather-than-broad-wildcards-reducing-unnecessary-network-requests-and-ui-re-renders",
+      "featureTitle": "Review and optimize all React Query mutation hooks in frontend/src/hooks/tasks.ts, frontend/src/hooks/clients.ts, and frontend/src/hooks/assignees.ts to ensure onSuccess callbacks use targeted queryClient.invalidateQueries with specific query keys rather than broad wildcards, reducing unnecessary network requests and UI re-renders.",
+      "files": [
+        "frontend/src/hooks/assignees.ts",
+        "frontend/src/hooks/clients.ts",
+        "frontend/src/hooks/tasks.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-79"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-loading-indicators-and-disable-ui-controls-during-mutation-submission-in-taskformdialog-clientformdialog-and-assigneeformdialog-to-provide-clear-visual-feedback-that-an-update-is-in-progress-preventing-users-from-perceiving-the-system-as-unresponsive",
+      "featureTitle": "Add loading indicators and disable UI controls during mutation submission in TaskFormDialog, ClientFormDialog, and AssigneeFormDialog to provide clear visual feedback that an update is in progress, preventing users from perceiving the system as unresponsive.",
+      "files": [
+        "frontend/src/components/assignees/AssigneeFormDialog.tsx",
+        "frontend/src/components/clients/ClientFormDialog.tsx",
+        "frontend/src/components/tasks/TaskFormDialog.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-80"
       ],
       "confidence": "high"
     }

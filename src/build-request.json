@@ -1,84 +1,102 @@
 {
   "kind": "build_request",
-  "title": "Fix production blank screen by removing startup URL mutation in actor initialization",
-  "projectName": "CSWA Task Manager",
-  "priority": "high",
+  "title": "Replace app logo and optimize data update performance",
+  "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-74",
-      "text": "Stop reading or mutating the browser URL for `caffeineAdminToken` during actor creation so the app can render routes reliably (no startup freeze/blank screen). Update `frontend/src/hooks/useActor.ts` to remove the call to `getSecretParameter('caffeineAdminToken')` and instead read the token only from `sessionStorage` (via `getSessionParameter('caffeineAdminToken')` from `frontend/src/utils/urlParams.ts`).",
+      "id": "REQ-77",
+      "text": "Replace the existing CSWA Group of Companies logo assets in frontend/public/assets/generated with the user-provided logo image (WhatsApp Image 2026-01-25 at 8.23.55 AM-1.jpeg) and ensure it is used consistently across all branding surfaces including the signed-out landing screen, the in-app header, and anywhere the current logo appears.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-last"
         ],
         "quotes": [
-          "still not loading"
+          "use this logo"
         ]
       },
       "acceptanceCriteria": [
-        "`frontend/src/hooks/useActor.ts` no longer imports or calls `getSecretParameter` (or any URL-reading helper that can call `history.replaceState`).",
-        "Actor initialization does not call `history.replaceState` or otherwise change `window.location` during initial render / router bootstrap.",
-        "App loads (no blank screen) when opening any route directly (e.g., `/`, `/tasks`, `/dashboard`) with and without a `#caffeineAdminToken=...` or `#/route?caffeineAdminToken=...` fragment present."
+        "The new logo replaces all existing CSWA logo files in frontend/public/assets/generated",
+        "The logo appears correctly in the SignedOutScreen component",
+        "The logo appears correctly in the AppLayout header",
+        "The logo maintains appropriate dimensions and aspect ratio across all viewports"
       ]
     },
     {
-      "id": "REQ-75",
-      "text": "Update actor initialization so `_initializeAccessControlWithSecret` is called only when a non-empty `caffeineAdminToken` exists in `sessionStorage`; do not call `_initializeAccessControlWithSecret` with an empty string token.",
+      "id": "REQ-78",
+      "text": "Optimize React Query mutation and cache invalidation patterns to reduce perceived delay when updating tasks, clients, or assignees. Ensure mutations provide immediate optimistic updates where safe, and that success callbacks trigger precise cache invalidation without unnecessary full-page refetches.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-last"
         ],
         "quotes": [
-          "still not loading"
+          "it seems slow to update the data when click update"
         ]
       },
       "acceptanceCriteria": [
-        "When `sessionStorage.getItem('caffeineAdminToken')` is `null` or an empty/whitespace-only string, `useActor` creates the authenticated actor (when signed in) without calling `_initializeAccessControlWithSecret`.",
-        "When `sessionStorage` contains a non-empty token, `_initializeAccessControlWithSecret(token)` is invoked exactly once per actor creation and does not block initial rendering indefinitely."
+        "Task updates reflect in the UI within 500ms of clicking update",
+        "Client updates reflect in the UI within 500ms of clicking update",
+        "Assignee updates reflect in the UI within 500ms of clicking update",
+        "Cache invalidation is scoped to affected queries only (no unnecessary global refetches)",
+        "Optimistic updates are applied where data integrity allows"
       ]
     },
     {
-      "id": "REQ-76",
-      "text": "Ensure deferred token capture + URL cleanup remains the only code path that reads `caffeineAdminToken` from the URL, and it runs only after mount via `useDeferredUrlCleanup` (keep all user-facing text in English).",
+      "id": "REQ-79",
+      "text": "Review and optimize all React Query mutation hooks in frontend/src/hooks/tasks.ts, frontend/src/hooks/clients.ts, and frontend/src/hooks/assignees.ts to ensure onSuccess callbacks use targeted queryClient.invalidateQueries with specific query keys rather than broad wildcards, reducing unnecessary network requests and UI re-renders.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-1"
+          "msg-last"
         ],
         "quotes": [
-          "still not loading"
+          "it seems slow to update the data when click update"
         ]
       },
       "acceptanceCriteria": [
-        "No code path other than `frontend/src/hooks/useDeferredUrlCleanup.ts` reads `caffeineAdminToken` from `window.location`.",
-        "`useDeferredUrlCleanup` continues to (a) read the token using `readSecretFromHashNonMutating`, (b) store it to sessionStorage, and (c) clear it from the URL only inside an effect after the app has mounted.",
-        "With a URL containing a token, the app renders first paint successfully before the token is removed from the address bar."
+        "All mutation hooks use specific query key invalidation patterns",
+        "No mutation triggers invalidation of unrelated data queries",
+        "Loading states are minimized during update operations",
+        "Network request count is reduced compared to current implementation"
+      ]
+    },
+    {
+      "id": "REQ-80",
+      "text": "Add loading indicators and disable UI controls during mutation submission in TaskFormDialog, ClientFormDialog, and AssigneeFormDialog to provide clear visual feedback that an update is in progress, preventing users from perceiving the system as unresponsive.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-last"
+        ],
+        "quotes": [
+          "it seems slow to update the data when click update"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Submit buttons show loading state (spinner + 'Saving...' text) during mutations",
+        "Form inputs are disabled during mutation submission",
+        "Dialog cannot be closed while mutation is pending",
+        "Success feedback is shown before dialog closes"
       ]
     }
   ],
   "constraints": [
-    "Frontend files under `frontend/src/hooks/useInternetIdentity.ts`, `frontend/src/hooks/useActor.ts` is editable, but paths listed in `frontend.immutablePaths` must not be edited.",
-    "Do not introduce any non-supported backend technologies or external services.",
-    "Keep all user-facing text in English."
+    "Do not modify backend/main.mo unless absolutely necessary for performance optimization",
+    "Preserve all existing React Query cache invalidation behavior; only optimize for specificity",
+    "Maintain backward compatibility with existing stored data",
+    "Keep all loading states and user feedback in English"
   ],
   "nonGoals": [
-    "Adding new product features unrelated to fixing the app loading issue.",
-    "Changing backend data models or Motoko state as part of this fix."
+    "Implementing real-time data synchronization or WebSocket updates",
+    "Changing the underlying backend API response times",
+    "Adding offline-first or service worker caching",
+    "Modifying the Internet Identity authentication flow"
   ],
   "imageRequirements": {
     "required": [],
-    "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
+    "edits": [
+      "Replace the CSWA Group of Companies logo with the user-provided logo maintaining professional quality and dimensions appropriate for both header and landing page usage (cswa-logo.png > cswa-logo-new.dim_800x200.png)"
+    ]
   }
 }

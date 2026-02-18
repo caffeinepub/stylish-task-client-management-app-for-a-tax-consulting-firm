@@ -11,9 +11,9 @@ export default function SignedOutScreen() {
       <div className="w-full max-w-4xl">
         <div className="text-center mb-8">
           <img 
-            src="/assets/generated/cswa-logo.dim_256x256.png" 
+            src="/assets/generated/cswa-logo-new.dim_800x200.png" 
             alt="CSWA Group of Companies Logo" 
-            className="h-20 w-20 mx-auto mb-4 opacity-90"
+            className="h-24 mx-auto mb-4 opacity-90"
           />
           <h1 className="text-4xl font-bold text-[oklch(0.25_0_0)] dark:text-[oklch(0.95_0_0)] mb-2">
             CSWA Group of Companies

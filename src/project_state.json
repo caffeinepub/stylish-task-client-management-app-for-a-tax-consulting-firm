@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 45,
+  "projectStateVersion": 47,
   "summary": "Build a stylish Task/Client Management app for a tax consulting firm.",
   "architectural_notes": [
     "Dashboard should support interactive drill-down: clicking an aggregate metric navigates/filters to the corresponding Tasks list view (e.g., by category/status) and shows the matching items.",
@@ -19,9 +19,11 @@
     "Task edit flow is not working (user reports cannot edit tasks).",
     "App stuck on Loading screen/blank UI again due to root route initialization hang caused by getSecretParameter('caffeineAdminToken') running at startup and mutating the URL (history.replaceState), triggering TanStack Router freeze.",
     "Task edit dialog can crash / fail to open when a stored task has status set to an empty string (\"\"), triggering Radix Select error: \"A Select.Item must have a value prop that is not an empty string.\"",
-    "After deploying Version 21, the app is still not loading on the user side (persistent blank/loading screen in production)."
+    "After deploying Version 21, the app is still not loading on the user side (persistent blank/loading screen in production).",
+    "Data updates are slow/delayed after clicking update button (task/client/assignee editing)."
   ],
   "isFixRequest": true,
+  "imageRequirements": "## Edit Images\n- Replace the CSWA Group of Companies logo with the user-provided logo maintaining professional quality and dimensions appropriate for both header and landing page usage (cswa-logo.png > cswa-logo-new.dim_800x200.png)",
   "existing_features": [
     {
       "id": "feature-create-an-authenticated-single-tenant-experience-using-internet-identity-so-a-signed-in-user-can-access-their-own-data-require-sign-in-before-viewing-or-editing-any-clients-tasks",
@@ -526,6 +528,38 @@
         "REQ-76"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-replace-the-existing-cswa-group-of-companies-logo-assets-in-frontend-public-assets-generated-with-the-user-provided-logo-image-whatsapp-image-2026-01-25-at-8-23-55-am-1-jpeg-and-ensure-it-is-used-consistently-across-all-branding-surfaces-including-the-signed-out-landing-screen-the-in-app-header-and-anywhere-the-current-logo-appears",
+      "title": "Replace the existing CSWA Group of Companies logo assets in frontend/public/assets/generated with the user-provided logo image (WhatsApp Image 2026-01-25 at 8.23.55 AM-1.jpeg) and ensure it is used consistently across all branding surfaces including the signed-out landing screen, the in-app header, and anywhere the current logo appears.",
+      "reqIds": [
+        "REQ-77"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-optimize-react-query-mutation-and-cache-invalidation-patterns-to-reduce-perceived-delay-when-updating-tasks-clients-or-assignees-ensure-mutations-provide-immediate-optimistic-updates-where-safe-and-that-success-callbacks-trigger-precise-cache-invalidation-without-unnecessary-full-page-refetches",
+      "title": "Optimize React Query mutation and cache invalidation patterns to reduce perceived delay when updating tasks, clients, or assignees. Ensure mutations provide immediate optimistic updates where safe, and that success callbacks trigger precise cache invalidation without unnecessary full-page refetches.",
+      "reqIds": [
+        "REQ-78"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-review-and-optimize-all-react-query-mutation-hooks-in-frontend-src-hooks-tasks-ts-frontend-src-hooks-clients-ts-and-frontend-src-hooks-assignees-ts-to-ensure-onsuccess-callbacks-use-targeted-queryclient-invalidatequeries-with-specific-query-keys-rather-than-broad-wildcards-reducing-unnecessary-network-requests-and-ui-re-renders",
+      "title": "Review and optimize all React Query mutation hooks in frontend/src/hooks/tasks.ts, frontend/src/hooks/clients.ts, and frontend/src/hooks/assignees.ts to ensure onSuccess callbacks use targeted queryClient.invalidateQueries with specific query keys rather than broad wildcards, reducing unnecessary network requests and UI re-renders.",
+      "reqIds": [
+        "REQ-79"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-loading-indicators-and-disable-ui-controls-during-mutation-submission-in-taskformdialog-clientformdialog-and-assigneeformdialog-to-provide-clear-visual-feedback-that-an-update-is-in-progress-preventing-users-from-perceiving-the-system-as-unresponsive",
+      "title": "Add loading indicators and disable UI controls during mutation submission in TaskFormDialog, ClientFormDialog, and AssigneeFormDialog to provide clear visual feedback that an update is in progress, preventing users from perceiving the system as unresponsive.",
+      "reqIds": [
+        "REQ-80"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -739,6 +773,18 @@
       "reqIds": [
         "REQ-75"
       ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-34",
+      "summary": "Replace current logo with user-provided logo (referenced as 'this logo').",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-35",
+      "summary": "Improve data update responsiveness (currently slow when clicking update button).",
+      "reqIds": [],
       "status": "pending"
     }
   ],

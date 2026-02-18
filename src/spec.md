@@ -1,11 +1,14 @@
 # Specification
 
 ## Summary
-**Goal:** Fix the production blank screen by preventing actor initialization from reading/mutating the browser URL for `caffeineAdminToken` during startup.
+**Goal:** Replace the application logo with the new CSWA Group of Companies branding and optimize data update performance to make mutations feel instant.
 
 **Planned changes:**
-- Update `frontend/src/hooks/useActor.ts` to stop importing/calling `getSecretParameter('caffeineAdminToken')` (or any URL-reading helper that may trigger `history.replaceState`) and instead read the token only from `sessionStorage` via `getSessionParameter('caffeineAdminToken')`.
-- Adjust actor initialization so `_initializeAccessControlWithSecret` is called only when a non-empty `caffeineAdminToken` exists in `sessionStorage` (do not call it with an empty string).
-- Ensure `frontend/src/hooks/useDeferredUrlCleanup.ts` remains the only place that reads `caffeineAdminToken` from the URL and that it performs token capture + URL cleanup only after mount (in an effect), so initial render happens before any URL changes.
+- Replace all existing CSWA logo assets with the new user-provided logo image
+- Update logo references in SignedOutScreen and AppLayout header
+- Optimize React Query mutation hooks to use targeted cache invalidation instead of broad wildcards
+- Add optimistic updates to task, client, and assignee mutations where safe
+- Implement loading states and disable UI controls during mutation submission
+- Add visual feedback (spinners, 'Saving...' text) to form dialogs during updates
 
-**User-visible outcome:** The app reliably loads (no startup freeze/blank screen) when opening routes directly (e.g., `/`, `/tasks`, `/dashboard`), regardless of whether the URL includes a `caffeineAdminToken` fragment; the token (if present) is captured after first paint and then removed from the address bar.
+**User-visible outcome:** Users see the new CSWA Group of Companies logo throughout the application and experience near-instant feedback when updating tasks, clients, or assignees with clear loading indicators during save operations.

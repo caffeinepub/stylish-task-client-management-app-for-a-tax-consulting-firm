@@ -52,7 +52,52 @@ export function useUpdateAssignee() {
       if (!actor) throw new Error('Actor not available');
       return actor.updateAssignee(assigneeId, assignee);
     },
-    onSuccess: (_, variables) => {
+    onMutate: async (newAssignee) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['assignees'] });
+      await queryClient.cancelQueries({ queryKey: ['assignee', newAssignee.assigneeId.toString()] });
+
+      // Snapshot previous values
+      const previousAssignees = queryClient.getQueryData<Assignee[]>(['assignees']);
+      const previousAssignee = queryClient.getQueryData<Assignee | null>(['assignee', newAssignee.assigneeId.toString()]);
+
+      // Optimistically update assignees list
+      if (previousAssignees) {
+        queryClient.setQueryData<Assignee[]>(['assignees'], (old) =>
+          old?.map((assignee) =>
+            assignee.id === newAssignee.assigneeId
+              ? {
+                  ...assignee,
+                  name: newAssignee.name,
+                  captain: newAssignee.captain,
+                }
+              : assignee
+          ) || []
+        );
+      }
+
+      // Optimistically update single assignee
+      if (previousAssignee) {
+        queryClient.setQueryData<Assignee | null>(['assignee', newAssignee.assigneeId.toString()], {
+          ...previousAssignee,
+          name: newAssignee.name,
+          captain: newAssignee.captain,
+        });
+      }
+
+      return { previousAssignees, previousAssignee };
+    },
+    onError: (err, newAssignee, context) => {
+      // Rollback on error
+      if (context?.previousAssignees) {
+        queryClient.setQueryData(['assignees'], context.previousAssignees);
+      }
+      if (context?.previousAssignee) {
+        queryClient.setQueryData(['assignee', newAssignee.assigneeId.toString()], context.previousAssignee);
+      }
+    },
+    onSettled: (_, __, variables) => {
+      // Refetch to ensure consistency
       queryClient.invalidateQueries({ queryKey: ['assignees'] });
       queryClient.invalidateQueries({ queryKey: ['assignee', variables.assigneeId.toString()] });
     },

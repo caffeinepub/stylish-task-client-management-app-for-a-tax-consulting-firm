@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useCreateAssignee, useUpdateAssignee, useDeleteAssignee } from '../../hooks/assignees';
+import { Loader2 } from 'lucide-react';
 import type { Assignee } from '../../backend';
 
 interface AssigneeFormDialogProps {
@@ -53,7 +54,6 @@ export default function AssigneeFormDialog({ open, onOpenChange, assignee, trigg
     if (!name.trim()) {
       newErrors.name = 'Team Name is required';
     }
-
     if (!captain.trim()) {
       newErrors.captain = 'Captain is required';
     }
@@ -115,7 +115,7 @@ export default function AssigneeFormDialog({ open, onOpenChange, assignee, trigg
       <DialogHeader>
         <DialogTitle>{isEdit ? 'Edit Assignee' : 'Add New Assignee'}</DialogTitle>
         <DialogDescription>
-          {isEdit ? 'Update assignee information' : 'Enter team and captain details'}
+          {isEdit ? 'Update assignee information' : 'Enter assignee details to get started'}
         </DialogDescription>
       </DialogHeader>
       <form onSubmit={handleSubmit}>
@@ -160,7 +160,14 @@ export default function AssigneeFormDialog({ open, onOpenChange, assignee, trigg
             Cancel
           </Button>
           <Button type="submit" disabled={isPending}>
-            {isPending ? 'Saving...' : isEdit ? 'Update' : 'Create'}
+            {isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              isEdit ? 'Update' : 'Create'
+            )}
           </Button>
         </DialogFooter>
       </form>
@@ -176,7 +183,14 @@ export default function AssigneeFormDialog({ open, onOpenChange, assignee, trigg
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              {isDeleting ? 'Deleting...' : 'Delete'}
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -186,9 +200,9 @@ export default function AssigneeFormDialog({ open, onOpenChange, assignee, trigg
 
   if (trigger) {
     return (
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={(newOpen) => !isPending && setDialogOpen(newOpen)}>
         <DialogTrigger asChild>{trigger}</DialogTrigger>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent onEscapeKeyDown={(e) => isPending && e.preventDefault()} onPointerDownOutside={(e) => isPending && e.preventDefault()}>
           {content}
         </DialogContent>
       </Dialog>
@@ -196,8 +210,8 @@ export default function AssigneeFormDialog({ open, onOpenChange, assignee, trigg
   }
 
   return (
-    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={dialogOpen} onOpenChange={(newOpen) => !isPending && setDialogOpen(newOpen)}>
+      <DialogContent onEscapeKeyDown={(e) => isPending && e.preventDefault()} onPointerDownOutside={(e) => isPending && e.preventDefault()}>
         {content}
       </DialogContent>
     </Dialog>

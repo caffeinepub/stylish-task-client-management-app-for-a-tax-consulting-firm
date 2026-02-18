@@ -86,7 +86,74 @@ export function useUpdateTask() {
         data.paymentStatus
       );
     },
-    onSuccess: (_, variables) => {
+    onMutate: async (newTask) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['tasks'] });
+      await queryClient.cancelQueries({ queryKey: ['task', newTask.taskId.toString()] });
+
+      // Snapshot previous values
+      const previousTasks = queryClient.getQueryData<Task[]>(['tasks']);
+      const previousTask = queryClient.getQueryData<Task | null>(['task', newTask.taskId.toString()]);
+
+      // Optimistically update tasks list
+      if (previousTasks) {
+        queryClient.setQueryData<Task[]>(['tasks'], (old) =>
+          old?.map((task) =>
+            task.id === newTask.taskId
+              ? {
+                  ...task,
+                  clientName: newTask.clientName,
+                  taskCategory: newTask.taskCategory,
+                  subCategory: newTask.subCategory,
+                  status: newTask.status ?? undefined,
+                  comment: newTask.comment ?? undefined,
+                  assignedName: newTask.assignedName ?? undefined,
+                  dueDate: newTask.dueDate ?? undefined,
+                  assignmentDate: newTask.assignmentDate ?? undefined,
+                  completionDate: newTask.completionDate ?? undefined,
+                  bill: newTask.bill ?? undefined,
+                  advanceReceived: newTask.advanceReceived ?? undefined,
+                  outstandingAmount: newTask.outstandingAmount ?? undefined,
+                  paymentStatus: newTask.paymentStatus ?? undefined,
+                }
+              : task
+          ) || []
+        );
+      }
+
+      // Optimistically update single task
+      if (previousTask) {
+        queryClient.setQueryData<Task | null>(['task', newTask.taskId.toString()], {
+          ...previousTask,
+          clientName: newTask.clientName,
+          taskCategory: newTask.taskCategory,
+          subCategory: newTask.subCategory,
+          status: newTask.status ?? undefined,
+          comment: newTask.comment ?? undefined,
+          assignedName: newTask.assignedName ?? undefined,
+          dueDate: newTask.dueDate ?? undefined,
+          assignmentDate: newTask.assignmentDate ?? undefined,
+          completionDate: newTask.completionDate ?? undefined,
+          bill: newTask.bill ?? undefined,
+          advanceReceived: newTask.advanceReceived ?? undefined,
+          outstandingAmount: newTask.outstandingAmount ?? undefined,
+          paymentStatus: newTask.paymentStatus ?? undefined,
+        });
+      }
+
+      return { previousTasks, previousTask };
+    },
+    onError: (err, newTask, context) => {
+      // Rollback on error
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks'], context.previousTasks);
+      }
+      if (context?.previousTask) {
+        queryClient.setQueryData(['task', newTask.taskId.toString()], context.previousTask);
+      }
+    },
+    onSettled: (_, __, variables) => {
+      // Refetch to ensure consistency
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['task', variables.taskId.toString()] });
     },
@@ -163,7 +230,32 @@ export function useUpdateTaskComment() {
       const update: PartialTaskUpdate = { comment: data.comment };
       return actor.bulkUpdateTasks([[data.taskId, update]]);
     },
-    onSuccess: () => {
+    onMutate: async (data) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['tasks'] });
+
+      // Snapshot previous value
+      const previousTasks = queryClient.getQueryData<Task[]>(['tasks']);
+
+      // Optimistically update
+      if (previousTasks) {
+        queryClient.setQueryData<Task[]>(['tasks'], (old) =>
+          old?.map((task) =>
+            task.id === data.taskId ? { ...task, comment: data.comment } : task
+          ) || []
+        );
+      }
+
+      return { previousTasks };
+    },
+    onError: (err, data, context) => {
+      // Rollback on error
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks'], context.previousTasks);
+      }
+    },
+    onSettled: () => {
+      // Refetch to ensure consistency
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
   });

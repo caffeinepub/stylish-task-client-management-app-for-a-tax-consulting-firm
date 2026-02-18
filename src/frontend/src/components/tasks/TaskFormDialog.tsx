@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useCreateTask, useUpdateTask } from '../../hooks/tasks';
 import { ALLOWED_TASK_STATUSES, coerceStatusForSelect } from '../../constants/taskStatus';
+import { Loader2 } from 'lucide-react';
 import type { Task } from '../../backend';
 
 interface TaskFormDialogProps {
@@ -127,8 +128,8 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
   const error = createError || updateError;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={(newOpen) => !isPending && onOpenChange(newOpen)}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" onEscapeKeyDown={(e) => isPending && e.preventDefault()} onPointerDownOutside={(e) => isPending && e.preventDefault()}>
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Edit Task' : 'Create New Task'}</DialogTitle>
           <DialogDescription>
@@ -150,6 +151,7 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
                 onChange={(e) => setClientName(e.target.value)}
                 placeholder="Enter client name"
                 required
+                disabled={isPending}
               />
             </div>
 
@@ -161,6 +163,7 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
                 onChange={(e) => setTaskCategory(e.target.value)}
                 placeholder="e.g., GST Return, Income Tax"
                 required
+                disabled={isPending}
               />
             </div>
 
@@ -172,12 +175,13 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
                 onChange={(e) => setSubCategory(e.target.value)}
                 placeholder="e.g., GSTR-1, ITR-4"
                 required
+                disabled={isPending}
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
-              <Select value={status} onValueChange={setStatus}>
+              <Select value={status} onValueChange={setStatus} disabled={isPending}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
@@ -199,6 +203,7 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
                 value={assignedName}
                 onChange={(e) => setAssignedName(e.target.value)}
                 placeholder="Enter assignee name"
+                disabled={isPending}
               />
             </div>
 
@@ -209,6 +214,7 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
+                disabled={isPending}
               />
             </div>
 
@@ -219,6 +225,7 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
                 type="date"
                 value={assignmentDate}
                 onChange={(e) => setAssignmentDate(e.target.value)}
+                disabled={isPending}
               />
             </div>
 
@@ -229,6 +236,7 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
                 type="date"
                 value={completionDate}
                 onChange={(e) => setCompletionDate(e.target.value)}
+                disabled={isPending}
               />
             </div>
 
@@ -241,6 +249,7 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
                 value={bill}
                 onChange={(e) => setBill(e.target.value)}
                 placeholder="0.00"
+                disabled={isPending}
               />
             </div>
 
@@ -253,6 +262,7 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
                 value={advanceReceived}
                 onChange={(e) => setAdvanceReceived(e.target.value)}
                 placeholder="0.00"
+                disabled={isPending}
               />
             </div>
 
@@ -265,6 +275,7 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
                 value={outstandingAmount}
                 onChange={(e) => setOutstandingAmount(e.target.value)}
                 placeholder="0.00"
+                disabled={isPending}
               />
             </div>
 
@@ -275,6 +286,7 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
                 value={paymentStatus}
                 onChange={(e) => setPaymentStatus(e.target.value)}
                 placeholder="e.g., Paid, Pending"
+                disabled={isPending}
               />
             </div>
           </div>
@@ -287,6 +299,7 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
               onChange={(e) => setComment(e.target.value)}
               placeholder="Add any additional notes..."
               rows={3}
+              disabled={isPending}
             />
           </div>
 
@@ -295,7 +308,14 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
               Cancel
             </Button>
             <Button type="submit" disabled={isPending}>
-              {isPending ? (isEditing ? 'Updating...' : 'Creating...') : (isEditing ? 'Update Task' : 'Create Task')}
+              {isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {isEditing ? 'Saving...' : 'Creating...'}
+                </>
+              ) : (
+                isEditing ? 'Update Task' : 'Create Task'
+              )}
             </Button>
           </DialogFooter>
         </form>

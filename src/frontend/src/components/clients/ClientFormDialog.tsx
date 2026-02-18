@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useCreateClient, useUpdateClient, useDeleteClient } from '../../hooks/clients';
+import { Loader2 } from 'lucide-react';
 import type { Client } from '../../backend';
 
 interface ClientFormDialogProps {
@@ -187,7 +188,14 @@ export default function ClientFormDialog({ open, onOpenChange, client, trigger }
             Cancel
           </Button>
           <Button type="submit" disabled={isPending}>
-            {isPending ? 'Saving...' : isEdit ? 'Update' : 'Create'}
+            {isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              isEdit ? 'Update' : 'Create'
+            )}
           </Button>
         </DialogFooter>
       </form>
@@ -203,7 +211,14 @@ export default function ClientFormDialog({ open, onOpenChange, client, trigger }
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              {isDeleting ? 'Deleting...' : 'Delete'}
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -213,9 +228,9 @@ export default function ClientFormDialog({ open, onOpenChange, client, trigger }
 
   if (trigger) {
     return (
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={(newOpen) => !isPending && setDialogOpen(newOpen)}>
         <DialogTrigger asChild>{trigger}</DialogTrigger>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent onEscapeKeyDown={(e) => isPending && e.preventDefault()} onPointerDownOutside={(e) => isPending && e.preventDefault()}>
           {content}
         </DialogContent>
       </Dialog>
@@ -223,8 +238,8 @@ export default function ClientFormDialog({ open, onOpenChange, client, trigger }
   }
 
   return (
-    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={dialogOpen} onOpenChange={(newOpen) => !isPending && setDialogOpen(newOpen)}>
+      <DialogContent onEscapeKeyDown={(e) => isPending && e.preventDefault()} onPointerDownOutside={(e) => isPending && e.preventDefault()}>
         {content}
       </DialogContent>
     </Dialog>

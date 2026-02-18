@@ -52,7 +52,58 @@ export function useUpdateClient() {
       if (!actor) throw new Error('Actor not available');
       return actor.updateClient(clientId, client);
     },
-    onSuccess: (_, variables) => {
+    onMutate: async (newClient) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['clients'] });
+      await queryClient.cancelQueries({ queryKey: ['client', newClient.clientId.toString()] });
+
+      // Snapshot previous values
+      const previousClients = queryClient.getQueryData<Client[]>(['clients']);
+      const previousClient = queryClient.getQueryData<Client | null>(['client', newClient.clientId.toString()]);
+
+      // Optimistically update clients list
+      if (previousClients) {
+        queryClient.setQueryData<Client[]>(['clients'], (old) =>
+          old?.map((client) =>
+            client.id === newClient.clientId
+              ? {
+                  ...client,
+                  name: newClient.name,
+                  gstin: newClient.gstin,
+                  pan: newClient.pan,
+                  notes: newClient.notes,
+                  timestamp: BigInt(Date.now()),
+                }
+              : client
+          ) || []
+        );
+      }
+
+      // Optimistically update single client
+      if (previousClient) {
+        queryClient.setQueryData<Client | null>(['client', newClient.clientId.toString()], {
+          ...previousClient,
+          name: newClient.name,
+          gstin: newClient.gstin,
+          pan: newClient.pan,
+          notes: newClient.notes,
+          timestamp: BigInt(Date.now()),
+        });
+      }
+
+      return { previousClients, previousClient };
+    },
+    onError: (err, newClient, context) => {
+      // Rollback on error
+      if (context?.previousClients) {
+        queryClient.setQueryData(['clients'], context.previousClients);
+      }
+      if (context?.previousClient) {
+        queryClient.setQueryData(['client', newClient.clientId.toString()], context.previousClient);
+      }
+    },
+    onSettled: (_, __, variables) => {
+      // Refetch to ensure consistency
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       queryClient.invalidateQueries({ queryKey: ['client', variables.clientId.toString()] });
     },
