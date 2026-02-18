@@ -1,18 +1,18 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-18T01:53:54.172Z",
+  "generatedAt": "2026-02-18T02:04:32.058Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 3,
+    "total": 3,
+    "implemented": 1,
     "items": [
       {
-        "id": "REQ-70",
-        "summary": "Stop mutating or reading the browser URL for caffeineAdminToken during initial actor creation so the app cannot hang on the startup \"Loading...\" screen.",
+        "id": "REQ-74",
+        "summary": "Stop reading or mutating the browser URL for `caffeineAdminToken` during actor creation so the app can render routes reliably (no startup freeze/blank screen). Update `frontend/src/hooks/useActor.ts` to remove the call to `getSecretParameter('caffeineAdminToken')` and instead read the token only from `sessionStorage` (via `getSessionParameter('caffeineAdminToken')` from `frontend/src/utils/urlParams.ts`).",
         "status": "missing",
         "plannedFiles": [
           "frontend/src/hooks/useActor.ts"
@@ -20,36 +20,21 @@
         "matchedFiles": []
       },
       {
-        "id": "REQ-71",
-        "summary": "Update actor initialization to read caffeineAdminToken only from sessionStorage and call `_initializeAccessControlWithSecret` only when a non-empty token exists.",
-        "status": "implemented",
+        "id": "REQ-75",
+        "summary": "Update actor initialization so `_initializeAccessControlWithSecret` is called only when a non-empty `caffeineAdminToken` exists in `sessionStorage`; do not call `_initializeAccessControlWithSecret` with an empty string token.",
+        "status": "missing",
         "plannedFiles": [
-          "frontend/src/hooks/useActor.ts",
-          "frontend/src/utils/urlParams.ts"
+          "frontend/src/hooks/useActor.ts"
         ],
-        "matchedFiles": [
-          "frontend/src/utils/urlParams.ts"
-        ]
+        "matchedFiles": []
       },
       {
-        "id": "REQ-72",
-        "summary": "Make `readSecretFromHashNonMutating('caffeineAdminToken')` robust for both hash styles: (1) `#caffeineAdminToken=...` and (2) `#/route?caffeineAdminToken=...`, without mutating the URL.",
+        "id": "REQ-76",
+        "summary": "Ensure deferred token capture + URL cleanup remains the only code path that reads `caffeineAdminToken` from the URL, and it runs only after mount via `useDeferredUrlCleanup` (keep all user-facing text in English).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/utils/urlParams.ts"
-        ],
-        "matchedFiles": [
-          "frontend/src/utils/urlParams.ts"
-        ]
-      },
-      {
-        "id": "REQ-73",
-        "summary": "Ensure deferred token capture + URL cleanup (useDeferredUrlCleanup) is the only code path that reads caffeineAdminToken from the URL and that the cleanup runs only after mount.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/useDeferredUrlCleanup.ts",
           "frontend/src/utils/urlParams.ts",
-          "frontend/src/App.tsx"
+          "frontend/src/hooks/useDeferredUrlCleanup.ts"
         ],
         "matchedFiles": [
           "frontend/src/utils/urlParams.ts"

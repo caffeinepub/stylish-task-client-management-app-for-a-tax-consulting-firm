@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 43,
+  "projectStateVersion": 45,
   "summary": "Build a stylish Task/Client Management app for a tax consulting firm.",
   "architectural_notes": [
     "Dashboard should support interactive drill-down: clicking an aggregate metric navigates/filters to the corresponding Tasks list view (e.g., by category/status) and shows the matching items.",
@@ -18,7 +18,8 @@
     "Production app shows a fully blank page (not loading) across routes (e.g., /tasks and /dashboard), consistent with a root route crash/hang before initial render (TanStack Router + async root init + validateSearch interaction suspected).",
     "Task edit flow is not working (user reports cannot edit tasks).",
     "App stuck on Loading screen/blank UI again due to root route initialization hang caused by getSecretParameter('caffeineAdminToken') running at startup and mutating the URL (history.replaceState), triggering TanStack Router freeze.",
-    "Task edit dialog can crash / fail to open when a stored task has status set to an empty string (\"\"), triggering Radix Select error: \"A Select.Item must have a value prop that is not an empty string.\""
+    "Task edit dialog can crash / fail to open when a stored task has status set to an empty string (\"\"), triggering Radix Select error: \"A Select.Item must have a value prop that is not an empty string.\"",
+    "After deploying Version 21, the app is still not loading on the user side (persistent blank/loading screen in production)."
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -517,6 +518,14 @@
         "REQ-73"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-ensure-deferred-token-capture-url-cleanup-remains-the-only-code-path-that-reads-caffeineadmintoken-from-the-url-and-it-runs-only-after-mount-via-usedeferredurlcleanup-keep-all-user-facing-text-in-english",
+      "title": "Ensure deferred token capture + URL cleanup remains the only code path that reads `caffeineAdminToken` from the URL, and it runs only after mount via `useDeferredUrlCleanup` (keep all user-facing text in English).",
+      "reqIds": [
+        "REQ-76"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -713,6 +722,22 @@
       "summary": "Stop mutating or reading the browser URL for caffeineAdminToken during initial actor creation so the app cannot hang on the startup \"Loading...\" screen.",
       "reqIds": [
         "REQ-70"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-32",
+      "summary": "Stop reading or mutating the browser URL for `caffeineAdminToken` during actor creation so the app can render routes reliably (no startup freeze/blank screen). Update `frontend/src/hooks/useActor.ts` to remove the call to `getSecretParameter('caffeineAdminToken')` and instead read the token only from `sessionStorage` (via `getSessionParameter('caffeineAdminToken')` from `frontend/src/utils/urlParams.ts`).",
+      "reqIds": [
+        "REQ-74"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-33",
+      "summary": "Update actor initialization so `_initializeAccessControlWithSecret` is called only when a non-empty `caffeineAdminToken` exists in `sessionStorage`; do not call `_initializeAccessControlWithSecret` with an empty string token.",
+      "reqIds": [
+        "REQ-75"
       ],
       "status": "pending"
     }

@@ -2,8 +2,8 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-actor-initialization-to-read-caffeineadmintoken-only-from-sessionstorage-and-call-initializeaccesscontrolwithsecret-only-when-a-non-empty-token-exists",
-      "featureTitle": "Update actor initialization to read caffeineAdminToken only from sessionStorage and call `_initializeAccessControlWithSecret` only when a non-empty token exists.",
+      "featureId": "feature-ensure-deferred-token-capture-url-cleanup-remains-the-only-code-path-that-reads-caffeineadmintoken-from-the-url-and-it-runs-only-after-mount-via-usedeferredurlcleanup-keep-all-user-facing-text-in-english",
+      "featureTitle": "Ensure deferred token capture + URL cleanup remains the only code path that reads `caffeineAdminToken` from the URL, and it runs only after mount via `useDeferredUrlCleanup` (keep all user-facing text in English).",
       "files": [
         "frontend/src/utils/urlParams.ts"
       ],
@@ -16,45 +16,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-71"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-make-readsecretfromhashnonmutating-caffeineadmintoken-robust-for-both-hash-styles-1-caffeineadmintoken-and-2-route-caffeineadmintoken-without-mutating-the-url",
-      "featureTitle": "Make `readSecretFromHashNonMutating('caffeineAdminToken')` robust for both hash styles: (1) `#caffeineAdminToken=...` and (2) `#/route?caffeineAdminToken=...`, without mutating the URL.",
-      "files": [
-        "frontend/src/utils/urlParams.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-72"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-ensure-deferred-token-capture-url-cleanup-usedeferredurlcleanup-is-the-only-code-path-that-reads-caffeineadmintoken-from-the-url-and-that-the-cleanup-runs-only-after-mount",
-      "featureTitle": "Ensure deferred token capture + URL cleanup (useDeferredUrlCleanup) is the only code path that reads caffeineAdminToken from the URL and that the cleanup runs only after mount.",
-      "files": [
-        "frontend/src/utils/urlParams.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-73"
+        "REQ-76"
       ],
       "confidence": "high"
     }

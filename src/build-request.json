@@ -1,95 +1,71 @@
 {
   "kind": "build_request",
-  "title": "Fix startup Loading-screen hang by deferring admin-token URL handling",
+  "title": "Fix production blank screen by removing startup URL mutation in actor initialization",
   "projectName": "CSWA Task Manager",
   "priority": "high",
   "requirements": [
     {
-      "id": "REQ-70",
-      "text": "Stop mutating or reading the browser URL for caffeineAdminToken during initial actor creation so the app cannot hang on the startup \"Loading...\" screen.",
+      "id": "REQ-74",
+      "text": "Stop reading or mutating the browser URL for `caffeineAdminToken` during actor creation so the app can render routes reliably (no startup freeze/blank screen). Update `frontend/src/hooks/useActor.ts` to remove the call to `getSecretParameter('caffeineAdminToken')` and instead read the token only from `sessionStorage` (via `getSessionParameter('caffeineAdminToken')` from `frontend/src/utils/urlParams.ts`).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6",
-          "msg-7"
+          "msg-user-1"
         ],
         "quotes": [
-          "fix now",
-          "the problem is caused by this line in `useActor.ts`: `const adminToken = getSecretParameter('caffeineAdminToken')`"
+          "still not loading"
         ]
       },
       "acceptanceCriteria": [
-        "`frontend/src/hooks/useActor.ts` no longer calls `getSecretParameter('caffeineAdminToken')` (or any other URL-reading helper) during actor initialization.",
-        "Actor initialization does not call any helper that can invoke `history.replaceState` (directly or indirectly) during the `useQuery` `queryFn` in `useActor`.",
-        "With a URL containing `#caffeineAdminToken=<token>`, the app renders past the startup Loading screen and the router can render the root route reliably before any URL cleanup occurs."
+        "`frontend/src/hooks/useActor.ts` no longer imports or calls `getSecretParameter` (or any URL-reading helper that can call `history.replaceState`).",
+        "Actor initialization does not call `history.replaceState` or otherwise change `window.location` during initial render / router bootstrap.",
+        "App loads (no blank screen) when opening any route directly (e.g., `/`, `/tasks`, `/dashboard`) with and without a `#caffeineAdminToken=...` or `#/route?caffeineAdminToken=...` fragment present."
       ]
     },
     {
-      "id": "REQ-71",
-      "text": "Update actor initialization to read caffeineAdminToken only from sessionStorage and call `_initializeAccessControlWithSecret` only when a non-empty token exists.",
+      "id": "REQ-75",
+      "text": "Update actor initialization so `_initializeAccessControlWithSecret` is called only when a non-empty `caffeineAdminToken` exists in `sessionStorage`; do not call `_initializeAccessControlWithSecret` with an empty string token.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-user-1"
         ],
         "quotes": [
-          "Switching it to read the token only from sessionStorage",
-          "Ensuring the token is captured only after mount via `useDeferredUrlCleanup`"
+          "still not loading"
         ]
       },
       "acceptanceCriteria": [
-        "`useActor` reads caffeineAdminToken via a sessionStorage-based helper (e.g., `getSessionParameter('caffeineAdminToken')`) and never from the URL.",
-        "`_initializeAccessControlWithSecret` is not called when the token is missing, null, empty string, or whitespace-only.",
-        "When a valid token is present in sessionStorage, `_initializeAccessControlWithSecret` is called exactly once per actor creation and the authenticated experience functions as before."
+        "When `sessionStorage.getItem('caffeineAdminToken')` is `null` or an empty/whitespace-only string, `useActor` creates the authenticated actor (when signed in) without calling `_initializeAccessControlWithSecret`.",
+        "When `sessionStorage` contains a non-empty token, `_initializeAccessControlWithSecret(token)` is invoked exactly once per actor creation and does not block initial rendering indefinitely."
       ]
     },
     {
-      "id": "REQ-72",
-      "text": "Make `readSecretFromHashNonMutating('caffeineAdminToken')` robust for both hash styles: (1) `#caffeineAdminToken=...` and (2) `#/route?caffeineAdminToken=...`, without mutating the URL.",
+      "id": "REQ-76",
+      "text": "Ensure deferred token capture + URL cleanup remains the only code path that reads `caffeineAdminToken` from the URL, and it runs only after mount via `useDeferredUrlCleanup` (keep all user-facing text in English).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-user-1"
         ],
         "quotes": [
-          "This matches your screenshot: the URL still contains `#caffeineAdminToken=...` while the page is stuck."
+          "still not loading"
         ]
       },
       "acceptanceCriteria": [
-        "`readSecretFromHashNonMutating` correctly returns the token for `window.location.hash` equal to `#caffeineAdminToken=<token>`.",
-        "`readSecretFromHashNonMutating` correctly returns the token for `window.location.hash` equal to `#/tasks?caffeineAdminToken=<token>` (and similar routes).",
-        "`readSecretFromHashNonMutating` never calls `clearParamFromHash` or any API that mutates `window.location`/`window.history`.",
-        "If the token is not present, the function returns null and does not throw for malformed/unexpected hash contents."
-      ]
-    },
-    {
-      "id": "REQ-73",
-      "text": "Ensure deferred token capture + URL cleanup (useDeferredUrlCleanup) is the only code path that reads caffeineAdminToken from the URL and that the cleanup runs only after mount.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-6"
-        ],
-        "quotes": [
-          "Ensuring the token is captured only after mount via `useDeferredUrlCleanup`"
-        ]
-      },
-      "acceptanceCriteria": [
-        "The only place in the codebase that reads caffeineAdminToken from `window.location` is `frontend/src/hooks/useDeferredUrlCleanup.ts` (via `readSecretFromHashNonMutating`).",
-        "URL cleanup (`clearParamFromHash('caffeineAdminToken')`) happens only inside the post-mount effect in `useDeferredUrlCleanup`, never during router creation or initial route validation.",
-        "After mount, if caffeineAdminToken was present in the URL, it is persisted to sessionStorage and removed from the address bar without a page reload."
+        "No code path other than `frontend/src/hooks/useDeferredUrlCleanup.ts` reads `caffeineAdminToken` from `window.location`.",
+        "`useDeferredUrlCleanup` continues to (a) read the token using `readSecretFromHashNonMutating`, (b) store it to sessionStorage, and (c) clear it from the URL only inside an effect after the app has mounted.",
+        "With a URL containing a token, the app renders first paint successfully before the token is removed from the address bar."
       ]
     }
   ],
   "constraints": [
-    "Frontend immutable paths must not be modified: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui (compose instead).",
-    "Keep all user-facing text in English.",
-    "Do not introduce additional backend services or external databases; remain within the existing Internet Computer single-canister architecture."
+    "Frontend files under `frontend/src/hooks/useInternetIdentity.ts`, `frontend/src/hooks/useActor.ts` is editable, but paths listed in `frontend.immutablePaths` must not be edited.",
+    "Do not introduce any non-supported backend technologies or external services.",
+    "Keep all user-facing text in English."
   ],
   "nonGoals": [
-    "Changing backend Motoko access control logic or APIs beyond what is required for the frontend startup fix.",
-    "Implementing new authentication providers beyond Internet Identity.",
-    "Addressing unrelated console warnings unless they are directly causing the startup hang."
+    "Adding new product features unrelated to fixing the app loading issue.",
+    "Changing backend data models or Motoko state as part of this fix."
   ],
   "imageRequirements": {
     "required": [],

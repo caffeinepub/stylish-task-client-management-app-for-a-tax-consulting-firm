@@ -1,12 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Prevent the CSWA Task Manager frontend from hanging on the startup “Loading...” screen by deferring caffeineAdminToken URL handling until after mount and using sessionStorage during actor initialization.
+**Goal:** Fix the production blank screen by preventing actor initialization from reading/mutating the browser URL for `caffeineAdminToken` during startup.
 
 **Planned changes:**
-- Update `useActor` so actor initialization does not read or mutate the browser URL (and does not call any helper that can trigger `history.replaceState`) during the `useQuery` `queryFn`.
-- Change actor initialization to read `caffeineAdminToken` only from sessionStorage and call `_initializeAccessControlWithSecret` only when a non-empty, non-whitespace token exists.
-- Make `readSecretFromHashNonMutating('caffeineAdminToken')` reliably parse tokens from both `#caffeineAdminToken=<token>` and `#/route?caffeineAdminToken=<token>` hash styles without mutating the URL and returning `null` safely when missing/malformed.
-- Ensure `useDeferredUrlCleanup` is the only code path that reads `caffeineAdminToken` from `window.location`, captures it post-mount, persists it to sessionStorage, and then clears it from the address bar without reload.
+- Update `frontend/src/hooks/useActor.ts` to stop importing/calling `getSecretParameter('caffeineAdminToken')` (or any URL-reading helper that may trigger `history.replaceState`) and instead read the token only from `sessionStorage` via `getSessionParameter('caffeineAdminToken')`.
+- Adjust actor initialization so `_initializeAccessControlWithSecret` is called only when a non-empty `caffeineAdminToken` exists in `sessionStorage` (do not call it with an empty string).
+- Ensure `frontend/src/hooks/useDeferredUrlCleanup.ts` remains the only place that reads `caffeineAdminToken` from the URL and that it performs token capture + URL cleanup only after mount (in an effect), so initial render happens before any URL changes.
 
-**User-visible outcome:** Visiting the app with a URL containing `#caffeineAdminToken=<token>` no longer gets stuck on “Loading...”; the app loads the root route reliably, and the token is captured after mount and then removed from the URL while authenticated behavior continues to work as before.
+**User-visible outcome:** The app reliably loads (no startup freeze/blank screen) when opening routes directly (e.g., `/`, `/tasks`, `/dashboard`), regardless of whether the URL includes a `caffeineAdminToken` fragment; the token (if present) is captured after first paint and then removed from the address bar.
