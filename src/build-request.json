@@ -1,41 +1,96 @@
 {
   "kind": "build_request",
-  "title": "Fix Task edit crash when status is empty string",
-  "priority": "high",
+  "title": "Dashboard sub-category analytics + inline comment editing in Tasks table",
+  "projectName": "CSWA Tasks",
+  "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-63",
-      "text": "Prevent Radix Select crashes in the Task create/edit dialog when a task’s stored status is an empty string (\"\") or otherwise missing/invalid by ensuring the Status <Select> is never controlled with \"\" and always maps empty/whitespace/unknown status values to a safe non-empty sentinel option.",
+      "id": "REQ-67",
+      "text": "Extend the Dashboard to include three new breakdown sections based on Task Sub Category: (A) a \"Revenue by Sub Category\" table that sums each task’s Bill amount (treat missing/null Bill as 0) grouped by Sub Category, sorted by highest revenue first; (B) a \"Tasks by Sub Category\" table that shows task counts grouped by Sub Category, sorted by highest count first; and (C) a combined \"Category + Sub Category\" grouped table that groups by (Task Category, Sub Category) pair and shows at least task count and total revenue for each pair, sorted by highest revenue first.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages"
+          "msg-USER-1"
         ],
         "quotes": [
-          "User: Apply the empty-status fix",
-          "User: while try to edit the task ,not working",
-          "A Select.Item must have a value prop that is not an empty string."
+          "add Task typy,sub type  also in dashboard",
+          "A,B and C"
         ]
       },
       "acceptanceCriteria": [
-        "Opening the Edit Task dialog for a task with status === \"\" does not crash and renders the dialog normally.",
-        "In frontend/src/components/tasks/TaskFormDialog.tsx, when initializing edit-mode state, empty-string/whitespace status values are mapped to the existing STATUS_NONE_SENTINEL (\"__none__\") instead of being passed through to the Select as \"\".",
-        "If an existing task has a status value that is not in ALLOWED_TASK_STATUSES (e.g., legacy or malformed), the dialog does not crash and the status field falls back to the sentinel (\"None\") or a normalized allowed value (if normalization is applied).",
-        "Submitting an edited task with the sentinel selected results in sending status: null (i.e., clearing status) rather than sending an empty string.",
-        "No SelectItem in the Task edit flow uses value=\"\" and no Select component in the Task edit flow receives \"\" as its controlled value."
+        "Dashboard page renders three new sections for Sub Category analytics: Revenue by Sub Category, Tasks by Sub Category, and Category + Sub Category grouped table.",
+        "Revenue aggregation uses Task.bill as the revenue amount and treats null/undefined as 0.",
+        "All new tables are sorted descending by their primary metric (Revenue tables by revenue; Count tables by count).",
+        "If there are no tasks (or no data for a table), show a clear empty state message in English rather than an empty table.",
+        "Dashboard remains responsive (tables are usable on small screens via horizontal scroll and/or sensible column sizing)."
+      ]
+    },
+    {
+      "id": "REQ-68",
+      "text": "Add drill-down navigation from the new Dashboard Sub Category tables into the Tasks page by applying appropriate route search parameters, and extend Tasks route search-param validation and Tasks page filtering to support sub-category filtering. Specifically: clicking a Sub Category row navigates to /tasks with a subCategory search param; clicking a combined Category + Sub Category row navigates to /tasks with both taskCategory and subCategory search params applied.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-USER-1"
+        ],
+        "quotes": [
+          "add Task typy,sub type  also in dashboard",
+          "A,B and C"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Clicking a row in Revenue by Sub Category navigates to /tasks with the selected Sub Category filter applied.",
+        "Clicking a row in Tasks by Sub Category navigates to /tasks with the selected Sub Category filter applied.",
+        "Clicking a row in the combined Category + Sub Category table navigates to /tasks with both the selected Task Category and Sub Category filters applied.",
+        "/tasks route validateSearch (in frontend/src/App.tsx) defensively accepts the new subCategory search param (string only) and ignores malformed values without throwing.",
+        "TasksPage initializes and applies subCategory filtering when the subCategory search param is present."
+      ]
+    },
+    {
+      "id": "REQ-69",
+      "text": "Add inline editing of a task’s Comment directly in the Tasks list table (Comment column) so users can update the comment without opening the Task edit dialog. The inline edit must save via existing task update APIs and show clear loading/error feedback in English.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-USER-1"
+        ],
+        "quotes": [
+          "add option to edit  comment  from task view itself"
+        ]
+      },
+      "acceptanceCriteria": [
+        "In the Tasks table, the Comment cell can be switched into an editing state (e.g., click-to-edit or an edit icon in the cell).",
+        "User can edit the comment text and either Save or Cancel without opening TaskFormDialog.",
+        "Saving updates the task’s comment via an existing mutation (e.g., bulkUpdateTasks with a single task patch, or the existing updateTask call) and refreshes the tasks list so the updated comment is visible.",
+        "While saving, the UI shows an in-progress state for that row/cell and prevents duplicate submissions.",
+        "On failure, the UI shows a clear English error message and keeps the edited text available so the user can retry.",
+        "Clearing the comment is supported (user can set comment to empty/none) and the displayed value updates accordingly."
       ]
     }
   ],
   "constraints": [
-    "Use English for any user-facing text.",
-    "Do not edit files under frontend/src/components/ui (compose existing UI components instead)."
+    "Backend must remain single-actor (backend/main.mo); only add backend changes if strictly required by the UI change.",
+    "Do not edit files under frontend/src/components/ui (read-only).",
+    "Do not edit frontend/src/hooks/useInternetIdentity.ts(x), frontend/src/hooks/useActor.ts, or frontend/src/main.tsx (immutable paths).",
+    "Use English for any user-facing text."
   ],
   "nonGoals": [
-    "Changing the backend task schema or writing a data migration to rewrite stored task statuses.",
-    "Adding new task status options beyond the existing allowed status set."
+    "Do not redesign the overall Dashboard layout beyond adding the requested Sub Category sections.",
+    "Do not add new backend storage fields or schema changes solely for analytics; compute breakdowns from existing Task fields.",
+    "Do not implement real-time collaboration or live updates beyond existing React Query refetch/invalidation patterns."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

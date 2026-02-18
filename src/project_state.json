@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 37,
+  "projectStateVersion": 41,
   "summary": "Build a stylish Task/Client Management app for a tax consulting firm.",
   "architectural_notes": [
     "Dashboard should support interactive drill-down: clicking an aggregate metric navigates/filters to the corresponding Tasks list view (e.g., by category/status) and shows the matching items.",
@@ -10,7 +10,8 @@
     "Tasks list sorting controls should include sort by Client Name and by Assigned Name (assignee/team).",
     "TanStack Router may hang on a blank screen if routes use validateSearch while the root route performs async initialization (e.g., Internet Identity/user loading); ensure root-route initialization and search validation are wired to avoid pre-render hangs.",
     "Avoid reading/mutating URL (e.g., via getSecretParameter('caffeineAdminToken')/history.replaceState) during initial router bootstrap; ensure useActor/root init defers any URL cleanup until after the router has rendered.",
-    "When opening the Task edit dialog, treat stored task.status === \"\" (empty string) the same as null/undefined and map it to a safe non-empty sentinel value so Radix Select never receives \"\" as its controlled value."
+    "When opening the Task edit dialog, treat stored task.status === \"\" (empty string) the same as null/undefined and map it to a safe non-empty sentinel value so Radix Select never receives \"\" as its controlled value.",
+    "Admin token (caffeineAdminToken) must not be read via getSecretParameter during startup; useActor should read it from sessionStorage only, while useDeferredUrlCleanup extracts it from URL and clears the URL after mount."
   ],
   "known_issues": [
     "Single task addition (Add Task dialog) is not working while bulk task addition works; likely due to Add Task form crash related to dropdown/select rendering/default values.",
@@ -19,7 +20,7 @@
     "App stuck on Loading screen/blank UI again due to root route initialization hang caused by getSecretParameter('caffeineAdminToken') running at startup and mutating the URL (history.replaceState), triggering TanStack Router freeze.",
     "Task edit dialog can crash / fail to open when a stored task has status set to an empty string (\"\"), triggering Radix Select error: \"A Select.Item must have a value prop that is not an empty string.\""
   ],
-  "isFixRequest": true,
+  "isFixRequest": false,
   "existing_features": [
     {
       "id": "feature-create-an-authenticated-single-tenant-experience-using-internet-identity-so-a-signed-in-user-can-access-their-own-data-require-sign-in-before-viewing-or-editing-any-clients-tasks",
@@ -460,6 +461,38 @@
         "REQ-63"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-ensure-deferred-token-capture-url-cleanup-is-the-only-place-that-reads-caffeineadmintoken-from-the-url-and-that-it-runs-only-after-mount-keep-usedeferredurlcleanup-mounted-from-the-root-app-tsx-rootcomponent-and-adjust-frontend-src-utils-urlparams-ts-non-mutating-secret-read-helper-to-be-defensive-for-both-hash-styles-caffeineadmintoken-and-route-caffeineadmintoken",
+      "title": "Ensure deferred token capture + URL cleanup is the only place that reads caffeineAdminToken from the URL and that it runs only after mount. Keep useDeferredUrlCleanup mounted from the root (App.tsx RootComponent) and adjust frontend/src/utils/urlParams.ts non-mutating secret read helper to be defensive for both hash styles: '#caffeineAdminToken=...' and '#/route?caffeineAdminToken=...'.",
+      "reqIds": [
+        "REQ-66"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-extend-the-dashboard-to-include-three-new-breakdown-sections-based-on-task-sub-category-a-a-revenue-by-sub-category-table-that-sums-each-task-s-bill-amount-treat-missing-null-bill-as-0-grouped-by-sub-category-sorted-by-highest-revenue-first-b-a-tasks-by-sub-category-table-that-shows-task-counts-grouped-by-sub-category-sorted-by-highest-count-first-and-c-a-combined-category-sub-category-grouped-table-that-groups-by-task-category-sub-category-pair-and-shows-at-least-task-count-and-total-revenue-for-each-pair-sorted-by-highest-revenue-first",
+      "title": "Extend the Dashboard to include three new breakdown sections based on Task Sub Category: (A) a \"Revenue by Sub Category\" table that sums each task’s Bill amount (treat missing/null Bill as 0) grouped by Sub Category, sorted by highest revenue first; (B) a \"Tasks by Sub Category\" table that shows task counts grouped by Sub Category, sorted by highest count first; and (C) a combined \"Category + Sub Category\" grouped table that groups by (Task Category, Sub Category) pair and shows at least task count and total revenue for each pair, sorted by highest revenue first.",
+      "reqIds": [
+        "REQ-67"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-drill-down-navigation-from-the-new-dashboard-sub-category-tables-into-the-tasks-page-by-applying-appropriate-route-search-parameters-and-extend-tasks-route-search-param-validation-and-tasks-page-filtering-to-support-sub-category-filtering-specifically-clicking-a-sub-category-row-navigates-to-tasks-with-a-subcategory-search-param-clicking-a-combined-category-sub-category-row-navigates-to-tasks-with-both-taskcategory-and-subcategory-search-params-applied",
+      "title": "Add drill-down navigation from the new Dashboard Sub Category tables into the Tasks page by applying appropriate route search parameters, and extend Tasks route search-param validation and Tasks page filtering to support sub-category filtering. Specifically: clicking a Sub Category row navigates to /tasks with a subCategory search param; clicking a combined Category + Sub Category row navigates to /tasks with both taskCategory and subCategory search params applied.",
+      "reqIds": [
+        "REQ-68"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-inline-editing-of-a-task-s-comment-directly-in-the-tasks-list-table-comment-column-so-users-can-update-the-comment-without-opening-the-task-edit-dialog-the-inline-edit-must-save-via-existing-task-update-apis-and-show-clear-loading-error-feedback-in-english",
+      "title": "Add inline editing of a task’s Comment directly in the Tasks list table (Comment column) so users can update the comment without opening the Task edit dialog. The inline edit must save via existing task update APIs and show clear loading/error feedback in English.",
+      "reqIds": [
+        "REQ-69"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -620,6 +653,34 @@
     {
       "id": "AR-26",
       "summary": "Extend Tasks list sorting options to include Client-wise and Assignee-wise sorting (in addition to other sort fields).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-27",
+      "summary": "Refactor frontend/src/hooks/useActor.ts so actor creation never reads the admin token from the URL (and never calls any helper that mutates window.history during startup). Remove the getSecretParameter('caffeineAdminToken') call and instead read the token only from sessionStorage.",
+      "reqIds": [
+        "REQ-64"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-28",
+      "summary": "Update actor initialization so _initializeAccessControlWithSecret is invoked only when a non-empty caffeineAdminToken exists in sessionStorage; do not call it with an empty string token.",
+      "reqIds": [
+        "REQ-65"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-29",
+      "summary": "Enhance Dashboard to include Sub Category breakdowns: (A) Revenue by Sub Category, (B) Tasks count by Sub Category, and (C) a combined Category + Sub Category grouped table.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-30",
+      "summary": "Add inline editing of Task Comment directly from the Tasks list view (task table) without opening the Edit Task dialog.",
       "reqIds": [],
       "status": "pending"
     }

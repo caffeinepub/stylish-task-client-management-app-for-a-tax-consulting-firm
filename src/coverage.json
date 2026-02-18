@@ -1,40 +1,74 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T01:51:36.185Z",
+  "generatedAt": "2026-02-18T01:44:01.708Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 1,
-    "implemented": 1,
+    "total": 3,
+    "implemented": 3,
     "items": [
       {
-        "id": "REQ-63",
-        "summary": "Prevent Radix Select crashes in the Task create/edit dialog when a task’s stored status is an empty string (\"\") or otherwise missing/invalid by ensuring the Status <Select> is never controlled with \"\" and always maps empty/whitespace/unknown status values to a safe non-empty sentinel option.",
+        "id": "REQ-67",
+        "summary": "Extend the Dashboard to include three new breakdown sections based on Task Sub Category: (A) a \"Revenue by Sub Category\" table that sums each task’s Bill amount (treat missing/null Bill as 0) grouped by Sub Category, sorted by highest revenue first; (B) a \"Tasks by Sub Category\" table that shows task counts grouped by Sub Category, sorted by highest count first; and (C) a combined \"Category + Sub Category\" grouped table that groups by (Task Category, Sub Category) pair and shows at least task count and total revenue for each pair, sorted by highest revenue first.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/tasks/TaskFormDialog.tsx",
-          "frontend/src/constants/taskStatus.ts",
-          "frontend/src/components/tasks/TaskBulkEditDialog.tsx"
+          "frontend/src/utils/taskAggregations.ts",
+          "frontend/src/pages/DashboardPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/tasks/TaskFormDialog.tsx",
-          "frontend/src/constants/taskStatus.ts",
-          "frontend/src/components/tasks/TaskBulkEditDialog.tsx"
+          "frontend/src/utils/taskAggregations.ts",
+          "frontend/src/pages/DashboardPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-68",
+        "summary": "Add drill-down navigation from the new Dashboard Sub Category tables into the Tasks page by applying appropriate route search parameters, and extend Tasks route search-param validation and Tasks page filtering to support sub-category filtering. Specifically: clicking a Sub Category row navigates to /tasks with a subCategory search param; clicking a combined Category + Sub Category row navigates to /tasks with both taskCategory and subCategory search params applied.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/App.tsx",
+          "frontend/src/pages/DashboardPage.tsx",
+          "frontend/src/pages/TasksPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/App.tsx",
+          "frontend/src/pages/DashboardPage.tsx",
+          "frontend/src/pages/TasksPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-69",
+        "summary": "Add inline editing of a task’s Comment directly in the Tasks list table (Comment column) so users can update the comment without opening the Task edit dialog. The inline edit must save via existing task update APIs and show clear loading/error feedback in English.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/tasks.ts",
+          "frontend/src/components/tasks/InlineCommentEditor.tsx",
+          "frontend/src/pages/TasksPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/tasks.ts",
+          "frontend/src/components/tasks/InlineCommentEditor.tsx",
+          "frontend/src/pages/TasksPage.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
     "build-request.json",
+    "caffeine.lock.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
-    "frontend/src/components/tasks/TaskFormDialog.tsx",
-    "frontend/src/constants/taskStatus.ts",
+    "frontend/src/App.tsx",
+    "frontend/src/components/tasks/InlineCommentEditor.tsx",
+    "frontend/src/config.ts",
+    "frontend/src/hooks/tasks.ts",
+    "frontend/src/pages/DashboardPage.tsx",
+    "frontend/src/pages/TasksPage.tsx",
+    "frontend/src/utils/taskAggregations.ts",
+    "frontend/src/utils/taskSort.ts",
     "frontend/src/utils/urlParams.ts",
     "project_state.json",
     "scratch/component-selection.json",

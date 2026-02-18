@@ -1,47 +1,36 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T01:51:36.182Z",
-  "summary": "REQ-63 is largely implemented by introducing a safe coercion helper for task status values and using it in TaskFormDialog edit-mode initialization, plus converting the sentinel selection to `null` on submit so Radix Select is never controlled with an empty string. However, due to truncation, the diff does not conclusively show that no SelectItem uses `value=\"\"` and that the Select never receives `\"\"` in all Task edit flow codepaths.",
-  "missing_requirements": [
-    {
-      "id": "REQ-63",
-      "requirement": "No SelectItem in the Task edit flow uses value=\"\" and no Select component in the Task edit flow receives \"\" as its controlled value.",
-      "reason": "TaskFormDialog.tsx is truncated before the SelectContent/SelectItem list, so it cannot be verified from the provided diff summary whether any SelectItem uses value=\"\" or whether any other codepath passes \"\" into the Select value.",
-      "evidence": [
-        "frontend/src/components/tasks/TaskFormDialog.tsx (truncated)"
-      ]
-    }
-  ],
+  "generatedAt": "2026-02-18T01:44:01.703Z",
+  "summary": "Implemented requested Sub Category analytics on Dashboard (including new aggregation utilities), drill-down navigation to /tasks via subCategory/taskCategory search params with defensive validation, and inline comment editing in the Tasks table via a new InlineCommentEditor component and a comment-only mutation hook. Also includes additional unrelated utility/sorting changes not explicitly requested.",
+  "missing_requirements": [],
   "hallucinated_features": [
     {
-      "description": "Added/modified Task bulk edit dialog status sentinel handling (STATUS_UNCHANGED_SENTINEL) and related bulk-edit Select behavior.",
-      "reason": "BuildRequest focuses on preventing Radix Select crashes in the Task create/edit dialog (TaskFormDialog). Bulk edit dialog changes are not requested in REQ-63.",
+      "description": "Added/modified general URL parameter + sessionStorage helper utilities (not required for sub-category dashboard drilldowns or inline comment editing per the BuildRequest).",
+      "reason": "REQ-67/68/69 do not request new URL/sessionStorage utilities; TanStack Router navigation + validateSearch were the specified mechanism.",
       "evidence": [
-        "frontend/src/components/tasks/TaskBulkEditDialog.tsx (truncated)"
+        "frontend/src/utils/urlParams.ts"
       ]
     },
     {
-      "description": "Expanded task status utilities beyond the explicit REQ-63 coercion need (legacy status mapping, normalizeStatus, isCompletedStatus, isValidStatus, getStatusDisplayLabel).",
-      "reason": "REQ-63 requests mapping empty/invalid statuses to a sentinel for Select safety and submitting sentinel as null; the additional legacy mapping and other helpers are not explicitly requested.",
+      "description": "Extended/added task sorting support including subCategory and other sort fields/labels (not explicitly requested as part of sub-category analytics or inline comment editing).",
+      "reason": "REQ-67/68/69 do not mention adding new sorting capabilities; this appears to be extra functionality beyond the stated requirements.",
       "evidence": [
-        "frontend/src/constants/taskStatus.ts"
-      ]
-    },
-    {
-      "description": "URL parameter/session storage utilities added/modified (getUrlParameter, session persistence helpers, clearParamFromHash, etc.).",
-      "reason": "Unrelated to the Task status Select crash fix described in REQ-63.",
-      "evidence": [
-        "frontend/src/utils/urlParams.ts (truncated)"
+        "frontend/src/utils/taskSort.ts",
+        "frontend/src/pages/TasksPage.tsx (imports SortField/SortDirection/sortTasks)"
       ]
     }
   ],
-  "confidence": 0.64,
+  "confidence": 0.72,
   "changed_files": [
     "frontend-file-summaries.txt",
-    "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
-    "frontend/src/components/tasks/TaskFormDialog.tsx",
-    "frontend/src/constants/taskStatus.ts",
+    "frontend/src/App.tsx",
+    "frontend/src/components/tasks/InlineCommentEditor.tsx",
+    "frontend/src/hooks/tasks.ts",
+    "frontend/src/pages/DashboardPage.tsx",
+    "frontend/src/pages/TasksPage.tsx",
+    "frontend/src/utils/taskAggregations.ts",
+    "frontend/src/utils/taskSort.ts",
     "frontend/src/utils/urlParams.ts",
     "project_state.json"
   ]

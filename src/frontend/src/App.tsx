@@ -76,9 +76,9 @@ const tasksRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/tasks',
   component: TasksPage,
-  validateSearch: (search: Record<string, unknown>): { overdue?: string; status?: string; taskCategory?: string } => {
+  validateSearch: (search: Record<string, unknown>): { overdue?: string; status?: string; taskCategory?: string; subCategory?: string } => {
     // Defensive normalization: only accept expected string values
-    const result: { overdue?: string; status?: string; taskCategory?: string } = {};
+    const result: { overdue?: string; status?: string; taskCategory?: string; subCategory?: string } = {};
 
     // Only accept string primitives, ignore arrays/objects/unexpected types
     if (typeof search.overdue === 'string' && search.overdue.length > 0) {
@@ -91,6 +91,10 @@ const tasksRoute = createRoute({
 
     if (typeof search.taskCategory === 'string' && search.taskCategory.length > 0) {
       result.taskCategory = search.taskCategory;
+    }
+
+    if (typeof search.subCategory === 'string' && search.subCategory.length > 0) {
+      result.subCategory = search.subCategory;
     }
 
     return result;

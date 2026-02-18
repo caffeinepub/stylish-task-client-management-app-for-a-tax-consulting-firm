@@ -1,15 +1,18 @@
 import type { Task } from '../backend';
 import { getStatusDisplayLabel } from '../constants/taskStatus';
 
-export type SortField = 'dueDate' | 'status' | 'taskCategory' | 'clientName' | 'assignedName' | 'bill' | 'createdAt';
+export type SortField = 'dueDate' | 'status' | 'taskCategory' | 'subCategory' | 'clientName' | 'assignedName' | 'assignmentDate' | 'completionDate' | 'bill' | 'createdAt';
 export type SortDirection = 'asc' | 'desc';
 
 export const SORT_FIELD_LABELS: Record<SortField, string> = {
   dueDate: 'Due Date',
   status: 'Status',
   taskCategory: 'Task Category',
+  subCategory: 'Sub Category',
   clientName: 'Client Name',
   assignedName: 'Assignee',
+  assignmentDate: 'Assignment Date',
+  completionDate: 'Completion Date',
   bill: 'Bill Amount',
   createdAt: 'Created At',
 };
@@ -68,6 +71,12 @@ export function sortTasks(
       case 'dueDate':
         return compareValues(a.dueDate, b.dueDate, direction, compareBigInt);
 
+      case 'assignmentDate':
+        return compareValues(a.assignmentDate, b.assignmentDate, direction, compareBigInt);
+
+      case 'completionDate':
+        return compareValues(a.completionDate, b.completionDate, direction, compareBigInt);
+
       case 'status': {
         const statusA = getStatusDisplayLabel(a.status);
         const statusB = getStatusDisplayLabel(b.status);
@@ -81,6 +90,9 @@ export function sortTasks(
 
       case 'taskCategory':
         return compareValues(a.taskCategory, b.taskCategory, direction, compareString);
+
+      case 'subCategory':
+        return compareValues(a.subCategory, b.subCategory, direction, compareString);
 
       case 'clientName':
         return compareValues(a.clientName, b.clientName, direction, compareString);

@@ -2,12 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-prevent-radix-select-crashes-in-the-task-create-edit-dialog-when-a-task-s-stored-status-is-an-empty-string-or-otherwise-missing-invalid-by-ensuring-the-status-select-is-never-controlled-with-and-always-maps-empty-whitespace-unknown-status-values-to-a-safe-non-empty-sentinel-option",
-      "featureTitle": "Prevent Radix Select crashes in the Task create/edit dialog when a task’s stored status is an empty string (\"\") or otherwise missing/invalid by ensuring the Status <Select> is never controlled with \"\" and always maps empty/whitespace/unknown status values to a safe non-empty sentinel option.",
+      "featureId": "feature-extend-the-dashboard-to-include-three-new-breakdown-sections-based-on-task-sub-category-a-a-revenue-by-sub-category-table-that-sums-each-task-s-bill-amount-treat-missing-null-bill-as-0-grouped-by-sub-category-sorted-by-highest-revenue-first-b-a-tasks-by-sub-category-table-that-shows-task-counts-grouped-by-sub-category-sorted-by-highest-count-first-and-c-a-combined-category-sub-category-grouped-table-that-groups-by-task-category-sub-category-pair-and-shows-at-least-task-count-and-total-revenue-for-each-pair-sorted-by-highest-revenue-first",
+      "featureTitle": "Extend the Dashboard to include three new breakdown sections based on Task Sub Category: (A) a \"Revenue by Sub Category\" table that sums each task’s Bill amount (treat missing/null Bill as 0) grouped by Sub Category, sorted by highest revenue first; (B) a \"Tasks by Sub Category\" table that shows task counts grouped by Sub Category, sorted by highest count first; and (C) a combined \"Category + Sub Category\" grouped table that groups by (Task Category, Sub Category) pair and shows at least task count and total revenue for each pair, sorted by highest revenue first.",
       "files": [
-        "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
-        "frontend/src/components/tasks/TaskFormDialog.tsx",
-        "frontend/src/constants/taskStatus.ts"
+        "frontend/src/pages/DashboardPage.tsx",
+        "frontend/src/utils/taskAggregations.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -18,7 +17,49 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-63"
+        "REQ-67"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-drill-down-navigation-from-the-new-dashboard-sub-category-tables-into-the-tasks-page-by-applying-appropriate-route-search-parameters-and-extend-tasks-route-search-param-validation-and-tasks-page-filtering-to-support-sub-category-filtering-specifically-clicking-a-sub-category-row-navigates-to-tasks-with-a-subcategory-search-param-clicking-a-combined-category-sub-category-row-navigates-to-tasks-with-both-taskcategory-and-subcategory-search-params-applied",
+      "featureTitle": "Add drill-down navigation from the new Dashboard Sub Category tables into the Tasks page by applying appropriate route search parameters, and extend Tasks route search-param validation and Tasks page filtering to support sub-category filtering. Specifically: clicking a Sub Category row navigates to /tasks with a subCategory search param; clicking a combined Category + Sub Category row navigates to /tasks with both taskCategory and subCategory search params applied.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/pages/DashboardPage.tsx",
+        "frontend/src/pages/TasksPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-68"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-inline-editing-of-a-task-s-comment-directly-in-the-tasks-list-table-comment-column-so-users-can-update-the-comment-without-opening-the-task-edit-dialog-the-inline-edit-must-save-via-existing-task-update-apis-and-show-clear-loading-error-feedback-in-english",
+      "featureTitle": "Add inline editing of a task’s Comment directly in the Tasks list table (Comment column) so users can update the comment without opening the Task edit dialog. The inline edit must save via existing task update APIs and show clear loading/error feedback in English.",
+      "files": [
+        "frontend/src/components/tasks/InlineCommentEditor.tsx",
+        "frontend/src/hooks/tasks.ts",
+        "frontend/src/pages/TasksPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-69"
       ],
       "confidence": "high"
     }

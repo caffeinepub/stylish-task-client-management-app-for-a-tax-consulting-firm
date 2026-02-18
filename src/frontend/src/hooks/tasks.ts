@@ -152,3 +152,19 @@ export function useBulkUpdateTasks() {
     },
   });
 }
+
+export function useUpdateTaskComment() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { taskId: TaskId; comment: string }) => {
+      if (!actor) throw new Error('Actor not available');
+      const update: PartialTaskUpdate = { comment: data.comment };
+      return actor.bulkUpdateTasks([[data.taskId, update]]);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
+  });
+}

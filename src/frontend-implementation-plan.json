@@ -1,33 +1,85 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix Radix Select crash for empty/invalid task status in Task edit flow",
+  "title": "Dashboard Sub-Category Analytics + Tasks Inline Comment Editing",
   "requirements": [
     {
-      "id": "REQ-63",
-      "summary": "Harden Task status Select so empty/whitespace/invalid stored statuses never control Radix Select with an empty string and always fall back to a safe non-empty sentinel; ensure sentinel submits status: null.",
+      "id": "REQ-67",
+      "summary": "Add three Dashboard breakdown sections for Task Sub Category and Category+Sub Category with revenue/count aggregations and responsive empty-state tables.",
       "acceptanceCriteria": [
-        "Opening the Edit Task dialog for a task with status === \"\" does not crash and renders the dialog normally.",
-        "In frontend/src/components/tasks/TaskFormDialog.tsx, when initializing edit-mode state, empty-string/whitespace status values are mapped to the existing STATUS_NONE_SENTINEL (\"__none__\") instead of being passed through to the Select as \"\".",
-        "If an existing task has a status value that is not in ALLOWED_TASK_STATUSES (e.g., legacy or malformed), the dialog does not crash and the status field falls back to the sentinel (\"None\") or a normalized allowed value (if normalization is applied).",
-        "Submitting an edited task with the sentinel selected results in sending status: null (i.e., clearing status) rather than sending an empty string.",
-        "No SelectItem in the Task edit flow uses value=\"\" and no Select component in the Task edit flow receives \"\" as its controlled value."
+        "Dashboard page renders three new sections for Sub Category analytics: Revenue by Sub Category, Tasks by Sub Category, and Category + Sub Category grouped table.",
+        "Revenue aggregation uses Task.bill as the revenue amount and treats null/undefined as 0.",
+        "All new tables are sorted descending by their primary metric (Revenue tables by revenue; Count tables by count).",
+        "If there are no tasks (or no data for a table), show a clear empty state message in English rather than an empty table.",
+        "Dashboard remains responsive (tables are usable on small screens via horizontal scroll and/or sensible column sizing)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/tasks/TaskFormDialog.tsx",
+          "path": "frontend/src/utils/taskAggregations.ts",
           "operation": "modify",
-          "description": "Add a small status coercion/normalization step when populating edit-mode state so task.status values that are empty/whitespace or not in ALLOWED_TASK_STATUSES never reach the <Select> as \"\" or an invalid value; map them to STATUS_NONE_SENTINEL (\"__none__\") or a normalized allowed value. Ensure submit logic continues to translate STATUS_NONE_SENTINEL to status: null (never an empty string)."
+          "description": "Add new aggregation helpers/types to compute: (1) revenue grouped by subCategory, (2) task counts grouped by subCategory, and (3) grouped rows by (taskCategory, subCategory) with at least count + revenue, all sorted descending by their primary metric; ensure bill null/undefined is treated as 0."
         },
         {
-          "path": "frontend/src/constants/taskStatus.ts",
+          "path": "frontend/src/pages/DashboardPage.tsx",
           "operation": "modify",
-          "description": "Improve status normalization/validation utilities to be null/whitespace-safe (e.g., trim input before mapping) so TaskFormDialog can reliably normalize legacy values and detect unknown/invalid statuses for fallback to the sentinel."
+          "description": "Render three new dashboard sections (cards + tables) for Sub Category analytics using existing shadcn-ui Table/Card components (verify the component's usage instructions before implementing.); add clear English empty states when no rows exist; wrap tables in responsive horizontal scroll containers and apply sensible min column widths."
+        }
+      ]
+    },
+    {
+      "id": "REQ-68",
+      "summary": "Enable drill-down navigation from Dashboard Sub Category tables to Tasks with subCategory search param and extend /tasks search validation + filtering for subCategory.",
+      "acceptanceCriteria": [
+        "Clicking a row in Revenue by Sub Category navigates to /tasks with the selected Sub Category filter applied.",
+        "Clicking a row in Tasks by Sub Category navigates to /tasks with the selected Sub Category filter applied.",
+        "Clicking a row in the combined Category + Sub Category table navigates to /tasks with both the selected Task Category and Sub Category filters applied.",
+        "/tasks route validateSearch (in frontend/src/App.tsx) defensively accepts the new subCategory search param (string only) and ignores malformed values without throwing.",
+        "TasksPage initializes and applies subCategory filtering when the subCategory search param is present."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Extend the /tasks route validateSearch to defensively accept a new subCategory search param (string only) and ignore malformed values without throwing."
         },
         {
-          "path": "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
+          "path": "frontend/src/pages/DashboardPage.tsx",
           "operation": "modify",
-          "description": "Remove any Radix <SelectItem> that uses value=\"\" by introducing a non-empty sentinel for the bulk-edit 'Leave unchanged' option, and ensure the controlled <Select> value never becomes \"\". Keep behavior the same (no status update applied when 'Leave unchanged' is selected)."
+          "description": "Add row click handlers on the new Sub Category analytics tables to navigate to /tasks with search params: { subCategory } for Sub Category rows and { taskCategory, subCategory } for Category+Sub Category rows."
+        },
+        {
+          "path": "frontend/src/pages/TasksPage.tsx",
+          "operation": "modify",
+          "description": "Update TasksPage to read the new validated subCategory search param, initialize a subCategory filter from it, include subCategory in filtering logic, and reflect it in active-filter UI (using existing shadcn-ui Select/Badge components; verify the component's usage instructions before implementing.)."
+        }
+      ]
+    },
+    {
+      "id": "REQ-69",
+      "summary": "Add inline editing for Task Comment within the Tasks table with save/cancel, loading state, and retryable error feedback using existing task update APIs.",
+      "acceptanceCriteria": [
+        "In the Tasks table, the Comment cell can be switched into an editing state (e.g., click-to-edit or an edit icon in the cell).",
+        "User can edit the comment text and either Save or Cancel without opening TaskFormDialog.",
+        "Saving updates the task’s comment via an existing mutation (e.g., bulkUpdateTasks with a single task patch, or the existing updateTask call) and refreshes the tasks list so the updated comment is visible.",
+        "While saving, the UI shows an in-progress state for that row/cell and prevents duplicate submissions.",
+        "On failure, the UI shows a clear English error message and keeps the edited text available so the user can retry.",
+        "Clearing the comment is supported (user can set comment to empty/none) and the displayed value updates accordingly."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/tasks.ts",
+          "operation": "modify",
+          "description": "Add a focused React Query mutation hook for updating only a task's comment via existing backend capabilities (prefer bulkUpdateTasks with a single patch); ensure tasks query invalidation occurs after success."
+        },
+        {
+          "path": "frontend/src/components/tasks/InlineCommentEditor.tsx",
+          "operation": "create",
+          "description": "Create a reusable Tasks table cell editor for Comment with view/edit modes, Save/Cancel actions, per-cell loading/disabled state, and clear English error messaging on failure; implement using existing shadcn-ui Input/Button components (verify the component's usage instructions before implementing.)."
+        },
+        {
+          "path": "frontend/src/pages/TasksPage.tsx",
+          "operation": "modify",
+          "description": "Wire InlineCommentEditor into the Tasks table Comment column so each row can edit/save/cancel comment inline without opening TaskFormDialog; ensure saving refreshes the list, prevents duplicate submissions while pending, supports clearing to empty, and preserves edited text on error for retry."
         }
       ]
     }

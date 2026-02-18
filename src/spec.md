@@ -1,11 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Fix the Task create/edit dialog crash caused by Radix Select receiving an empty-string or invalid status value.
+**Goal:** Add Sub Category analytics to the Dashboard with drill-down into filtered Tasks, and enable inline Comment editing directly in the Tasks table.
 
 **Planned changes:**
-- In `frontend/src/components/tasks/TaskFormDialog.tsx`, normalize task status when initializing edit-mode form state so empty-string/whitespace/missing/unknown values map to the existing non-empty `STATUS_NONE_SENTINEL` (`"__none__"`), never `""`.
-- Ensure the Status `<Select>` is never controlled with `""`, and no `Select.Item` uses `value=""` in the task edit flow.
-- On submit, when the sentinel (“None”) is selected, send `status: null` to clear status instead of sending an empty string.
+- Extend the Dashboard with three new Sub Category breakdown sections: Revenue by Sub Category (sum of Bill, treating missing/null as 0), Tasks by Sub Category (count), and a combined Category + Sub Category table (count + total revenue), each sorted descending by its primary metric and showing a clear English empty state when no data.
+- Add row click drill-down from the new Dashboard tables to `/tasks` using route search params: `subCategory` alone, or `taskCategory` + `subCategory` for the combined table.
+- Update `/tasks` route search-param validation to defensively accept `subCategory` (string only) and update Tasks page filtering to apply `subCategory` when present.
+- Add inline editing for the Comment column in the Tasks list table with Save/Cancel, saving via existing task update APIs, including row-level loading state, clear English error messaging, retry support, and allowing clearing the comment to empty.
 
-**User-visible outcome:** Users can open and use the Edit Task dialog even for tasks that have an empty/invalid stored status, without the page crashing, and can clear status safely via the “None” option.
+**User-visible outcome:** Users can view new Sub Category analytics on the Dashboard, click rows to jump into the Tasks page with Sub Category (and optionally Category) filters applied, and edit a task’s Comment inline in the Tasks table without opening the edit dialog.

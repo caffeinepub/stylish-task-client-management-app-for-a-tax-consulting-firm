@@ -16,6 +16,7 @@ import TaskFormDialog from '../components/tasks/TaskFormDialog';
 import TaskQuickStatus from '../components/tasks/TaskQuickStatus';
 import TaskBulkUploadDialog from '../components/tasks/TaskBulkUploadDialog';
 import TaskBulkEditDialog from '../components/tasks/TaskBulkEditDialog';
+import InlineCommentEditor from '../components/tasks/InlineCommentEditor';
 import { ALLOWED_TASK_STATUSES, isCompletedStatus, getStatusDisplayLabel } from '../constants/taskStatus';
 import { exportTasksToExcel } from '../utils/taskExcel';
 import { SortField, SortDirection, sortTasks } from '../utils/taskSort';
@@ -24,12 +25,13 @@ import type { Task } from '../backend';
 
 export default function TasksPage() {
   const navigate = useNavigate();
-  const searchParams = useSearch({ from: '/tasks' }) as { overdue?: string; status?: string; taskCategory?: string };
+  const searchParams = useSearch({ from: '/tasks' }) as { overdue?: string; status?: string; taskCategory?: string; subCategory?: string };
   
   const { data: tasks, isLoading: tasksLoading, error: tasksError, refetch: refetchTasks } = useGetAllTasks();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [subCategoryFilter, setSubCategoryFilter] = useState<string>('all');
   const [overdueFilter, setOverdueFilter] = useState<boolean>(false);
   const [sortField, setSortField] = useState<SortField>('dueDate');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -54,6 +56,9 @@ export default function TasksPage() {
     if (searchParams.taskCategory) {
       setCategoryFilter(searchParams.taskCategory);
     }
+    if (searchParams.subCategory) {
+      setSubCategoryFilter(searchParams.subCategory);
+    }
   }, [searchParams]);
 
   // Clear selection when bulk edit dialog closes
@@ -63,11 +68,17 @@ export default function TasksPage() {
     }
   }, [bulkEditOpen]);
 
-  // Get unique categories for filter dropdown
+  // Get unique categories and sub categories for filter dropdowns
   const uniqueCategories = useMemo(() => {
     if (!tasks) return [];
     const categories = new Set(tasks.map(t => t.taskCategory));
     return Array.from(categories).sort();
+  }, [tasks]);
+
+  const uniqueSubCategories = useMemo(() => {
+    if (!tasks) return [];
+    const subCategories = new Set(tasks.map(t => t.subCategory));
+    return Array.from(subCategories).sort();
   }, [tasks]);
 
   const filteredTasks = useMemo(() => {
@@ -100,15 +111,20 @@ export default function TasksPage() {
         matchesCategory = task.taskCategory === categoryFilter;
       }
 
+      let matchesSubCategory = true;
+      if (subCategoryFilter !== 'all') {
+        matchesSubCategory = task.subCategory === subCategoryFilter;
+      }
+
       let matchesOverdue = true;
       if (overdueFilter) {
         // Overdue: has due date in past AND not completed
         matchesOverdue = !!(task.dueDate && Number(task.dueDate) < now && !isCompletedStatus(task.status));
       }
 
-      return matchesSearch && matchesStatus && matchesCategory && matchesOverdue;
+      return matchesSearch && matchesStatus && matchesCategory && matchesSubCategory && matchesOverdue;
     });
-  }, [tasks, searchQuery, statusFilter, categoryFilter, overdueFilter]);
+  }, [tasks, searchQuery, statusFilter, categoryFilter, subCategoryFilter, overdueFilter]);
 
   const sortedTasks = useMemo(() => {
     return sortTasks(filteredTasks, sortField, sortDirection);
@@ -118,7 +134,7 @@ export default function TasksPage() {
     return sortedTasks.filter(task => selectedTaskIds.has(task.id.toString()));
   }, [sortedTasks, selectedTaskIds]);
 
-  const hasActiveFilters = statusFilter !== 'all' || categoryFilter !== 'all' || overdueFilter;
+  const hasActiveFilters = statusFilter !== 'all' || categoryFilter !== 'all' || subCategoryFilter !== 'all' || overdueFilter;
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -139,6 +155,16 @@ export default function TasksPage() {
     setSelectedTaskIds(newSelection);
   };
 
+  const handleAddTask = () => {
+    setEditingTask(undefined);
+    setDialogOpen(true);
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setDialogOpen(true);
+  };
+
   const handleBulkDelete = () => {
     const taskIds = Array.from(selectedTaskIds).map(id => BigInt(id));
     bulkDeleteTasks(taskIds, {
@@ -149,10 +175,12 @@ export default function TasksPage() {
     });
   };
 
-  const handleExportToExcel = async () => {
+  const handleExport = async () => {
+    if (!tasks || tasks.length === 0) return;
+    
     setIsExporting(true);
     try {
-      await exportTasksToExcel(sortedTasks);
+      await exportTasksToExcel(tasks);
     } catch (error) {
       console.error('Export failed:', error);
     } finally {
@@ -160,32 +188,21 @@ export default function TasksPage() {
     }
   };
 
-  const toggleSortDirection = () => {
-    setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
   };
 
   const clearFilters = () => {
     setStatusFilter('all');
     setCategoryFilter('all');
+    setSubCategoryFilter('all');
     setOverdueFilter(false);
     navigate({ to: '/tasks', search: {} });
-  };
-
-  const handleEditTask = (task: Task) => {
-    setEditingTask(task);
-    setDialogOpen(true);
-  };
-
-  const handleAddTask = () => {
-    setEditingTask(undefined);
-    setDialogOpen(true);
-  };
-
-  const handleDialogOpenChange = (open: boolean) => {
-    setDialogOpen(open);
-    if (!open) {
-      setEditingTask(undefined);
-    }
   };
 
   if (tasksError) {
@@ -193,7 +210,7 @@ export default function TasksPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Tasks</h1>
-          <p className="text-muted-foreground">Manage your task workflow</p>
+          <p className="text-muted-foreground">Manage your tasks</p>
         </div>
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -201,7 +218,6 @@ export default function TasksPage() {
             Failed to load tasks. {tasksError.message}
           </AlertDescription>
         </Alert>
-        <Button onClick={() => refetchTasks()}>Retry</Button>
       </div>
     );
   }
@@ -210,17 +226,17 @@ export default function TasksPage() {
     return (
       <div className="space-y-6">
         <div>
-          <Skeleton className="h-10 w-48 mb-2" />
-          <Skeleton className="h-5 w-96" />
+          <Skeleton className="h-10 w-32 mb-2" />
+          <Skeleton className="h-5 w-64" />
         </div>
         <Card>
           <CardHeader>
-            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-6 w-48" />
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="h-12 w-full" />
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-16 w-full" />
               ))}
             </div>
           </CardContent>
@@ -234,218 +250,207 @@ export default function TasksPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Tasks</h1>
-          <p className="text-muted-foreground">Manage your task workflow</p>
+          <p className="text-muted-foreground">Manage your tasks</p>
         </div>
         <div className="flex gap-2">
-          <Button 
-            onClick={handleExportToExcel}
-            variant="outline"
-            disabled={isExporting || sortedTasks.length === 0}
-          >
+          <Button onClick={handleExport} variant="outline" disabled={!tasks || tasks.length === 0 || isExporting}>
             <Download className="mr-2 h-4 w-4" />
-            {isExporting ? 'Exporting...' : 'Export to Excel'}
+            {isExporting ? 'Exporting...' : 'Export Excel'}
           </Button>
-          <Button 
-            onClick={() => setBulkUploadOpen(true)}
-            variant="outline"
-          >
+          <Button onClick={() => setBulkUploadOpen(true)} variant="outline">
             <Upload className="mr-2 h-4 w-4" />
             Bulk Upload
           </Button>
-          <Button 
-            onClick={handleAddTask}
-            className="bg-[oklch(0.50_0.08_130)] hover:bg-[oklch(0.45_0.08_130)] dark:bg-[oklch(0.65_0.08_130)] dark:hover:bg-[oklch(0.70_0.08_130)]"
-          >
+          <Button onClick={handleAddTask}>
             <Plus className="mr-2 h-4 w-4" />
             Add Task
           </Button>
         </div>
       </div>
 
-      {hasActiveFilters && (
-        <Card className="border-[oklch(0.50_0.08_130)] bg-[oklch(0.50_0.08_130)]/5">
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-medium">Active filters:</span>
-                {statusFilter !== 'all' && (
-                  <Badge variant="secondary">
-                    Status: {statusFilter === 'open' ? 'Open' : statusFilter}
-                  </Badge>
-                )}
-                {categoryFilter !== 'all' && (
-                  <Badge variant="secondary">
-                    Category: {categoryFilter}
-                  </Badge>
-                )}
-                {overdueFilter && (
-                  <Badge variant="destructive">
-                    Overdue
-                  </Badge>
-                )}
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearFilters}
-              >
-                <X className="mr-2 h-4 w-4" />
-                Clear Filters
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {selectedTaskIds.size > 0 && (
-        <Card className="border-[oklch(0.50_0.08_130)] bg-[oklch(0.50_0.08_130)]/5">
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <span className="font-medium">
-                {selectedTaskIds.size} task{selectedTaskIds.size !== 1 ? 's' : ''} selected
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setBulkEditOpen(true)}
-                >
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit Selected
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => setDeleteDialogOpen(true)}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete Selected
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       <Card className="border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)]">
         <CardHeader>
           <CardTitle>All Tasks</CardTitle>
           <CardDescription>
-            {sortedTasks.length} {sortedTasks.length === 1 ? 'task' : 'tasks'}
-            {hasActiveFilters && ` (filtered from ${tasks?.length || 0} total)`}
+            {sortedTasks.length} task{sortedTasks.length !== 1 ? 's' : ''} found
+            {selectedTaskIds.size > 0 && ` • ${selectedTaskIds.size} selected`}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-4 mb-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search tasks..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="open">Open</SelectItem>
-                  {ALLOWED_TASK_STATUSES.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue placeholder="Filter by category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {uniqueCategories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search tasks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
             </div>
-            
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Select value={sortField} onValueChange={(value) => setSortField(value as SortField)}>
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="dueDate">Due Date</SelectItem>
-                  <SelectItem value="status">Status</SelectItem>
-                  <SelectItem value="taskCategory">Task Category</SelectItem>
-                  <SelectItem value="clientName">Client Name</SelectItem>
-                  <SelectItem value="assignedName">Assignee</SelectItem>
-                  <SelectItem value="bill">Bill Amount</SelectItem>
-                  <SelectItem value="createdAt">Created At</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                variant="outline"
-                size="default"
-                onClick={toggleSortDirection}
-                className="w-full sm:w-auto"
-              >
-                <ArrowUpDown className="mr-2 h-4 w-4" />
-                {sortDirection === 'asc' ? 'Ascending' : 'Descending'}
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="open">Open</SelectItem>
+                {ALLOWED_TASK_STATUSES.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Filter by category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {uniqueCategories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={subCategoryFilter} onValueChange={setSubCategoryFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Filter by sub category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Sub Categories</SelectItem>
+                {uniqueSubCategories.map((subCategory) => (
+                  <SelectItem key={subCategory} value={subCategory}>
+                    {subCategory}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {hasActiveFilters && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Active filters:</span>
+              {statusFilter !== 'all' && (
+                <Badge variant="secondary" className="gap-1">
+                  Status: {statusFilter}
+                  <X className="h-3 w-3 cursor-pointer" onClick={() => setStatusFilter('all')} />
+                </Badge>
+              )}
+              {categoryFilter !== 'all' && (
+                <Badge variant="secondary" className="gap-1">
+                  Category: {categoryFilter}
+                  <X className="h-3 w-3 cursor-pointer" onClick={() => setCategoryFilter('all')} />
+                </Badge>
+              )}
+              {subCategoryFilter !== 'all' && (
+                <Badge variant="secondary" className="gap-1">
+                  Sub Category: {subCategoryFilter}
+                  <X className="h-3 w-3 cursor-pointer" onClick={() => setSubCategoryFilter('all')} />
+                </Badge>
+              )}
+              {overdueFilter && (
+                <Badge variant="secondary" className="gap-1">
+                  Overdue
+                  <X className="h-3 w-3 cursor-pointer" onClick={() => setOverdueFilter(false)} />
+                </Badge>
+              )}
+              <Button variant="ghost" size="sm" onClick={clearFilters}>
+                Clear all
               </Button>
             </div>
-          </div>
+          )}
+
+          {selectedTaskIds.size > 0 && (
+            <div className="flex items-center gap-2 p-3 bg-accent/50 rounded-md">
+              <CheckSquare className="h-4 w-4" />
+              <span className="text-sm font-medium">{selectedTaskIds.size} task{selectedTaskIds.size !== 1 ? 's' : ''} selected</span>
+              <div className="flex-1" />
+              <Button size="sm" variant="outline" onClick={() => setBulkEditOpen(true)}>
+                <Edit className="mr-2 h-4 w-4" />
+                Bulk Edit
+              </Button>
+              <Button size="sm" variant="destructive" onClick={() => setDeleteDialogOpen(true)}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </Button>
+            </div>
+          )}
 
           {sortedTasks.length === 0 ? (
             <div className="text-center py-12">
-              <CheckSquare className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">
-                {tasks && tasks.length === 0 ? 'No tasks yet' : 'No tasks found'}
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                {tasks && tasks.length === 0
-                  ? 'Get started by adding your first task'
-                  : 'Try adjusting your search or filters'}
-              </p>
-              {tasks && tasks.length === 0 && (
-                <Button onClick={handleAddTask}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Your First Task
+              <p className="text-muted-foreground">No tasks found</p>
+              {hasActiveFilters && (
+                <Button variant="link" onClick={clearFilters} className="mt-2">
+                  Clear filters
                 </Button>
               )}
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="rounded-md border border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)] overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-12">
+                    <TableHead className="w-[50px]">
                       <Checkbox
                         checked={selectedTaskIds.size === sortedTasks.length && sortedTasks.length > 0}
                         onCheckedChange={handleSelectAll}
-                        aria-label="Select all tasks"
                       />
                     </TableHead>
-                    <TableHead className="min-w-[150px]">Client Name</TableHead>
-                    <TableHead className="min-w-[120px]">Category</TableHead>
-                    <TableHead className="min-w-[120px]">Sub Category</TableHead>
-                    <TableHead className="min-w-[140px]">Status</TableHead>
-                    <TableHead className="min-w-[150px]">Comment</TableHead>
-                    <TableHead className="min-w-[120px]">Assigned</TableHead>
-                    <TableHead className="min-w-[110px]">Due Date</TableHead>
-                    <TableHead className="min-w-[130px]">Assignment Date</TableHead>
-                    <TableHead className="min-w-[140px]">Completion Date</TableHead>
-                    <TableHead className="min-w-[100px]">Bill</TableHead>
-                    <TableHead className="min-w-[130px]">Advance Received</TableHead>
-                    <TableHead className="min-w-[150px]">Outstanding Amount</TableHead>
-                    <TableHead className="min-w-[130px]">Payment Status</TableHead>
+                    <TableHead className="min-w-[150px] cursor-pointer" onClick={() => handleSort('clientName')}>
+                      <div className="flex items-center gap-1">
+                        Client Name
+                        <ArrowUpDown className="h-3 w-3" />
+                      </div>
+                    </TableHead>
+                    <TableHead className="min-w-[150px] cursor-pointer" onClick={() => handleSort('taskCategory')}>
+                      <div className="flex items-center gap-1">
+                        Category
+                        <ArrowUpDown className="h-3 w-3" />
+                      </div>
+                    </TableHead>
+                    <TableHead className="min-w-[150px] cursor-pointer" onClick={() => handleSort('subCategory')}>
+                      <div className="flex items-center gap-1">
+                        Sub Category
+                        <ArrowUpDown className="h-3 w-3" />
+                      </div>
+                    </TableHead>
+                    <TableHead className="min-w-[120px]">Status</TableHead>
+                    <TableHead className="min-w-[200px]">Comment</TableHead>
+                    <TableHead className="min-w-[150px] cursor-pointer" onClick={() => handleSort('assignedName')}>
+                      <div className="flex items-center gap-1">
+                        Assigned To
+                        <ArrowUpDown className="h-3 w-3" />
+                      </div>
+                    </TableHead>
+                    <TableHead className="min-w-[120px] cursor-pointer" onClick={() => handleSort('dueDate')}>
+                      <div className="flex items-center gap-1">
+                        Due Date
+                        <ArrowUpDown className="h-3 w-3" />
+                      </div>
+                    </TableHead>
+                    <TableHead className="min-w-[120px] cursor-pointer" onClick={() => handleSort('assignmentDate')}>
+                      <div className="flex items-center gap-1">
+                        Assignment Date
+                        <ArrowUpDown className="h-3 w-3" />
+                      </div>
+                    </TableHead>
+                    <TableHead className="min-w-[120px] cursor-pointer" onClick={() => handleSort('completionDate')}>
+                      <div className="flex items-center gap-1">
+                        Completion Date
+                        <ArrowUpDown className="h-3 w-3" />
+                      </div>
+                    </TableHead>
+                    <TableHead className="min-w-[120px] text-right cursor-pointer" onClick={() => handleSort('bill')}>
+                      <div className="flex items-center justify-end gap-1">
+                        Bill
+                        <ArrowUpDown className="h-3 w-3" />
+                      </div>
+                    </TableHead>
+                    <TableHead className="min-w-[120px] text-right">Advance</TableHead>
+                    <TableHead className="min-w-[120px] text-right">Outstanding</TableHead>
+                    <TableHead className="min-w-[120px]">Payment Status</TableHead>
                     <TableHead className="w-[80px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -456,7 +461,6 @@ export default function TasksPage() {
                         <Checkbox
                           checked={selectedTaskIds.has(task.id.toString())}
                           onCheckedChange={(checked) => handleSelectTask(task.id.toString(), checked as boolean)}
-                          aria-label={`Select task ${task.id}`}
                         />
                       </TableCell>
                       <TableCell className="font-medium">{task.clientName}</TableCell>
@@ -465,16 +469,16 @@ export default function TasksPage() {
                       <TableCell>
                         <TaskQuickStatus task={task} />
                       </TableCell>
-                      <TableCell className="max-w-[200px] truncate">
-                        {formatOptionalText(task.comment)}
+                      <TableCell>
+                        <InlineCommentEditor task={task} />
                       </TableCell>
                       <TableCell>{formatOptionalText(task.assignedName)}</TableCell>
                       <TableCell>{formatTaskDate(task.dueDate)}</TableCell>
                       <TableCell>{formatTaskDate(task.assignmentDate)}</TableCell>
                       <TableCell>{formatTaskDate(task.completionDate)}</TableCell>
-                      <TableCell>{formatCurrency(task.bill)}</TableCell>
-                      <TableCell>{formatCurrency(task.advanceReceived)}</TableCell>
-                      <TableCell>{formatCurrency(task.outstandingAmount)}</TableCell>
+                      <TableCell className="text-right">{task.bill !== undefined && task.bill !== null ? formatCurrency(task.bill) : '—'}</TableCell>
+                      <TableCell className="text-right">{task.advanceReceived !== undefined && task.advanceReceived !== null ? formatCurrency(task.advanceReceived) : '—'}</TableCell>
+                      <TableCell className="text-right">{task.outstandingAmount !== undefined && task.outstandingAmount !== null ? formatCurrency(task.outstandingAmount) : '—'}</TableCell>
                       <TableCell>{formatOptionalText(task.paymentStatus)}</TableCell>
                       <TableCell>
                         <Button
@@ -496,7 +500,7 @@ export default function TasksPage() {
 
       <TaskFormDialog
         open={dialogOpen}
-        onOpenChange={handleDialogOpenChange}
+        onOpenChange={setDialogOpen}
         task={editingTask}
       />
 
@@ -521,11 +525,7 @@ export default function TasksPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleBulkDelete}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
+            <AlertDialogAction onClick={handleBulkDelete} disabled={isDeleting}>
               {isDeleting ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -65,6 +65,14 @@ export default function DashboardPage() {
     navigate({ to: '/tasks', search: { taskCategory: category } });
   };
 
+  const handleSubCategoryClick = (subCategory: string) => {
+    navigate({ to: '/tasks', search: { subCategory } });
+  };
+
+  const handleCategorySubCategoryClick = (taskCategory: string, subCategory: string) => {
+    navigate({ to: '/tasks', search: { taskCategory, subCategory } });
+  };
+
   const handleOverdueClick = () => {
     navigate({ to: '/tasks', search: { overdue: 'true' } });
   };
@@ -185,7 +193,7 @@ export default function DashboardPage() {
                 No revenue data available
               </div>
             ) : (
-              <div className="rounded-md border border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)]">
+              <div className="rounded-md border border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)] overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -222,7 +230,7 @@ export default function DashboardPage() {
                 No tasks available
               </div>
             ) : (
-              <div className="rounded-md border border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)]">
+              <div className="rounded-md border border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)] overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -250,6 +258,123 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)]">
+          <CardHeader>
+            <CardTitle>Revenue by Sub Category</CardTitle>
+            <CardDescription>Total revenue breakdown by task sub category</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {stats.subCategoryRevenue.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No revenue data available
+              </div>
+            ) : (
+              <div className="rounded-md border border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)] overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Sub Category</TableHead>
+                      <TableHead className="text-right">Revenue</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {stats.subCategoryRevenue.map((item) => (
+                      <TableRow 
+                        key={item.subCategory}
+                        className="cursor-pointer hover:bg-accent/50"
+                        onClick={() => handleSubCategoryClick(item.subCategory)}
+                      >
+                        <TableCell className="font-medium">{item.subCategory}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(item.revenue)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)]">
+          <CardHeader>
+            <CardTitle>Tasks by Sub Category</CardTitle>
+            <CardDescription>Task count breakdown by sub category</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {stats.subCategoryCount.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No tasks available
+              </div>
+            ) : (
+              <div className="rounded-md border border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)] overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Sub Category</TableHead>
+                      <TableHead className="text-right">Count</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {stats.subCategoryCount.map((item) => (
+                      <TableRow 
+                        key={item.subCategory}
+                        className="cursor-pointer hover:bg-accent/50"
+                        onClick={() => handleSubCategoryClick(item.subCategory)}
+                      >
+                        <TableCell className="font-medium">{item.subCategory}</TableCell>
+                        <TableCell className="text-right font-medium">{item.count}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)]">
+        <CardHeader>
+          <CardTitle>Category + Sub Category Breakdown</CardTitle>
+          <CardDescription>Combined view of task categories and sub categories with count and revenue</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {stats.categorySubCategoryRows.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No data available
+            </div>
+          ) : (
+            <div className="rounded-md border border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)] overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[150px]">Category</TableHead>
+                    <TableHead className="min-w-[150px]">Sub Category</TableHead>
+                    <TableHead className="text-right">Count</TableHead>
+                    <TableHead className="text-right">Revenue</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {stats.categorySubCategoryRows.map((item, idx) => (
+                    <TableRow 
+                      key={`${item.taskCategory}-${item.subCategory}-${idx}`}
+                      className="cursor-pointer hover:bg-accent/50"
+                      onClick={() => handleCategorySubCategoryClick(item.taskCategory, item.subCategory)}
+                    >
+                      <TableCell className="font-medium">{item.taskCategory}</TableCell>
+                      <TableCell className="font-medium">{item.subCategory}</TableCell>
+                      <TableCell className="text-right">{item.count}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(item.revenue)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
