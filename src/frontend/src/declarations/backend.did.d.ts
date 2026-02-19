@@ -35,6 +35,22 @@ export interface PartialClientInput {
   'gstin' : [] | [string],
   'notes' : [] | [string],
 }
+export interface PartialTaskUpdate {
+  'id' : TaskId,
+  'status' : [] | [string],
+  'subCategory' : [] | [string],
+  'paymentStatus' : [] | [string],
+  'completionDate' : [] | [bigint],
+  'clientName' : [] | [string],
+  'assignmentDate' : [] | [bigint],
+  'bill' : [] | [number],
+  'advanceReceived' : [] | [number],
+  'dueDate' : [] | [bigint],
+  'comment' : [] | [string],
+  'outstandingAmount' : [] | [number],
+  'taskCategory' : [] | [string],
+  'assignedName' : [] | [string],
+}
 export interface PartialTodoInput {
   'title' : string,
   'completed' : boolean,
@@ -82,6 +98,7 @@ export type UserRole = { 'admin' : null } |
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'bulkUpdateTasks' : ActorMethod<[Array<PartialTaskUpdate>], undefined>,
   'createAssignee' : ActorMethod<[PartialAssigneeInput], AssigneeId>,
   'createClient' : ActorMethod<[PartialClientInput], ClientId>,
   'createTask' : ActorMethod<[string, string, string], TaskId>,

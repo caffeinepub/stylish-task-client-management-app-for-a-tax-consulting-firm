@@ -46,6 +46,22 @@ export interface PartialClientInput {
     gstin?: string;
     notes?: string;
 }
+export interface PartialTaskUpdate {
+    id: TaskId;
+    status?: string;
+    subCategory?: string;
+    paymentStatus?: string;
+    completionDate?: bigint;
+    clientName?: string;
+    assignmentDate?: bigint;
+    bill?: number;
+    advanceReceived?: number;
+    dueDate?: bigint;
+    comment?: string;
+    outstandingAmount?: number;
+    taskCategory?: string;
+    assignedName?: string;
+}
 export type TaskId = bigint;
 export interface Assignee {
     id: AssigneeId;
@@ -82,6 +98,7 @@ export enum UserRole {
 }
 export interface backendInterface {
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    bulkUpdateTasks(updates: Array<PartialTaskUpdate>): Promise<void>;
     createAssignee(assignee: PartialAssigneeInput): Promise<AssigneeId>;
     createClient(client: PartialClientInput): Promise<ClientId>;
     createTask(clientName: string, taskCategory: string, subCategory: string): Promise<TaskId>;

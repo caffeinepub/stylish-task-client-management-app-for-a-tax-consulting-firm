@@ -6,6 +6,7 @@ import Principal "mo:core/Principal";
 import Nat "mo:core/Nat";
 import Iter "mo:core/Iter";
 import Migration "migration";
+
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
@@ -64,6 +65,7 @@ actor {
   };
 
   public type PartialTaskUpdate = {
+    id : TaskId;
     clientName : ?Text;
     taskCategory : ?Text;
     subCategory : ?Text;
@@ -450,6 +452,79 @@ actor {
     };
   };
 
+  public shared ({ caller }) func bulkUpdateTasks(updates : [PartialTaskUpdate]) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Please sign in to continue");
+    };
+
+    let taskStorage = getTaskStorage(caller);
+
+    for (update in updates.values()) {
+      switch (taskStorage.get(update.id)) {
+        case (null) {}; // Ignore non-existent tasks
+        case (?existingTask) {
+          let updatedTask : Task = {
+            id = existingTask.id;
+            clientName = switch (update.clientName) {
+              case (null) { existingTask.clientName };
+              case (?value) { value };
+            };
+            taskCategory = switch (update.taskCategory) {
+              case (null) { existingTask.taskCategory };
+              case (?value) { value };
+            };
+            subCategory = switch (update.subCategory) {
+              case (null) { existingTask.subCategory };
+              case (?value) { value };
+            };
+            status = switch (update.status) {
+              case (null) { existingTask.status };
+              case (?value) { ?value };
+            };
+            comment = switch (update.comment) {
+              case (null) { existingTask.comment };
+              case (?value) { ?value };
+            };
+            assignedName = switch (update.assignedName) {
+              case (null) { existingTask.assignedName };
+              case (?value) { ?value };
+            };
+            dueDate = switch (update.dueDate) {
+              case (null) { existingTask.dueDate };
+              case (?value) { ?value };
+            };
+            assignmentDate = switch (update.assignmentDate) {
+              case (null) { existingTask.assignmentDate };
+              case (?value) { ?value };
+            };
+            completionDate = switch (update.completionDate) {
+              case (null) { existingTask.completionDate };
+              case (?value) { ?value };
+            };
+            bill = switch (update.bill) {
+              case (null) { existingTask.bill };
+              case (?value) { ?value };
+            };
+            advanceReceived = switch (update.advanceReceived) {
+              case (null) { existingTask.advanceReceived };
+              case (?value) { ?value };
+            };
+            outstandingAmount = switch (update.outstandingAmount) {
+              case (null) { existingTask.outstandingAmount };
+              case (?value) { ?value };
+            };
+            paymentStatus = switch (update.paymentStatus) {
+              case (null) { existingTask.paymentStatus };
+              case (?value) { ?value };
+            };
+            createdAt = existingTask.createdAt;
+          };
+          taskStorage.add(update.id, updatedTask);
+        };
+      };
+    };
+  };
+
   public shared ({ caller }) func deleteTask(taskId : TaskId) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Please sign in to continue");
@@ -588,4 +663,3 @@ actor {
     todoStorage.values().toArray();
   };
 };
-

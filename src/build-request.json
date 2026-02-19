@@ -1,71 +1,98 @@
 {
   "kind": "build_request",
-  "title": "Auto-populate Assignment Date and Completion Date based on task state changes",
+  "title": "Enable full field editing in bulk task edit flow",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-85",
-      "text": "Update the backend Task update logic so that when a task's assignedName field transitions from null/empty to a non-empty value, the assignmentDate field is automatically set to the current timestamp (Int representing nanoseconds since epoch) if assignmentDate is not already set.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-user-auto-update"
-        ],
-        "quotes": [
-          "auto updation of assignment date when assign a task to a assignee"
-        ]
-      },
-      "acceptanceCriteria": [
-        "When updateTask is called with a non-empty assignedName and the existing task has null/empty assignedName, the backend automatically sets assignmentDate to the current timestamp",
-        "If assignmentDate is already set (non-null), the backend does not overwrite it",
-        "If assignedName remains null/empty or does not change, assignmentDate is not modified"
-      ]
-    },
-    {
-      "id": "REQ-86",
-      "text": "Update the backend Task update logic so that when a task's status field is set to 'Completed', the completionDate field is automatically set to the current timestamp (Int representing nanoseconds since epoch) if completionDate is not already set.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-user-auto-update"
-        ],
-        "quotes": [
-          "update date of completion when mark task statsus  as completed"
-        ]
-      },
-      "acceptanceCriteria": [
-        "When updateTask is called with status='Completed' and the existing task has null completionDate, the backend automatically sets completionDate to the current timestamp",
-        "If completionDate is already set (non-null), the backend does not overwrite it",
-        "If status is set to any value other than 'Completed', completionDate is not automatically modified"
-      ]
-    },
-    {
-      "id": "REQ-87",
-      "text": "Update the frontend Task mutation hooks (useUpdateTask in frontend/src/hooks/tasks.ts) and all task update UI flows (TaskFormDialog, TaskQuickStatus, InlineCommentEditor, bulk edit) to ensure they send all existing task fields when updating a task, so the backend auto-population logic for assignmentDate and completionDate can reliably detect state transitions.",
+      "id": "REQ-88",
+      "text": "Update the TaskBulkEditDialog component (frontend/src/components/tasks/TaskBulkEditDialog.tsx) to include form fields for all editable Task components: Client Name, Task Category, Sub Category, Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, and Payment Status. Each field must remain optional with an 'Unchanged' sentinel value so users can selectively update only the fields they specify.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-auto-update"
+          "msg-last"
+        ],
+        "quotes": [
+          "in bulk edit ,i need to update all fields when requires"
         ]
       },
       "acceptanceCriteria": [
-        "All task update mutations send the complete task payload including current values for assignedName and status",
-        "The backend receives sufficient context to detect assignedName transitions (null → non-empty) and status transitions (→ 'Completed')",
-        "No existing task update flows are broken by these changes"
+        "Bulk edit dialog displays form inputs for all Task fields (Client Name, Task Category, Sub Category, Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, Payment Status)",
+        "Each field has a default 'Unchanged' option/value that preserves the existing value when not explicitly set by the user",
+        "Form validation handles all field types appropriately (text, dates, numbers, status enum)",
+        "User can update any combination of fields across selected tasks without overwriting unchanged fields"
+      ]
+    },
+    {
+      "id": "REQ-89",
+      "text": "Extend the backend bulkUpdateTasks API (if not already present) or update the existing bulk update logic in backend/main.mo to accept partial updates for all Task fields (clientName, taskCategory, subCategory, status, comment, assignedName, dueDate, assignmentDate, completionDate, bill, advanceReceived, outstandingAmount, paymentStatus). The API must apply only the fields provided in the request payload, leaving omitted fields unchanged in the stored task records.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-last"
+        ],
+        "quotes": [
+          "in bulk edit ,i need to update all fields when requires"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Backend bulk update API accepts optional values for all Task fields",
+        "Only explicitly provided fields in the request payload are updated in each task",
+        "Omitted/null fields in the request do not overwrite existing stored values",
+        "Auto-population logic (assignmentDate when assignedName is set, completionDate when status becomes 'Completed') continues to work during bulk updates"
+      ]
+    },
+    {
+      "id": "REQ-90",
+      "text": "Update the useBulkUpdateTasks mutation hook in frontend/src/hooks/tasks.ts to send all user-specified field updates from the bulk edit form to the backend bulk update API, properly encoding dates as timestamps and numbers as numeric types. Ensure the mutation triggers appropriate cache invalidation and provides clear loading/success/error feedback.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-last"
+        ],
+        "quotes": [
+          "in bulk edit ,i need to update all fields when requires"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Mutation hook sends only the fields the user explicitly set in the bulk edit form",
+        "Date fields are converted to backend-expected timestamp format (Int nanoseconds)",
+        "Numeric fields (Bill, Advance Received, Outstanding Amount) are sent as numbers",
+        "Cache invalidation updates the Tasks list immediately after successful bulk update",
+        "Loading and error states are properly handled and displayed to the user"
+      ]
+    },
+    {
+      "id": "REQ-91",
+      "text": "Wire the expanded TaskBulkEditDialog form submission to call the updated useBulkUpdateTasks mutation with all user-provided field values, ensuring the bulk edit flow remains consistent with existing UI patterns (dialog closure on success, error display, bulk selection state clearing after successful update).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-last"
+        ],
+        "quotes": [
+          "in bulk edit ,i need to update all fields when requires"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Submitting the bulk edit form updates only the selected tasks with the specified field changes",
+        "Dialog closes automatically after successful update",
+        "Bulk selection checkboxes are cleared after successful update",
+        "Success/error feedback is displayed to the user in English",
+        "Updated tasks reflect the new values immediately in the Tasks list table"
       ]
     }
   ],
   "constraints": [
-    "Maintain single-actor architecture; all Motoko logic in backend/main.mo",
-    "Do not modify immutable frontend paths (hooks/useInternetIdentity.ts, hooks/useActor.ts, main.tsx, components/ui)",
-    "Preserve existing access control behavior (trap when unauthenticated)",
-    "Only auto-populate dates when transitioning to the target state; do not overwrite existing dates"
+    "Do not modify the backend single-actor architecture",
+    "Do not edit files listed in frontend.immutablePaths (useInternetIdentity.ts, useActor.ts, main.tsx, frontend/src/components/ui/*)",
+    "Preserve backward compatibility with existing stored task data",
+    "Maintain the 'Unchanged' sentinel value pattern for selective field updates"
   ],
   "nonGoals": [
-    "Changing the Task data model or adding new fields",
-    "Modifying the UI to display these dates differently",
-    "Adding user-configurable auto-population rules",
-    "Auto-populating dates during bulk operations (CSV upload)"
+    "Adding new task fields beyond those already supported",
+    "Changing the bulk selection UI or checkbox behavior",
+    "Modifying single-task edit dialog functionality",
+    "Altering the tasks list table column display"
   ],
   "imageRequirements": {
     "required": [],

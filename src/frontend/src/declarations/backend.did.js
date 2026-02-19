@@ -13,6 +13,23 @@ export const UserRole = IDL.Variant({
   'user' : IDL.Null,
   'guest' : IDL.Null,
 });
+export const TaskId = IDL.Nat;
+export const PartialTaskUpdate = IDL.Record({
+  'id' : TaskId,
+  'status' : IDL.Opt(IDL.Text),
+  'subCategory' : IDL.Opt(IDL.Text),
+  'paymentStatus' : IDL.Opt(IDL.Text),
+  'completionDate' : IDL.Opt(IDL.Int),
+  'clientName' : IDL.Opt(IDL.Text),
+  'assignmentDate' : IDL.Opt(IDL.Int),
+  'bill' : IDL.Opt(IDL.Float64),
+  'advanceReceived' : IDL.Opt(IDL.Float64),
+  'dueDate' : IDL.Opt(IDL.Int),
+  'comment' : IDL.Opt(IDL.Text),
+  'outstandingAmount' : IDL.Opt(IDL.Float64),
+  'taskCategory' : IDL.Opt(IDL.Text),
+  'assignedName' : IDL.Opt(IDL.Text),
+});
 export const PartialAssigneeInput = IDL.Record({
   'name' : IDL.Text,
   'captain' : IDL.Opt(IDL.Text),
@@ -25,7 +42,6 @@ export const PartialClientInput = IDL.Record({
   'notes' : IDL.Opt(IDL.Text),
 });
 export const ClientId = IDL.Nat;
-export const TaskId = IDL.Nat;
 export const PartialTodoInput = IDL.Record({
   'title' : IDL.Text,
   'completed' : IDL.Bool,
@@ -83,6 +99,7 @@ export const UserProfile = IDL.Record({ 'name' : IDL.Text });
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'bulkUpdateTasks' : IDL.Func([IDL.Vec(PartialTaskUpdate)], [], []),
   'createAssignee' : IDL.Func([PartialAssigneeInput], [AssigneeId], []),
   'createClient' : IDL.Func([PartialClientInput], [ClientId], []),
   'createTask' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [TaskId], []),
@@ -146,6 +163,23 @@ export const idlFactory = ({ IDL }) => {
     'user' : IDL.Null,
     'guest' : IDL.Null,
   });
+  const TaskId = IDL.Nat;
+  const PartialTaskUpdate = IDL.Record({
+    'id' : TaskId,
+    'status' : IDL.Opt(IDL.Text),
+    'subCategory' : IDL.Opt(IDL.Text),
+    'paymentStatus' : IDL.Opt(IDL.Text),
+    'completionDate' : IDL.Opt(IDL.Int),
+    'clientName' : IDL.Opt(IDL.Text),
+    'assignmentDate' : IDL.Opt(IDL.Int),
+    'bill' : IDL.Opt(IDL.Float64),
+    'advanceReceived' : IDL.Opt(IDL.Float64),
+    'dueDate' : IDL.Opt(IDL.Int),
+    'comment' : IDL.Opt(IDL.Text),
+    'outstandingAmount' : IDL.Opt(IDL.Float64),
+    'taskCategory' : IDL.Opt(IDL.Text),
+    'assignedName' : IDL.Opt(IDL.Text),
+  });
   const PartialAssigneeInput = IDL.Record({
     'name' : IDL.Text,
     'captain' : IDL.Opt(IDL.Text),
@@ -158,7 +192,6 @@ export const idlFactory = ({ IDL }) => {
     'notes' : IDL.Opt(IDL.Text),
   });
   const ClientId = IDL.Nat;
-  const TaskId = IDL.Nat;
   const PartialTodoInput = IDL.Record({
     'title' : IDL.Text,
     'completed' : IDL.Bool,
@@ -216,6 +249,7 @@ export const idlFactory = ({ IDL }) => {
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'bulkUpdateTasks' : IDL.Func([IDL.Vec(PartialTaskUpdate)], [], []),
     'createAssignee' : IDL.Func([PartialAssigneeInput], [AssigneeId], []),
     'createClient' : IDL.Func([PartialClientInput], [ClientId], []),
     'createTask' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [TaskId], []),

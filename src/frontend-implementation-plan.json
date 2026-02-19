@@ -1,41 +1,63 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Auto-populate Assignment Date and Completion Date based on task state changes",
+  "title": "Enable full field editing in bulk task edit flow",
   "requirements": [
     {
-      "id": "REQ-87",
-      "summary": "Update frontend task mutation hooks and UI flows to send complete task payloads for backend auto-population of assignmentDate and completionDate",
+      "id": "REQ-88",
+      "summary": "Update TaskBulkEditDialog to include form fields for all editable Task properties with optional 'Unchanged' sentinel values",
       "acceptanceCriteria": [
-        "All task update mutations send the complete task payload including current values for assignedName and status",
-        "The backend receives sufficient context to detect assignedName transitions (null → non-empty) and status transitions (→ 'Completed')",
-        "No existing task update flows are broken by these changes"
+        "Bulk edit dialog displays form inputs for all Task fields (Client Name, Task Category, Sub Category, Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, Payment Status)",
+        "Each field has a default 'Unchanged' option/value that preserves the existing value when not explicitly set by the user",
+        "Form validation handles all field types appropriately (text, dates, numbers, status enum)",
+        "User can update any combination of fields across selected tasks without overwriting unchanged fields"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
+          "operation": "modify",
+          "description": "Expand the bulk edit form to include input fields for all Task properties: clientName (text input with autocomplete from existing clients), taskCategory (text input), subCategory (text input), status (dropdown with task statuses from taskStatus.ts), comment (textarea), assignedName (text input with autocomplete from assignees), dueDate (date picker), assignmentDate (date picker), completionDate (date picker), bill (number input), advanceReceived (number input), outstandingAmount (number input), and paymentStatus (text input). Each field must support an 'Unchanged' sentinel value (empty string for text, null for dates/numbers, or a dedicated 'unchanged' option for dropdowns) so the user can selectively update only the fields they specify. Update form state management to track all fields and preserve the sentinel pattern throughout submission."
+        }
+      ]
+    },
+    {
+      "id": "REQ-90",
+      "summary": "Update useBulkUpdateTasks mutation hook to send all user-specified field updates with proper type encoding",
+      "acceptanceCriteria": [
+        "Mutation hook sends only the fields the user explicitly set in the bulk edit form",
+        "Date fields are converted to backend-expected timestamp format (Int nanoseconds)",
+        "Numeric fields (Bill, Advance Received, Outstanding Amount) are sent as numbers",
+        "Cache invalidation updates the Tasks list immediately after successful bulk update",
+        "Loading and error states are properly handled and displayed to the user"
       ],
       "file_operations": [
         {
           "path": "frontend/src/hooks/tasks.ts",
           "operation": "modify",
-          "description": "Update useUpdateTask hook to ensure all task update mutations send the complete existing task data as the baseline. When updating specific fields, merge the updates with all current task field values so the backend receives full context to detect state transitions for assignedName (null/empty → non-empty) and status (→ 'Completed'). Preserve the existing optimistic update logic and query invalidation behavior."
-        },
-        {
-          "path": "frontend/src/components/tasks/TaskFormDialog.tsx",
-          "operation": "modify",
-          "description": "Update the task update mutation call to pass all current task field values when submitting the form. Ensure that when editing an existing task, all fields (including assignedName, status, assignmentDate, completionDate) are sent to the backend even if unchanged, providing the backend with complete context for auto-population logic."
-        },
-        {
-          "path": "frontend/src/components/tasks/TaskQuickStatus.tsx",
-          "operation": "modify",
-          "description": "Verify that the status update mutation already sends all existing task fields alongside the new status value. Ensure the complete task object is provided to the backend so it can detect status transitions to 'Completed' and auto-populate completionDate."
-        },
-        {
-          "path": "frontend/src/components/tasks/InlineCommentEditor.tsx",
-          "operation": "modify",
-          "description": "Update the comment update mutation to send all existing task field values along with the new comment. Ensure the backend receives complete task context including current assignedName and status values, even though this component only modifies the comment field."
-        },
+          "description": "Update the useBulkUpdateTasks mutation to accept all Task field updates from the expanded bulk edit form. The mutation should map the form values to PartialTaskUpdate objects for each selected task, converting dates to nanosecond timestamps (BigInt) and ensuring numeric fields (bill, advanceReceived, outstandingAmount) are sent as numbers. Only include fields that are not set to the 'Unchanged' sentinel value. Ensure cache invalidation triggers for the 'tasks' and 'tasksWithCaptain' query keys after successful mutation, and provide clear loading/error feedback through mutation state."
+        }
+      ]
+    },
+    {
+      "id": "REQ-91",
+      "summary": "Wire the expanded TaskBulkEditDialog form submission to the updated useBulkUpdateTasks mutation with proper state management",
+      "acceptanceCriteria": [
+        "Submitting the bulk edit form updates only the selected tasks with the specified field changes",
+        "Dialog closes automatically after successful update",
+        "Bulk selection checkboxes are cleared after successful update",
+        "Success/error feedback is displayed to the user in English",
+        "Updated tasks reflect the new values immediately in the Tasks list table"
+      ],
+      "file_operations": [
         {
           "path": "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
           "operation": "modify",
-          "description": "Update bulk edit logic to ensure each task being updated sends its complete existing field values merged with the bulk edit changes. For fields using the unchanged sentinel value, preserve the existing task values so the backend receives full context for all tasks being updated."
+          "description": "Wire the form submission handler to call the updated useBulkUpdateTasks mutation with all user-provided field values. On successful mutation, close the dialog, clear bulk selection state (pass onSuccess callback to parent), and display a success toast message. On error, display an error toast with the error message. Ensure loading state disables the submit button during mutation execution. Filter out unchanged sentinel values before passing data to the mutation hook."
+        },
+        {
+          "path": "frontend/src/pages/TasksPage.tsx",
+          "operation": "modify",
+          "description": "Update the TasksPage component to handle the onSuccess callback from TaskBulkEditDialog by clearing the selectedTaskIds state after successful bulk update. Ensure the bulk edit dialog receives all necessary props including the expanded field update capability and the selected task objects (not just IDs) if needed for default values or validation."
         }
       ]
     }

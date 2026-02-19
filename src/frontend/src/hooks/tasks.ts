@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import type { Task, TaskId, TaskWithCaptain } from '../backend';
+import type { Task, TaskId, TaskWithCaptain, PartialTaskUpdate } from '../backend';
 
 export function useGetAllTasks() {
   const { actor, isFetching: actorFetching } = useActor();
@@ -215,32 +215,10 @@ export function useBulkUpdateTasks() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (taskUpdates: Array<{ taskId: TaskId; status?: string }>) => {
+    mutationFn: async (updates: Array<PartialTaskUpdate>) => {
       if (!actor) throw new Error('Actor not available');
-      const promises = taskUpdates.map(update => {
-        // For bulk updates, we need to get the current task data first
-        // This is a simplified version - in production you'd want to batch this better
-        return actor.getTask(update.taskId).then(task => {
-          if (!task) throw new Error(`Task ${update.taskId} not found`);
-          return actor.updateTask(
-            update.taskId,
-            task.clientName,
-            task.taskCategory,
-            task.subCategory,
-            update.status || task.status || null,
-            task.comment || null,
-            task.assignedName || null,
-            task.dueDate || null,
-            task.assignmentDate || null,
-            task.completionDate || null,
-            task.bill || null,
-            task.advanceReceived || null,
-            task.outstandingAmount || null,
-            task.paymentStatus || null
-          );
-        });
-      });
-      return Promise.all(promises);
+      // Use the backend's bulkUpdateTasks method
+      return actor.bulkUpdateTasks(updates);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });

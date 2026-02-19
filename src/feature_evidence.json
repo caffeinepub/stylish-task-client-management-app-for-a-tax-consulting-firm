@@ -1,4 +1,63 @@
 {
   "kind": "feature_evidence_report",
-  "features": []
+  "features": [
+    {
+      "featureId": "feature-update-the-taskbulkeditdialog-component-frontend-src-components-tasks-taskbulkeditdialog-tsx-to-include-form-fields-for-all-editable-task-components-client-name-task-category-sub-category-status-comment-assigned-name-due-date-assignment-date-completion-date-bill-advance-received-outstanding-amount-and-payment-status-each-field-must-remain-optional-with-an-unchanged-sentinel-value-so-users-can-selectively-update-only-the-fields-they-specify",
+      "featureTitle": "Update the TaskBulkEditDialog component (frontend/src/components/tasks/TaskBulkEditDialog.tsx) to include form fields for all editable Task components: Client Name, Task Category, Sub Category, Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, and Payment Status. Each field must remain optional with an 'Unchanged' sentinel value so users can selectively update only the fields they specify.",
+      "files": [
+        "frontend/src/components/tasks/TaskBulkEditDialog.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-88"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-the-usebulkupdatetasks-mutation-hook-in-frontend-src-hooks-tasks-ts-to-send-all-user-specified-field-updates-from-the-bulk-edit-form-to-the-backend-bulk-update-api-properly-encoding-dates-as-timestamps-and-numbers-as-numeric-types-ensure-the-mutation-triggers-appropriate-cache-invalidation-and-provides-clear-loading-success-error-feedback",
+      "featureTitle": "Update the useBulkUpdateTasks mutation hook in frontend/src/hooks/tasks.ts to send all user-specified field updates from the bulk edit form to the backend bulk update API, properly encoding dates as timestamps and numbers as numeric types. Ensure the mutation triggers appropriate cache invalidation and provides clear loading/success/error feedback.",
+      "files": [
+        "frontend/src/hooks/tasks.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-90"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-wire-the-expanded-taskbulkeditdialog-form-submission-to-call-the-updated-usebulkupdatetasks-mutation-with-all-user-provided-field-values-ensuring-the-bulk-edit-flow-remains-consistent-with-existing-ui-patterns-dialog-closure-on-success-error-display-bulk-selection-state-clearing-after-successful-update",
+      "featureTitle": "Wire the expanded TaskBulkEditDialog form submission to call the updated useBulkUpdateTasks mutation with all user-provided field values, ensuring the bulk edit flow remains consistent with existing UI patterns (dialog closure on success, error display, bulk selection state clearing after successful update).",
+      "files": [
+        "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
+        "frontend/src/pages/TasksPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-91"
+      ],
+      "confidence": "high"
+    }
+  ]
 }

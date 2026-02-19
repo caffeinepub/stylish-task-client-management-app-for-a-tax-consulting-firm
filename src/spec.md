@@ -1,12 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Auto-populate Assignment Date and Completion Date based on task state changes.
+**Goal:** Enable users to edit all task fields when performing bulk updates on multiple tasks.
 
 **Planned changes:**
-- Update backend Task update logic to automatically set assignmentDate when a task is assigned to a user (assignedName transitions from null/empty to non-empty)
-- Update backend Task update logic to automatically set completionDate when task status is changed to 'Completed'
-- Ensure frontend task update mutations send complete task payloads to enable reliable state transition detection
-- Auto-population only occurs when dates are not already set (no overwriting existing dates)
+- Expand the bulk edit dialog to include form fields for all editable task properties (Client Name, Task Category, Sub Category, Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, Payment Status)
+- Update backend bulk update API to accept partial updates for all task fields
+- Ensure each field in the bulk edit form remains optional with an 'Unchanged' default value
+- Wire the expanded form submission to the backend mutation with proper data type handling
 
-**User-visible outcome:** When users assign a task or mark it as completed, the assignment and completion dates are automatically recorded without manual input.
+**User-visible outcome:** Users can now selectively update any combination of task fields across multiple selected tasks in a single bulk edit operation, with unchanged fields preserving their existing values.
