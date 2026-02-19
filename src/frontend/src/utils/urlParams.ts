@@ -153,8 +153,7 @@ export function clearParamFromHash(paramName: string): void {
 
 /**
  * Reads a secret from the URL hash fragment without mutating the URL
- * This is useful for reading secrets before the router initializes
- * The URL should be cleaned up later using clearParamFromHash
+ * Used during initialization to capture the secret before router processes the URL
  *
  * @param paramName - The name of the secret parameter
  * @returns The secret value if found in hash, null otherwise

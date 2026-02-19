@@ -1,68 +1,83 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix Completion Date auto-population when marking tasks as Completed",
+  "title": "Add searchable dropdown/select controls for large lists",
   "requirements": [
     {
-      "id": "REQ-98",
-      "summary": "Verify frontend task update mutations send complete task payloads including status field",
+      "id": "REQ-100",
+      "summary": "Replace all dropdown Select controls in TaskFormDialog with searchable/filterable Select components supporting typing to filter options for Client Name, Task Category, Task Sub Category, Assigned Name, and Status",
       "acceptanceCriteria": [
-        "All task update API calls include the status field in the request payload",
-        "The backend receives accurate status values to determine when a transition to 'Completed' occurs",
-        "No frontend validation or encoding errors prevent the status from being sent correctly"
+        "All dropdown selects in TaskFormDialog support search/filter functionality",
+        "Users can type to filter options in Client Name, Task Category, Sub Category, Assigned Name, and Status selects",
+        "Search/filter works efficiently with large lists (100+ items)",
+        "Filtered results update in real-time as the user types",
+        "UI remains consistent with existing Shadcn/Radix Select styling"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/tasks.ts",
-          "operation": "modify",
-          "description": "Review and verify that useUpdateTask mutation includes the status field in all update calls. Ensure the mutation properly passes the status value from TaskFormDialog, TaskQuickStatus, and TaskBulkEditDialog components. Confirm that useBulkUpdateTasks sends status for each task in the updates array. Add explicit status field handling if missing to ensure backend receives complete payloads for detecting status transitions to 'Completed'."
-        },
-        {
           "path": "frontend/src/components/tasks/TaskFormDialog.tsx",
           "operation": "modify",
-          "description": "Verify that the form submission includes the current status value in the update payload sent to useUpdateTask. Ensure status is not accidentally omitted when other fields are updated. Confirm form state properly tracks status changes and passes them to the mutation."
-        },
-        {
-          "path": "frontend/src/components/tasks/TaskQuickStatus.tsx",
-          "operation": "modify",
-          "description": "Verify that the quick status change component sends the complete task payload with the new status value to the update mutation. Ensure all existing task fields are preserved when updating only the status field."
-        },
-        {
-          "path": "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
-          "operation": "modify",
-          "description": "Verify that bulk edit operations include status in the PartialTaskUpdate objects for tasks being updated. Ensure the unchanged sentinel pattern properly handles status field updates and that status values are sent to useBulkUpdateTasks for all tasks where status is being changed."
+          "description": "Replace the five dropdown Select controls (Client Name, Task Category, Task Sub Category, Assigned Name, Status) with Shadcn Combobox or Command components that support search/filter functionality. Maintain existing form validation and submission logic. Ensure the search functionality filters options as the user types and works efficiently with large lists (100+ items). Preserve the sentinel value handling for null status."
         }
       ]
     },
     {
-      "id": "REQ-99",
-      "summary": "Add defensive date validation in frontend task display utilities for completionDate timestamps",
+      "id": "REQ-101",
+      "summary": "Add searchable Select controls in TasksPage filter controls for filtering by Client Name, Task Category, Sub Category, Assigned Name, and Status",
       "acceptanceCriteria": [
-        "The formatDate utility handles null/undefined timestamps gracefully (displays '—' or empty)",
-        "Invalid or malformed timestamps do not cause 'Invalid Date' to appear in the UI",
-        "Completion Date column in the Tasks table displays valid dates for all completed tasks",
-        "Task detail views (TaskDetailsPanel, ClientDetailPage task lists) show valid completion dates"
+        "All filter dropdowns in TasksPage support search functionality",
+        "Users can type to quickly find and select filter values",
+        "Search works across Client Name, Category, Sub Category, Assignee, and Status filters",
+        "Filter selection remains functional with existing URL-based filter state"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/utils/taskDisplay.ts",
+          "path": "frontend/src/pages/TasksPage.tsx",
           "operation": "modify",
-          "description": "Add defensive validation to the formatDate utility function to handle edge cases: check for null/undefined timestamps and return '—'; validate that timestamp is a valid number within the valid Date range (not NaN, Infinity, or outside JavaScript Date bounds); detect timestamps that produce 'Invalid Date' when converted and return '—' instead. Ensure completionDate timestamps from the backend (bigint nanoseconds) are properly converted to milliseconds and validated before creating Date objects. Add unit test coverage for edge cases including null, undefined, 0, negative values, extremely large values, and invalid timestamp formats."
+          "description": "Replace the filter dropdown Select controls (Client Name, Task Category, Sub Category, Assigned Name, Status) with searchable Shadcn Combobox or Command components. Maintain existing URL-based filter state management and ensure filter selection updates the URL parameters correctly. The search functionality should work efficiently with large option lists and update filtered results in real-time as the user types."
+        }
+      ]
+    },
+    {
+      "id": "REQ-102",
+      "summary": "Replace the Client Name selector in ClientDetailPage task list with a searchable Select component",
+      "acceptanceCriteria": [
+        "Client selection in ClientDetailPage supports search/filter",
+        "Users can type to filter client options",
+        "Selection works correctly with existing client detail navigation"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/ClientDetailPage.tsx",
+          "operation": "modify",
+          "description": "Replace the Client Name selector control with a searchable Shadcn Combobox or Command component that allows users to type and filter client options. Ensure the selection correctly navigates to the selected client detail page and maintains existing functionality."
+        }
+      ]
+    },
+    {
+      "id": "REQ-103",
+      "summary": "Ensure all searchable Select implementations use Shadcn/Radix UI components with Combobox pattern or Command component for search functionality, maintaining consistency and accessibility",
+      "acceptanceCriteria": [
+        "All searchable selects use consistent Shadcn/Radix UI patterns",
+        "Components maintain accessibility standards (keyboard navigation, ARIA attributes)",
+        "Visual styling matches existing select components",
+        "Search functionality is performant with large option lists (no lag when typing)"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/tasks/TaskFormDialog.tsx",
+          "operation": "modify",
+          "description": "Verify that all searchable Select implementations use Shadcn Combobox or Command component patterns consistently. Ensure keyboard navigation (arrow keys, Enter, Escape) works correctly, ARIA attributes are present for accessibility, and visual styling matches the existing UI. Test performance with large option lists (100+ items) to ensure no lag when typing."
         },
         {
           "path": "frontend/src/pages/TasksPage.tsx",
           "operation": "modify",
-          "description": "Verify that the Completion Date column uses the updated formatDate utility from taskDisplay.ts. Ensure the column properly handles cases where completionDate is null, undefined, or invalid. Test that 'Invalid Date' no longer appears in the UI for completed tasks."
-        },
-        {
-          "path": "frontend/src/components/tasks/TaskDetailsPanel.tsx",
-          "operation": "modify",
-          "description": "Verify that completionDate display in the task details panel uses the updated formatDate utility. Ensure invalid dates show as '—' instead of 'Invalid Date'. Confirm the panel gracefully handles null/undefined completionDate values."
+          "description": "Verify that all filter searchable Select implementations use consistent Shadcn Combobox or Command component patterns. Ensure keyboard navigation, ARIA attributes, visual consistency with existing selects, and performant search with large option lists."
         },
         {
           "path": "frontend/src/pages/ClientDetailPage.tsx",
           "operation": "modify",
-          "description": "Verify that task lists shown on client detail pages use the updated formatDate utility for completionDate display. Ensure consistency with TasksPage and TaskDetailsPanel in handling invalid dates."
+          "description": "Verify that the Client Name searchable Select uses consistent Shadcn Combobox or Command component patterns. Ensure keyboard navigation, ARIA attributes, visual consistency, and performant search functionality."
         }
       ]
     }

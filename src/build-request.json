@@ -1,75 +1,87 @@
 {
   "kind": "build_request",
-  "title": "Fix Completion Date auto-population when marking tasks as Completed",
-  "projectName": "CSWA Group of Companies",
-  "priority": "high",
+  "title": "Add searchable dropdown/select controls for large lists",
+  "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-97",
-      "text": "Fix the backend Task update logic in backend/main.mo so that when a task's status is changed to 'Completed', the completionDate field is reliably set to the current timestamp (Time.now()) if it is not already set, ensuring the auto-population works correctly and produces valid dates.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "user-message"
-        ],
-        "quotes": [
-          "when mark complte but not autoupdating the date or it is invalid date"
-        ]
-      },
-      "acceptanceCriteria": [
-        "When a task's status is updated to 'Completed', the completionDate is automatically set to Time.now() if it is currently null or not set",
-        "The auto-populated completionDate displays as a valid, readable date in the frontend (not 'Invalid Date')",
-        "Existing tasks that already have a completionDate set are not overwritten",
-        "The fix works for all task update paths: single task edit (TaskFormDialog), quick status change (TaskQuickStatus), and bulk edit (TaskBulkEditDialog)"
-      ]
-    },
-    {
-      "id": "REQ-98",
-      "text": "Verify that the frontend task update mutations in frontend/src/hooks/tasks.ts (useUpdateTask, useBulkUpdateTasks) and all task update UI components (TaskFormDialog, TaskQuickStatus, TaskBulkEditDialog) are sending complete task payloads to the backend, including the current status value, so the backend can correctly detect status transitions to 'Completed'.",
+      "id": "REQ-100",
+      "text": "Replace all existing dropdown Select controls for Client Name, Task Category, Task Sub Category, Assigned Name, and Status in the Task create/edit dialog (TaskFormDialog.tsx) with searchable/filterable Select components that support typing to filter/search options when the list is large.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "user-message"
+          "msg-user-search-option"
         ],
         "quotes": [
-          "when mark complte but not autoupdating the date or it is invalid date"
+          "search option to select a item from list when it is huge (Task subtype,client etc.)"
         ]
       },
       "acceptanceCriteria": [
-        "All task update API calls include the status field in the request payload",
-        "The backend receives accurate status values to determine when a transition to 'Completed' occurs",
-        "No frontend validation or encoding errors prevent the status from being sent correctly"
+        "All dropdown selects in TaskFormDialog support search/filter functionality",
+        "Users can type to filter options in Client Name, Task Category, Sub Category, Assigned Name, and Status selects",
+        "Search/filter works efficiently with large lists (100+ items)",
+        "Filtered results update in real-time as the user types",
+        "UI remains consistent with existing Shadcn/Radix Select styling"
       ]
     },
     {
-      "id": "REQ-99",
-      "text": "Add defensive date validation in the frontend task display utilities (frontend/src/utils/taskDisplay.ts) to ensure completionDate timestamps are properly converted to readable date strings, handling edge cases like null values, invalid timestamps, or timestamps outside valid Date ranges.",
+      "id": "REQ-101",
+      "text": "Add searchable Select controls in the Tasks page filter controls (TasksPage.tsx) for filtering by Client Name, Task Category, Sub Category, Assigned Name, and Status so users can efficiently find and select filter values from large option lists.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "user-message"
-        ],
-        "quotes": [
-          "it is invalid date"
+          "msg-user-search-option"
         ]
       },
       "acceptanceCriteria": [
-        "The formatDate utility handles null/undefined timestamps gracefully (displays '—' or empty)",
-        "Invalid or malformed timestamps do not cause 'Invalid Date' to appear in the UI",
-        "Completion Date column in the Tasks table displays valid dates for all completed tasks",
-        "Task detail views (TaskDetailsPanel, ClientDetailPage task lists) show valid completion dates"
+        "All filter dropdowns in TasksPage support search functionality",
+        "Users can type to quickly find and select filter values",
+        "Search works across Client Name, Category, Sub Category, Assignee, and Status filters",
+        "Filter selection remains functional with existing URL-based filter state"
+      ]
+    },
+    {
+      "id": "REQ-102",
+      "text": "Replace the Client Name selector in the ClientDetailPage task list with a searchable Select component so users can efficiently find and select clients when the client list is large.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-user-search-option"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Client selection in ClientDetailPage supports search/filter",
+        "Users can type to filter client options",
+        "Selection works correctly with existing client detail navigation"
+      ]
+    },
+    {
+      "id": "REQ-103",
+      "text": "Ensure all searchable Select implementations use Shadcn/Radix UI components with Combobox pattern or Command component for search functionality, maintaining consistency with the existing UI component library and ensuring accessibility.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-user-search-option"
+        ]
+      },
+      "acceptanceCriteria": [
+        "All searchable selects use consistent Shadcn/Radix UI patterns",
+        "Components maintain accessibility standards (keyboard navigation, ARIA attributes)",
+        "Visual styling matches existing select components",
+        "Search functionality is performant with large option lists (no lag when typing)"
       ]
     }
   ],
   "constraints": [
-    "Do not change the backend Task data model schema",
-    "Preserve backward compatibility with existing stored completionDate values",
-    "Keep all user-facing text in English"
+    "Do not modify immutable frontend paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui",
+    "Use only Shadcn UI and Radix UI components for searchable select implementation",
+    "Maintain existing form validation and submission logic",
+    "Preserve existing filter state management and URL-based filtering"
   ],
   "nonGoals": [
-    "Changing the status options or status validation logic",
-    "Modifying the Assignment Date auto-population logic",
-    "Adding new task fields or changing existing field types"
+    "Adding search to other entity lists (Assignees, Todos) unless they also have dropdowns with large option sets",
+    "Implementing server-side filtering or pagination for dropdown options",
+    "Changing the underlying data fetching or storage mechanisms",
+    "Adding new filter criteria beyond existing fields"
   ],
   "imageRequirements": {
     "required": [],

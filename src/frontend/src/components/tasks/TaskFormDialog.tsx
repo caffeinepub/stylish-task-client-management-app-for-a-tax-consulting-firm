@@ -1,13 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { useCreateTask, useUpdateTask } from '../../hooks/tasks';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { useCreateTask, useUpdateTask, useGetAllTasks } from '../../hooks/tasks';
+import { useGetAllClients } from '../../hooks/clients';
+import { useGetAllAssignees } from '../../hooks/assignees';
 import { ALLOWED_TASK_STATUSES, coerceStatusForSelect } from '../../constants/taskStatus';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { Task } from '../../backend';
 
 interface TaskFormDialogProps {
@@ -22,6 +26,8 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
   const isEditing = !!task;
   const { mutate: createTask, isPending: isCreating, error: createError, reset: resetCreate } = useCreateTask();
   const { mutate: updateTask, isPending: isUpdating, error: updateError, reset: resetUpdate } = useUpdateTask();
+  const { data: clients } = useGetAllClients();
+  const { data: assignees } = useGetAllAssignees();
 
   const [clientName, setClientName] = useState('');
   const [taskCategory, setTaskCategory] = useState('');
@@ -36,6 +42,38 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
   const [advanceReceived, setAdvanceReceived] = useState('');
   const [outstandingAmount, setOutstandingAmount] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('');
+
+  // Combobox open states
+  const [clientOpen, setClientOpen] = useState(false);
+  const [categoryOpen, setCategoryOpen] = useState(false);
+  const [subCategoryOpen, setSubCategoryOpen] = useState(false);
+  const [statusOpen, setStatusOpen] = useState(false);
+  const [assigneeOpen, setAssigneeOpen] = useState(false);
+
+  // Get unique categories and subcategories from existing tasks
+  const { data: tasksWithCaptain } = useGetAllTasks();
+  const tasks = useMemo(() => tasksWithCaptain?.map(twc => twc.task) || [], [tasksWithCaptain]);
+
+  const uniqueCategories = useMemo(() => {
+    const categories = new Set(tasks.map(t => t.taskCategory));
+    return Array.from(categories).sort();
+  }, [tasks]);
+
+  const uniqueSubCategories = useMemo(() => {
+    const subCategories = new Set(tasks.map(t => t.subCategory));
+    return Array.from(subCategories).sort();
+  }, [tasks]);
+
+  // Get unique client names and assignee names
+  const clientNames = useMemo(() => {
+    if (!clients) return [];
+    return clients.map(c => c.name).sort();
+  }, [clients]);
+
+  const assigneeNames = useMemo(() => {
+    if (!assignees) return [];
+    return assignees.map(a => a.name).sort();
+  }, [assignees]);
 
   // Reset form when dialog opens/closes or task changes
   useEffect(() => {
@@ -139,75 +177,280 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-            {/* Client Name */}
+            {/* Client Name - Searchable Combobox */}
             <div className="space-y-2">
               <Label htmlFor="clientName">
                 Client Name <span className="text-destructive">*</span>
               </Label>
-              <Input
-                id="clientName"
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-                required
-                disabled={isPending}
-              />
+              <Popover open={clientOpen} onOpenChange={setClientOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={clientOpen}
+                    className="w-full justify-between"
+                    disabled={isPending}
+                    type="button"
+                  >
+                    {clientName || "Select client..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search client..." />
+                    <CommandList>
+                      <CommandEmpty>No client found.</CommandEmpty>
+                      <CommandGroup>
+                        {clientNames.map((name) => (
+                          <CommandItem
+                            key={name}
+                            value={name}
+                            onSelect={(currentValue) => {
+                              setClientName(currentValue);
+                              setClientOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                clientName === name ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
-            {/* Task Category */}
+            {/* Task Category - Searchable Combobox */}
             <div className="space-y-2">
               <Label htmlFor="taskCategory">
                 Task Category <span className="text-destructive">*</span>
               </Label>
-              <Input
-                id="taskCategory"
-                value={taskCategory}
-                onChange={(e) => setTaskCategory(e.target.value)}
-                required
-                disabled={isPending}
-              />
+              <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={categoryOpen}
+                    className="w-full justify-between"
+                    disabled={isPending}
+                    type="button"
+                  >
+                    {taskCategory || "Select category..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search category..." />
+                    <CommandList>
+                      <CommandEmpty>No category found.</CommandEmpty>
+                      <CommandGroup>
+                        {uniqueCategories.map((cat: string) => (
+                          <CommandItem
+                            key={cat}
+                            value={cat}
+                            onSelect={(currentValue) => {
+                              setTaskCategory(currentValue);
+                              setCategoryOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                taskCategory === cat ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {cat}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
-            {/* Sub Category */}
+            {/* Sub Category - Searchable Combobox */}
             <div className="space-y-2">
               <Label htmlFor="subCategory">
                 Sub Category <span className="text-destructive">*</span>
               </Label>
-              <Input
-                id="subCategory"
-                value={subCategory}
-                onChange={(e) => setSubCategory(e.target.value)}
-                required
-                disabled={isPending}
-              />
+              <Popover open={subCategoryOpen} onOpenChange={setSubCategoryOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={subCategoryOpen}
+                    className="w-full justify-between"
+                    disabled={isPending}
+                    type="button"
+                  >
+                    {subCategory || "Select sub category..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search sub category..." />
+                    <CommandList>
+                      <CommandEmpty>No sub category found.</CommandEmpty>
+                      <CommandGroup>
+                        {uniqueSubCategories.map((subCat: string) => (
+                          <CommandItem
+                            key={subCat}
+                            value={subCat}
+                            onSelect={(currentValue) => {
+                              setSubCategory(currentValue);
+                              setSubCategoryOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                subCategory === subCat ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {subCat}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
-            {/* Status */}
+            {/* Status - Searchable Combobox */}
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
-              <Select value={status} onValueChange={setStatus} disabled={isPending}>
-                <SelectTrigger id="status">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={STATUS_NONE_SENTINEL}>— None —</SelectItem>
-                  {ALLOWED_TASK_STATUSES.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={statusOpen} onOpenChange={setStatusOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={statusOpen}
+                    className="w-full justify-between"
+                    disabled={isPending}
+                    type="button"
+                  >
+                    {status === STATUS_NONE_SENTINEL ? "— None —" : status}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search status..." />
+                    <CommandList>
+                      <CommandEmpty>No status found.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value={STATUS_NONE_SENTINEL}
+                          onSelect={() => {
+                            setStatus(STATUS_NONE_SENTINEL);
+                            setStatusOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              status === STATUS_NONE_SENTINEL ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          — None —
+                        </CommandItem>
+                        {ALLOWED_TASK_STATUSES.map((s) => (
+                          <CommandItem
+                            key={s}
+                            value={s}
+                            onSelect={(currentValue) => {
+                              setStatus(currentValue);
+                              setStatusOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                status === s ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {s}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
-            {/* Assigned Name */}
+            {/* Assigned Name - Searchable Combobox */}
             <div className="space-y-2">
               <Label htmlFor="assignedName">Assigned To</Label>
-              <Input
-                id="assignedName"
-                value={assignedName}
-                onChange={(e) => setAssignedName(e.target.value)}
-                disabled={isPending}
-              />
+              <Popover open={assigneeOpen} onOpenChange={setAssigneeOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={assigneeOpen}
+                    className="w-full justify-between"
+                    disabled={isPending}
+                    type="button"
+                  >
+                    {assignedName || "Select assignee..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search assignee..." />
+                    <CommandList>
+                      <CommandEmpty>No assignee found.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value=""
+                          onSelect={() => {
+                            setAssignedName('');
+                            setAssigneeOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              assignedName === '' ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          — None —
+                        </CommandItem>
+                        {assigneeNames.map((name) => (
+                          <CommandItem
+                            key={name}
+                            value={name}
+                            onSelect={(currentValue) => {
+                              setAssignedName(currentValue);
+                              setAssigneeOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                assignedName === name ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Due Date */}

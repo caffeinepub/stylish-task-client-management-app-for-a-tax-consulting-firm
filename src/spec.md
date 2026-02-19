@@ -1,11 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Fix the auto-population of Completion Date when tasks are marked as Completed, ensuring valid dates are displayed instead of "Invalid Date".
+**Goal:** Add searchable dropdown/select controls to improve usability when selecting from large lists of clients, task categories, assignees, and statuses.
 
 **Planned changes:**
-- Fix backend Task update logic to automatically set completionDate to Time.now() when status changes to 'Completed'
-- Verify frontend task update mutations send complete payloads including status field to enable backend detection of status transitions
-- Add defensive date validation in frontend utilities to handle null, invalid, or out-of-range timestamps gracefully
+- Replace all dropdown selects in the Task create/edit dialog with searchable/filterable select components
+- Add searchable select controls to the Tasks page filter controls for Client Name, Task Category, Sub Category, Assigned Name, and Status
+- Replace the Client Name selector in the ClientDetailPage task list with a searchable select component
+- Implement all searchable selects using Shadcn/Radix UI Combobox or Command components for consistency and accessibility
 
-**User-visible outcome:** When users mark a task as Completed, the Completion Date field automatically populates with a valid, readable date instead of showing "Invalid Date" or remaining empty.
+**User-visible outcome:** Users can type to search and filter options in all dropdown selects for clients, task categories, sub-categories, assignees, and statuses, making it easier to work with large lists.

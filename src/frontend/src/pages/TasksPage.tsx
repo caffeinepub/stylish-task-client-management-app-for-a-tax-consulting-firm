@@ -3,15 +3,18 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, Search, AlertCircle, CheckSquare, Upload, Edit, Trash2, X, Download, ArrowUpDown } from 'lucide-react';
+import { Plus, Search, AlertCircle, CheckSquare, Upload, Edit, Trash2, X, Download, ArrowUpDown, Check, ChevronsUpDown } from 'lucide-react';
 import { useGetAllTasks, useBulkDeleteTasks } from '../hooks/tasks';
+import { useGetAllClients } from '../hooks/clients';
+import { useGetAllAssignees } from '../hooks/assignees';
 import TaskFormDialog from '../components/tasks/TaskFormDialog';
 import TaskQuickStatus from '../components/tasks/TaskQuickStatus';
 import TaskBulkUploadDialog from '../components/tasks/TaskBulkUploadDialog';
@@ -21,6 +24,7 @@ import { ALLOWED_TASK_STATUSES, isCompletedStatus, getStatusDisplayLabel } from 
 import { exportTasksToExcel } from '../utils/taskExcel';
 import { SortField, SortDirection, sortTasks } from '../utils/taskSort';
 import { formatTaskDate, formatCurrency, formatOptionalText, formatAssigneeWithCaptain } from '../utils/taskDisplay';
+import { cn } from '@/lib/utils';
 import type { Task, TaskWithCaptain } from '../backend';
 
 export default function TasksPage() {
@@ -28,10 +32,15 @@ export default function TasksPage() {
   const searchParams = useSearch({ from: '/tasks' }) as { overdue?: string; status?: string; taskCategory?: string; subCategory?: string };
   
   const { data: tasksWithCaptain, isLoading: tasksLoading, error: tasksError, refetch: refetchTasks } = useGetAllTasks();
+  const { data: clients } = useGetAllClients();
+  const { data: assignees } = useGetAllAssignees();
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [subCategoryFilter, setSubCategoryFilter] = useState<string>('all');
+  const [clientFilter, setClientFilter] = useState<string>('all');
+  const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
   const [overdueFilter, setOverdueFilter] = useState<boolean>(false);
   const [sortField, setSortField] = useState<SortField>('dueDate');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -42,6 +51,13 @@ export default function TasksPage() {
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+
+  // Combobox open states
+  const [clientFilterOpen, setClientFilterOpen] = useState(false);
+  const [categoryFilterOpen, setCategoryFilterOpen] = useState(false);
+  const [subCategoryFilterOpen, setSubCategoryFilterOpen] = useState(false);
+  const [statusFilterOpen, setStatusFilterOpen] = useState(false);
+  const [assigneeFilterOpen, setAssigneeFilterOpen] = useState(false);
 
   const { mutate: bulkDeleteTasks, isPending: isDeleting } = useBulkDeleteTasks();
 
@@ -66,7 +82,7 @@ export default function TasksPage() {
     }
   }, [searchParams]);
 
-  // Get unique categories and sub categories for filter dropdowns
+  // Get unique categories, sub categories, clients, and assignees for filter dropdowns
   const uniqueCategories = useMemo(() => {
     if (!tasks) return [];
     const categories = new Set(tasks.map(t => t.taskCategory));
@@ -78,6 +94,16 @@ export default function TasksPage() {
     const subCategories = new Set(tasks.map(t => t.subCategory));
     return Array.from(subCategories).sort();
   }, [tasks]);
+
+  const uniqueClients = useMemo(() => {
+    if (!clients) return [];
+    return clients.map(c => c.name).sort();
+  }, [clients]);
+
+  const uniqueAssignees = useMemo(() => {
+    if (!assignees) return [];
+    return assignees.map(a => a.name).sort();
+  }, [assignees]);
 
   const filteredTasks = useMemo(() => {
     if (!tasks) return [];
@@ -95,13 +121,15 @@ export default function TasksPage() {
       const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
       const matchesCategory = categoryFilter === 'all' || task.taskCategory === categoryFilter;
       const matchesSubCategory = subCategoryFilter === 'all' || task.subCategory === subCategoryFilter;
+      const matchesClient = clientFilter === 'all' || task.clientName === clientFilter;
+      const matchesAssignee = assigneeFilter === 'all' || task.assignedName === assigneeFilter;
       
       const isOverdue = task.dueDate && !isCompletedStatus(task.status) && Number(task.dueDate) / 1_000_000 < now;
       const matchesOverdue = !overdueFilter || isOverdue;
 
-      return matchesSearch && matchesStatus && matchesCategory && matchesSubCategory && matchesOverdue;
+      return matchesSearch && matchesStatus && matchesCategory && matchesSubCategory && matchesClient && matchesAssignee && matchesOverdue;
     });
-  }, [tasks, searchQuery, statusFilter, categoryFilter, subCategoryFilter, overdueFilter]);
+  }, [tasks, searchQuery, statusFilter, categoryFilter, subCategoryFilter, clientFilter, assigneeFilter, overdueFilter]);
 
   const sortedTasks = useMemo(() => {
     return sortTasks(filteredTasks, sortField, sortDirection);
@@ -143,8 +171,6 @@ export default function TasksPage() {
     setIsExporting(true);
     try {
       await exportTasksToExcel(sortedTasks);
-    } catch (error) {
-      console.error('Export failed:', error);
     } finally {
       setIsExporting(false);
     }
@@ -159,9 +185,17 @@ export default function TasksPage() {
     }
   };
 
-  const handleClearSelection = () => {
-    setSelectedTaskIds(new Set());
+  const clearFilters = () => {
+    setStatusFilter('all');
+    setCategoryFilter('all');
+    setSubCategoryFilter('all');
+    setClientFilter('all');
+    setAssigneeFilter('all');
+    setOverdueFilter(false);
+    setSearchQuery('');
   };
+
+  const hasActiveFilters = statusFilter !== 'all' || categoryFilter !== 'all' || subCategoryFilter !== 'all' || clientFilter !== 'all' || assigneeFilter !== 'all' || overdueFilter || searchQuery !== '';
 
   if (tasksError) {
     return (
@@ -169,7 +203,7 @@ export default function TasksPage() {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Failed to load tasks. Please try again later.
+            {tasksError instanceof Error ? tasksError.message : 'Failed to load tasks'}
           </AlertDescription>
         </Alert>
       </div>
@@ -178,130 +212,295 @@ export default function TasksPage() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Tasks</h1>
-          <p className="text-muted-foreground">Manage and track all your tasks</p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={() => setBulkUploadOpen(true)} variant="outline">
-            <Upload className="mr-2 h-4 w-4" />
-            Bulk Upload
-          </Button>
-          <Button onClick={handleExport} variant="outline" disabled={isExporting || sortedTasks.length === 0}>
-            <Download className="mr-2 h-4 w-4" />
-            {isExporting ? 'Exporting...' : 'Export'}
-          </Button>
-          <Button onClick={() => { setEditingTask(undefined); setDialogOpen(true); }}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Task
-          </Button>
-        </div>
-      </div>
-
-      {selectedTaskIds.size > 0 && (
-        <Card className="border-primary">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CheckSquare className="h-5 w-5 text-primary" />
-                <span className="font-medium">{selectedTaskIds.size} task(s) selected</span>
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <CardTitle>Tasks</CardTitle>
+              <CardDescription>Manage and track all your tasks</CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={() => { setEditingTask(undefined); setDialogOpen(true); }}>
+                <Plus className="mr-2 h-4 w-4" />
+                New Task
+              </Button>
+              <Button variant="outline" onClick={() => setBulkUploadOpen(true)}>
+                <Upload className="mr-2 h-4 w-4" />
+                Bulk Upload
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Search and Filters */}
+          <div className="flex flex-col gap-4">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search tasks..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
               </div>
-              <div className="flex gap-2">
-                <Button onClick={() => setBulkEditOpen(true)} variant="outline" size="sm">
+              <Button variant="outline" onClick={handleExport} disabled={isExporting || sortedTasks.length === 0}>
+                <Download className="mr-2 h-4 w-4" />
+                {isExporting ? 'Exporting...' : 'Export'}
+              </Button>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {/* Client Filter - Searchable */}
+              <Popover open={clientFilterOpen} onOpenChange={setClientFilterOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" aria-expanded={clientFilterOpen} className="justify-between min-w-[150px]">
+                    {clientFilter === 'all' ? 'All Clients' : clientFilter}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search client..." />
+                    <CommandList>
+                      <CommandEmpty>No client found.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="all"
+                          onSelect={() => {
+                            setClientFilter('all');
+                            setClientFilterOpen(false);
+                          }}
+                        >
+                          <Check className={cn("mr-2 h-4 w-4", clientFilter === 'all' ? "opacity-100" : "opacity-0")} />
+                          All Clients
+                        </CommandItem>
+                        {uniqueClients.map((client) => (
+                          <CommandItem
+                            key={client}
+                            value={client}
+                            onSelect={(currentValue) => {
+                              setClientFilter(currentValue);
+                              setClientFilterOpen(false);
+                            }}
+                          >
+                            <Check className={cn("mr-2 h-4 w-4", clientFilter === client ? "opacity-100" : "opacity-0")} />
+                            {client}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              {/* Category Filter - Searchable */}
+              <Popover open={categoryFilterOpen} onOpenChange={setCategoryFilterOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" aria-expanded={categoryFilterOpen} className="justify-between min-w-[150px]">
+                    {categoryFilter === 'all' ? 'All Categories' : categoryFilter}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search category..." />
+                    <CommandList>
+                      <CommandEmpty>No category found.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="all"
+                          onSelect={() => {
+                            setCategoryFilter('all');
+                            setCategoryFilterOpen(false);
+                          }}
+                        >
+                          <Check className={cn("mr-2 h-4 w-4", categoryFilter === 'all' ? "opacity-100" : "opacity-0")} />
+                          All Categories
+                        </CommandItem>
+                        {uniqueCategories.map((cat) => (
+                          <CommandItem
+                            key={cat}
+                            value={cat}
+                            onSelect={(currentValue) => {
+                              setCategoryFilter(currentValue);
+                              setCategoryFilterOpen(false);
+                            }}
+                          >
+                            <Check className={cn("mr-2 h-4 w-4", categoryFilter === cat ? "opacity-100" : "opacity-0")} />
+                            {cat}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              {/* Sub Category Filter - Searchable */}
+              <Popover open={subCategoryFilterOpen} onOpenChange={setSubCategoryFilterOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" aria-expanded={subCategoryFilterOpen} className="justify-between min-w-[150px]">
+                    {subCategoryFilter === 'all' ? 'All Sub Categories' : subCategoryFilter}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search sub category..." />
+                    <CommandList>
+                      <CommandEmpty>No sub category found.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="all"
+                          onSelect={() => {
+                            setSubCategoryFilter('all');
+                            setSubCategoryFilterOpen(false);
+                          }}
+                        >
+                          <Check className={cn("mr-2 h-4 w-4", subCategoryFilter === 'all' ? "opacity-100" : "opacity-0")} />
+                          All Sub Categories
+                        </CommandItem>
+                        {uniqueSubCategories.map((subCat) => (
+                          <CommandItem
+                            key={subCat}
+                            value={subCat}
+                            onSelect={(currentValue) => {
+                              setSubCategoryFilter(currentValue);
+                              setSubCategoryFilterOpen(false);
+                            }}
+                          >
+                            <Check className={cn("mr-2 h-4 w-4", subCategoryFilter === subCat ? "opacity-100" : "opacity-0")} />
+                            {subCat}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              {/* Assignee Filter - Searchable */}
+              <Popover open={assigneeFilterOpen} onOpenChange={setAssigneeFilterOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" aria-expanded={assigneeFilterOpen} className="justify-between min-w-[150px]">
+                    {assigneeFilter === 'all' ? 'All Assignees' : assigneeFilter}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search assignee..." />
+                    <CommandList>
+                      <CommandEmpty>No assignee found.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="all"
+                          onSelect={() => {
+                            setAssigneeFilter('all');
+                            setAssigneeFilterOpen(false);
+                          }}
+                        >
+                          <Check className={cn("mr-2 h-4 w-4", assigneeFilter === 'all' ? "opacity-100" : "opacity-0")} />
+                          All Assignees
+                        </CommandItem>
+                        {uniqueAssignees.map((assignee) => (
+                          <CommandItem
+                            key={assignee}
+                            value={assignee}
+                            onSelect={(currentValue) => {
+                              setAssigneeFilter(currentValue);
+                              setAssigneeFilterOpen(false);
+                            }}
+                          >
+                            <Check className={cn("mr-2 h-4 w-4", assigneeFilter === assignee ? "opacity-100" : "opacity-0")} />
+                            {assignee}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              {/* Status Filter - Searchable */}
+              <Popover open={statusFilterOpen} onOpenChange={setStatusFilterOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" aria-expanded={statusFilterOpen} className="justify-between min-w-[150px]">
+                    {statusFilter === 'all' ? 'All Statuses' : getStatusDisplayLabel(statusFilter)}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search status..." />
+                    <CommandList>
+                      <CommandEmpty>No status found.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="all"
+                          onSelect={() => {
+                            setStatusFilter('all');
+                            setStatusFilterOpen(false);
+                          }}
+                        >
+                          <Check className={cn("mr-2 h-4 w-4", statusFilter === 'all' ? "opacity-100" : "opacity-0")} />
+                          All Statuses
+                        </CommandItem>
+                        {ALLOWED_TASK_STATUSES.map((status) => (
+                          <CommandItem
+                            key={status}
+                            value={status}
+                            onSelect={(currentValue) => {
+                              setStatusFilter(currentValue);
+                              setStatusFilterOpen(false);
+                            }}
+                          >
+                            <Check className={cn("mr-2 h-4 w-4", statusFilter === status ? "opacity-100" : "opacity-0")} />
+                            {getStatusDisplayLabel(status)}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              <Button
+                variant={overdueFilter ? 'default' : 'outline'}
+                onClick={() => setOverdueFilter(!overdueFilter)}
+              >
+                Overdue Only
+              </Button>
+
+              {hasActiveFilters && (
+                <Button variant="ghost" onClick={clearFilters}>
+                  <X className="mr-2 h-4 w-4" />
+                  Clear Filters
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Bulk Actions */}
+          {selectedTaskIds.size > 0 && (
+            <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+              <CheckSquare className="h-4 w-4" />
+              <span className="text-sm font-medium">{selectedTaskIds.size} task(s) selected</span>
+              <div className="flex gap-2 ml-auto">
+                <Button size="sm" variant="outline" onClick={() => setBulkEditOpen(true)}>
                   <Edit className="mr-2 h-4 w-4" />
                   Bulk Edit
                 </Button>
-                <Button onClick={() => setDeleteDialogOpen(true)} variant="destructive" size="sm">
+                <Button size="sm" variant="destructive" onClick={() => setDeleteDialogOpen(true)}>
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete Selected
-                </Button>
-                <Button onClick={handleClearSelection} variant="ghost" size="sm">
-                  <X className="h-4 w-4" />
+                  Delete
                 </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Filter Tasks</CardTitle>
-          <CardDescription>Search and filter tasks by various criteria</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search tasks..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                {ALLOWED_TASK_STATUSES.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {status}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {uniqueCategories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={subCategoryFilter} onValueChange={setSubCategoryFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Sub Categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Sub Categories</SelectItem>
-                {uniqueSubCategories.map((subCategory) => (
-                  <SelectItem key={subCategory} value={subCategory}>
-                    {subCategory}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="overdue"
-                checked={overdueFilter}
-                onCheckedChange={(checked) => setOverdueFilter(checked === true)}
-              />
-              <label
-                htmlFor="overdue"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Overdue Only
-              </label>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>All Tasks ({sortedTasks.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
+          {/* Tasks Table */}
           {tasksLoading ? (
             <div className="space-y-2">
               {[...Array(5)].map((_, i) => (
@@ -310,10 +509,10 @@ export default function TasksPage() {
             </div>
           ) : sortedTasks.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              No tasks found. Create your first task to get started.
+              {hasActiveFilters ? 'No tasks match your filters' : 'No tasks yet. Create your first task!'}
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="border rounded-lg overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -325,63 +524,63 @@ export default function TasksPage() {
                     </TableHead>
                     <TableHead className="cursor-pointer" onClick={() => handleSort('clientName')}>
                       <div className="flex items-center gap-1">
-                        Client {sortField === 'clientName' && <ArrowUpDown className="h-4 w-4" />}
+                        Client {sortField === 'clientName' && <ArrowUpDown className="h-3 w-3" />}
                       </div>
                     </TableHead>
                     <TableHead className="cursor-pointer" onClick={() => handleSort('taskCategory')}>
                       <div className="flex items-center gap-1">
-                        Category {sortField === 'taskCategory' && <ArrowUpDown className="h-4 w-4" />}
+                        Category {sortField === 'taskCategory' && <ArrowUpDown className="h-3 w-3" />}
                       </div>
                     </TableHead>
                     <TableHead className="cursor-pointer" onClick={() => handleSort('subCategory')}>
                       <div className="flex items-center gap-1">
-                        Sub Category {sortField === 'subCategory' && <ArrowUpDown className="h-4 w-4" />}
+                        Sub Category {sortField === 'subCategory' && <ArrowUpDown className="h-3 w-3" />}
                       </div>
                     </TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Comment</TableHead>
                     <TableHead className="cursor-pointer" onClick={() => handleSort('assignedName')}>
                       <div className="flex items-center gap-1">
-                        Assigned To {sortField === 'assignedName' && <ArrowUpDown className="h-4 w-4" />}
+                        Assigned {sortField === 'assignedName' && <ArrowUpDown className="h-3 w-3" />}
                       </div>
                     </TableHead>
                     <TableHead className="cursor-pointer" onClick={() => handleSort('dueDate')}>
                       <div className="flex items-center gap-1">
-                        Due Date {sortField === 'dueDate' && <ArrowUpDown className="h-4 w-4" />}
+                        Due Date {sortField === 'dueDate' && <ArrowUpDown className="h-3 w-3" />}
                       </div>
                     </TableHead>
                     <TableHead className="cursor-pointer" onClick={() => handleSort('assignmentDate')}>
                       <div className="flex items-center gap-1">
-                        Assignment {sortField === 'assignmentDate' && <ArrowUpDown className="h-4 w-4" />}
+                        Assignment {sortField === 'assignmentDate' && <ArrowUpDown className="h-3 w-3" />}
                       </div>
                     </TableHead>
                     <TableHead className="cursor-pointer" onClick={() => handleSort('completionDate')}>
                       <div className="flex items-center gap-1">
-                        Completion {sortField === 'completionDate' && <ArrowUpDown className="h-4 w-4" />}
+                        Completion {sortField === 'completionDate' && <ArrowUpDown className="h-3 w-3" />}
                       </div>
                     </TableHead>
                     <TableHead className="cursor-pointer" onClick={() => handleSort('bill')}>
                       <div className="flex items-center gap-1">
-                        Bill {sortField === 'bill' && <ArrowUpDown className="h-4 w-4" />}
+                        Bill {sortField === 'bill' && <ArrowUpDown className="h-3 w-3" />}
                       </div>
                     </TableHead>
                     <TableHead>Advance</TableHead>
                     <TableHead>Outstanding</TableHead>
                     <TableHead>Payment Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="w-12">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {sortedTasks.map((task) => {
                     const taskWithCaptain = tasksWithCaptain?.find(twc => twc.task.id === task.id);
-                    const isOverdue = task.dueDate && !isCompletedStatus(task.status) && Number(task.dueDate) / 1_000_000 < Date.now();
+                    const captainName = taskWithCaptain?.captainName;
                     
                     return (
                       <TableRow key={task.id.toString()}>
                         <TableCell>
                           <Checkbox
                             checked={selectedTaskIds.has(task.id.toString())}
-                            onCheckedChange={(checked) => handleSelectTask(task.id.toString(), checked === true)}
+                            onCheckedChange={(checked) => handleSelectTask(task.id.toString(), checked as boolean)}
                           />
                         </TableCell>
                         <TableCell className="font-medium">{task.clientName}</TableCell>
@@ -390,26 +589,18 @@ export default function TasksPage() {
                         <TableCell>
                           <TaskQuickStatus task={task} />
                         </TableCell>
-                        <TableCell className="max-w-xs">
+                        <TableCell className="max-w-[200px]">
                           <InlineCommentEditor task={task} />
                         </TableCell>
-                        <TableCell>
-                          {taskWithCaptain ? formatAssigneeWithCaptain(task.assignedName, taskWithCaptain.captainName) : formatOptionalText(task.assignedName)}
-                        </TableCell>
-                        <TableCell>
-                          {isOverdue ? (
-                            <Badge variant="destructive">{formatTaskDate(task.dueDate)}</Badge>
-                          ) : (
-                            formatTaskDate(task.dueDate)
-                          )}
-                        </TableCell>
+                        <TableCell>{formatAssigneeWithCaptain(task.assignedName, captainName)}</TableCell>
+                        <TableCell>{formatTaskDate(task.dueDate)}</TableCell>
                         <TableCell>{formatTaskDate(task.assignmentDate)}</TableCell>
                         <TableCell>{formatTaskDate(task.completionDate)}</TableCell>
                         <TableCell>{formatCurrency(task.bill)}</TableCell>
                         <TableCell>{formatCurrency(task.advanceReceived)}</TableCell>
                         <TableCell>{formatCurrency(task.outstandingAmount)}</TableCell>
                         <TableCell>{formatOptionalText(task.paymentStatus)}</TableCell>
-                        <TableCell className="text-right">
+                        <TableCell>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -418,7 +609,7 @@ export default function TasksPage() {
                               setDialogOpen(true);
                             }}
                           >
-                            Edit
+                            <Edit className="h-4 w-4" />
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -446,13 +637,13 @@ export default function TasksPage() {
         open={bulkEditOpen}
         onOpenChange={setBulkEditOpen}
         selectedTasks={selectedTasks}
-        onSuccess={handleClearSelection}
+        onSuccess={() => setSelectedTaskIds(new Set())}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Selected Tasks</AlertDialogTitle>
+            <AlertDialogTitle>Delete Tasks</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete {selectedTaskIds.size} task(s)? This action cannot be undone.
             </AlertDialogDescription>

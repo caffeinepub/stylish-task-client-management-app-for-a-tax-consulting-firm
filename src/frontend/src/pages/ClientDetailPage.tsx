@@ -1,64 +1,66 @@
+import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, AlertCircle, Edit, CheckSquare } from 'lucide-react';
-import { useGetClient } from '../hooks/clients';
+import { Separator } from '@/components/ui/separator';
+import { ArrowLeft, Edit, AlertCircle, Check, ChevronsUpDown } from 'lucide-react';
+import { useGetAllClients } from '../hooks/clients';
 import { useGetAllTasks } from '../hooks/tasks';
-import { useState, useMemo } from 'react';
 import ClientFormDialog from '../components/clients/ClientFormDialog';
 import TaskDetailsPanel from '../components/tasks/TaskDetailsPanel';
-import { getStatusDisplayLabel } from '../constants/taskStatus';
+import { cn } from '@/lib/utils';
+import type { Client } from '../backend';
 
 export default function ClientDetailPage() {
   const { clientId } = useParams({ from: '/clients/$clientId' });
   const navigate = useNavigate();
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-
-  const { data: client, isLoading: clientLoading, error: clientError } = useGetClient(BigInt(clientId));
+  const { data: clients, isLoading: clientsLoading, error: clientsError } = useGetAllClients();
   const { data: tasksWithCaptain, isLoading: tasksLoading } = useGetAllTasks();
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [clientSelectorOpen, setClientSelectorOpen] = useState(false);
+
+  const client = useMemo(() => {
+    if (!clients) return null;
+    return clients.find(c => c.id.toString() === clientId) || null;
+  }, [clients, clientId]);
 
   const clientTasks = useMemo(() => {
     if (!tasksWithCaptain || !client) return [];
     return tasksWithCaptain.filter(twc => twc.task.clientName === client.name);
   }, [tasksWithCaptain, client]);
 
-  const taskStats = useMemo(() => {
-    const total = clientTasks.length;
-    const completed = clientTasks.filter(twc => 
-      getStatusDisplayLabel(twc.task.status) === 'Completed'
-    ).length;
-    const inProgress = clientTasks.filter(twc => 
-      getStatusDisplayLabel(twc.task.status) === 'In Progress'
-    ).length;
-    const pending = total - completed - inProgress;
+  const sortedClients = useMemo(() => {
+    if (!clients) return [];
+    return [...clients].sort((a, b) => a.name.localeCompare(b.name));
+  }, [clients]);
 
-    return { total, completed, inProgress, pending };
-  }, [clientTasks]);
+  const handleClientSelect = (selectedClientId: string) => {
+    setClientSelectorOpen(false);
+    navigate({ to: '/clients/$clientId', params: { clientId: selectedClientId } });
+  };
 
-  if (clientError) {
+  if (clientsError) {
     return (
-      <div className="space-y-6">
-        <Button variant="ghost" onClick={() => navigate({ to: '/clients' })}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Clients
-        </Button>
+      <div className="container mx-auto p-6">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Failed to load client details. Please try again later.
+            {clientsError instanceof Error ? clientsError.message : 'Failed to load client'}
           </AlertDescription>
         </Alert>
       </div>
     );
   }
 
-  if (clientLoading) {
+  if (clientsLoading) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-10 w-48" />
+      <div className="container mx-auto p-6 space-y-6">
+        <Skeleton className="h-8 w-64" />
         <Skeleton className="h-64 w-full" />
       </div>
     );
@@ -66,126 +68,143 @@ export default function ClientDetailPage() {
 
   if (!client) {
     return (
-      <div className="space-y-6">
-        <Button variant="ghost" onClick={() => navigate({ to: '/clients' })}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Clients
-        </Button>
+      <div className="container mx-auto p-6">
         <Alert>
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>Client not found.</AlertDescription>
+          <AlertDescription>Client not found</AlertDescription>
         </Alert>
+        <Button onClick={() => navigate({ to: '/clients' })} className="mt-4">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Clients
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={() => navigate({ to: '/clients' })}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Clients
-        </Button>
+    <div className="container mx-auto p-6 space-y-6">
+      {/* Header with Client Selector */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-4 flex-1">
+          <Button variant="ghost" size="sm" onClick={() => navigate({ to: '/clients' })}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <Popover open={clientSelectorOpen} onOpenChange={setClientSelectorOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={clientSelectorOpen}
+                className="justify-between min-w-[300px]"
+              >
+                {client.name}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[300px] p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Search client..." />
+                <CommandList>
+                  <CommandEmpty>No client found.</CommandEmpty>
+                  <CommandGroup>
+                    {sortedClients.map((c) => (
+                      <CommandItem
+                        key={c.id.toString()}
+                        value={c.name}
+                        onSelect={() => handleClientSelect(c.id.toString())}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            client.id === c.id ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {c.name}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
         <Button onClick={() => setEditDialogOpen(true)}>
-          <Edit className="h-4 w-4 mr-2" />
+          <Edit className="mr-2 h-4 w-4" />
           Edit Client
         </Button>
       </div>
 
+      {/* Client Details Card */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">{client.name}</CardTitle>
-          <CardDescription>
-            Client ID: {client.id.toString()}
-          </CardDescription>
+          <CardTitle>{client.name}</CardTitle>
+          <CardDescription>Client Information</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {client.gstin && (
             <div>
-              <p className="text-sm font-medium text-muted-foreground">GSTIN</p>
-              <p className="text-sm mt-1">{client.gstin}</p>
+              <h3 className="text-sm font-medium text-muted-foreground mb-1">GSTIN</h3>
+              <p className="text-base">{client.gstin}</p>
             </div>
           )}
-
           {client.pan && (
             <div>
-              <p className="text-sm font-medium text-muted-foreground">PAN</p>
-              <p className="text-sm mt-1">{client.pan}</p>
+              <h3 className="text-sm font-medium text-muted-foreground mb-1">PAN</h3>
+              <p className="text-base">{client.pan}</p>
             </div>
           )}
-
           {client.notes && (
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Notes</p>
-              <p className="text-sm mt-1 whitespace-pre-wrap">{client.notes}</p>
+              <h3 className="text-sm font-medium text-muted-foreground mb-1">Notes</h3>
+              <p className="text-base whitespace-pre-wrap">{client.notes}</p>
             </div>
           )}
-
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Created</p>
-            <p className="text-sm mt-1">
-              {new Date(Number(client.timestamp)).toLocaleDateString('en-IN', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </p>
-          </div>
+          {!client.gstin && !client.pan && !client.notes && (
+            <p className="text-sm text-muted-foreground">No additional information available</p>
+          )}
         </CardContent>
       </Card>
 
+      {/* Tasks Section */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Tasks</CardTitle>
-              <CardDescription>
-                {tasksLoading ? 'Loading tasks...' : `${clientTasks.length} task(s) for this client`}
-              </CardDescription>
-            </div>
-            <div className="flex gap-2">
-              <Badge variant="outline">
-                Total: {taskStats.total}
-              </Badge>
-              <Badge variant="default" className="bg-green-600">
-                Completed: {taskStats.completed}
-              </Badge>
-              <Badge variant="default" className="bg-blue-600">
-                In Progress: {taskStats.inProgress}
-              </Badge>
-              <Badge variant="secondary">
-                Pending: {taskStats.pending}
-              </Badge>
-            </div>
-          </div>
+          <CardTitle>Tasks</CardTitle>
+          <CardDescription>
+            {clientTasks.length} task{clientTasks.length !== 1 ? 's' : ''} for this client
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {tasksLoading ? (
             <div className="space-y-4">
               {[...Array(3)].map((_, i) => (
-                <Skeleton key={i} className="h-48 w-full" />
+                <Skeleton key={i} className="h-32 w-full" />
               ))}
             </div>
           ) : clientTasks.length === 0 ? (
-            <div className="text-center py-12">
-              <CheckSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No tasks found for this client.</p>
+            <div className="text-center py-12 text-muted-foreground">
+              No tasks found for this client
             </div>
           ) : (
             <div className="space-y-4">
               {clientTasks.map((taskWithCaptain) => (
-                <TaskDetailsPanel 
-                  key={taskWithCaptain.task.id.toString()} 
-                  task={taskWithCaptain.task}
-                  captainName={taskWithCaptain.captainName}
-                />
+                <div key={taskWithCaptain.task.id.toString()}>
+                  <TaskDetailsPanel 
+                    task={taskWithCaptain.task} 
+                    captainName={taskWithCaptain.captainName}
+                  />
+                  <Separator className="mt-4" />
+                </div>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
 
-      <ClientFormDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} client={client} />
+      <ClientFormDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        client={client}
+      />
     </div>
   );
 }

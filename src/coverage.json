@@ -1,64 +1,73 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-19T01:08:20.666Z",
+  "generatedAt": "2026-02-19T01:24:17.248Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 2,
+    "total": 4,
+    "implemented": 4,
     "items": [
       {
-        "id": "REQ-97",
-        "summary": "Fix the backend Task update logic in backend/main.mo so that when a task's status is changed to 'Completed', the completionDate field is reliably set to the current timestamp (Time.now()) if it is not already set, ensuring the auto-population works correctly and produces valid dates.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-98",
-        "summary": "Verify that the frontend task update mutations in frontend/src/hooks/tasks.ts (useUpdateTask, useBulkUpdateTasks) and all task update UI components (TaskFormDialog, TaskQuickStatus, TaskBulkEditDialog) are sending complete task payloads to the backend, including the current status value, so the backend can correctly detect status transitions to 'Completed'.",
+        "id": "REQ-100",
+        "summary": "Replace all existing dropdown Select controls for Client Name, Task Category, Task Sub Category, Assigned Name, and Status in the Task create/edit dialog (TaskFormDialog.tsx) with searchable/filterable Select components that support typing to filter/search options when the list is large.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/tasks.ts",
-          "frontend/src/components/tasks/TaskFormDialog.tsx",
-          "frontend/src/components/tasks/TaskQuickStatus.tsx",
-          "frontend/src/components/tasks/TaskBulkEditDialog.tsx"
+          "frontend/src/components/tasks/TaskFormDialog.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/tasks/TaskFormDialog.tsx",
-          "frontend/src/components/tasks/TaskQuickStatus.tsx",
-          "frontend/src/components/tasks/TaskBulkEditDialog.tsx"
+          "frontend/src/components/tasks/TaskFormDialog.tsx"
         ]
       },
       {
-        "id": "REQ-99",
-        "summary": "Add defensive date validation in the frontend task display utilities (frontend/src/utils/taskDisplay.ts) to ensure completionDate timestamps are properly converted to readable date strings, handling edge cases like null values, invalid timestamps, or timestamps outside valid Date ranges.",
+        "id": "REQ-101",
+        "summary": "Add searchable Select controls in the Tasks page filter controls (TasksPage.tsx) for filtering by Client Name, Task Category, Sub Category, Assigned Name, and Status so users can efficiently find and select filter values from large option lists.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/utils/taskDisplay.ts",
-          "frontend/src/pages/TasksPage.tsx",
-          "frontend/src/components/tasks/TaskDetailsPanel.tsx",
+          "frontend/src/pages/TasksPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/TasksPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-102",
+        "summary": "Replace the Client Name selector in the ClientDetailPage task list with a searchable Select component so users can efficiently find and select clients when the client list is large.",
+        "status": "implemented",
+        "plannedFiles": [
           "frontend/src/pages/ClientDetailPage.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/utils/taskDisplay.ts"
+          "frontend/src/pages/ClientDetailPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-103",
+        "summary": "Ensure all searchable Select implementations use Shadcn/Radix UI components with Combobox pattern or Command component for search functionality, maintaining consistency with the existing UI component library and ensuring accessibility.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/tasks/TaskFormDialog.tsx",
+          "frontend/src/pages/TasksPage.tsx",
+          "frontend/src/pages/ClientDetailPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/tasks/TaskFormDialog.tsx",
+          "frontend/src/pages/TasksPage.tsx",
+          "frontend/src/pages/ClientDetailPage.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
     "frontend/src/components/tasks/TaskFormDialog.tsx",
-    "frontend/src/components/tasks/TaskQuickStatus.tsx",
-    "frontend/src/utils/taskDisplay.ts",
+    "frontend/src/pages/ClientDetailPage.tsx",
+    "frontend/src/pages/TasksPage.tsx",
     "frontend/src/utils/urlParams.ts",
     "project_state.json",
     "scratch/component-selection.json",
