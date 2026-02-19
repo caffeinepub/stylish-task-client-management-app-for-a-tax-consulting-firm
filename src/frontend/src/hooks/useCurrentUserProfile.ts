@@ -6,24 +6,19 @@ import type { UserProfile } from '../backend';
 export function useGetCallerUserProfile() {
   const { actor, isFetching: actorFetching } = useActor();
   const { identity } = useInternetIdentity();
-
   const isAuthenticated = !!identity;
 
   const query = useQuery<UserProfile | null>({
     queryKey: ['currentUserProfile'],
     queryFn: async () => {
-      if (!actor) {
-        // Return null instead of throwing to prevent crashes
-        return null;
-      }
+      if (!actor) throw new Error('Actor not available');
       try {
         return await actor.getCallerUserProfile();
       } catch (error) {
-        console.error('Failed to fetch user profile:', error);
+        console.error('[useGetCallerUserProfile] Query error:', error);
         return null;
       }
     },
-    // Only enable when authenticated and actor is ready
     enabled: isAuthenticated && !!actor && !actorFetching,
     retry: false,
   });
@@ -31,7 +26,7 @@ export function useGetCallerUserProfile() {
   return {
     ...query,
     isLoading: actorFetching || query.isLoading,
-    isFetched: !!actor && query.isFetched,
+    isFetched: isAuthenticated && !!actor && query.isFetched,
   };
 }
 
@@ -42,7 +37,7 @@ export function useSaveCallerUserProfile() {
   return useMutation({
     mutationFn: async (profile: UserProfile) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.saveCallerUserProfile(profile);
+      await actor.saveCallerUserProfile(profile);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });

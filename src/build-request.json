@@ -1,40 +1,119 @@
 {
   "kind": "build_request",
-  "title": "Redesign Dashboard UI with more stylish visual theme",
-  "priority": "normal",
+  "title": "Fix production application loading failure",
+  "projectName": "CSWA Group of Companies",
+  "priority": "high",
   "requirements": [
     {
-      "id": "REQ-107",
-      "text": "Update the Dashboard page visual design (frontend/src/pages/DashboardPage.tsx) to apply a more stylish, modern aesthetic appropriate for a tax consulting firm, including enhanced spacing, typography hierarchy, color accents, card shadows/borders, and visual polish while maintaining all existing functional components (metrics cards, revenue aggregations, task breakdowns, drill-down navigation).",
+      "id": "REQ-113",
+      "text": "Diagnose and resolve the production application loading failure that causes the app to remain stuck on a blank screen or 'Loading...' state after deploying Version 32, with repeated console warnings visible in browser developer tools.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-latest"
         ],
         "quotes": [
-          "change the sstyle of dashboard more stylish"
+          "not loading"
         ]
       },
       "acceptanceCriteria": [
-        "Dashboard layout uses enhanced spacing and visual hierarchy to create a more polished, professional appearance",
-        "Metrics cards, revenue tables, and task breakdown sections include refined styling with appropriate shadows, borders, or accent colors",
-        "Typography is enhanced with clear size/weight hierarchy for headings, labels, and data values",
-        "The visual theme remains consistent with the existing app color palette (warm neutrals, sage green primary, charcoal tones)",
-        "All existing Dashboard functionality (drill-down navigation, data aggregations, clickable rows) continues to work without regression",
-        "The design maintains responsive behavior on mobile and tablet viewports"
+        "The production application loads successfully and renders the root route UI",
+        "Users can navigate to all routes (/dashboard, /tasks, /clients, etc.) without encountering blank screens",
+        "No console errors or warnings related to router initialization, actor creation, or URL parameter handling appear during startup",
+        "The Loading screen transitions to the signed-in or signed-out UI within a reasonable time frame"
+      ]
+    },
+    {
+      "id": "REQ-114",
+      "text": "Add enhanced error logging in the browser console during application startup to capture detailed diagnostic information about router initialization, actor creation, authentication state, and any errors that occur before the first paint, ensuring production issues can be diagnosed from user-reported console logs.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-latest"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Console logs clearly indicate each stage of application initialization (router created, actor initialized, authentication checked, etc.)",
+        "Any errors during startup are logged with full stack traces and context",
+        "Production builds include sufficient logging to diagnose loading failures without requiring source maps"
+      ]
+    },
+    {
+      "id": "REQ-115",
+      "text": "Verify that the useDeferredUrlCleanup hook (frontend/src/hooks/useDeferredUrlCleanup.ts) executes exactly once after mount, does not cause infinite loops or re-renders, and does not interfere with TanStack Router's initialization sequence or route rendering.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-latest"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The useDeferredUrlCleanup hook runs only once after the initial component mount",
+        "No infinite loops or repeated executions of the URL cleanup logic occur",
+        "The hook does not prevent TanStack Router from rendering the root route",
+        "Admin token extraction and URL cleanup complete without causing navigation errors"
+      ]
+    },
+    {
+      "id": "REQ-116",
+      "text": "Review and harden the actor creation logic in frontend/src/hooks/useActor.ts to ensure it does not cause startup failures, does not pass conflicting parameters to createActor (eliminating 'agent and agentOptions both passed' warnings), and gracefully handles missing or invalid admin tokens without blocking application initialization.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-latest"
+        ]
+      },
+      "acceptanceCriteria": [
+        "No console warnings about 'agent and agentOptions both passed to createActor' appear",
+        "Actor creation completes successfully even when admin token is missing or invalid",
+        "Actor initialization errors do not prevent the root route from rendering",
+        "The application can render the signed-out screen when actor/authentication is not ready"
+      ]
+    },
+    {
+      "id": "REQ-117",
+      "text": "Ensure the AppStartupErrorBoundary component (frontend/src/components/errors/AppStartupErrorBoundary.tsx) catches all errors during application initialization and displays the StartupErrorScreen with actionable error information, preventing the app from remaining in a blank or frozen state when unexpected errors occur.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-latest"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Any errors during startup are caught by the error boundary and displayed to users",
+        "The StartupErrorScreen shows clear English error messages without exposing sensitive details",
+        "Users can reload the application from the error screen",
+        "The error boundary does not itself crash or fail to render"
+      ]
+    },
+    {
+      "id": "REQ-118",
+      "text": "Test the production build locally using a production-like server configuration to reproduce the loading failure, verify JavaScript module serving with correct MIME types, and ensure the application initializes correctly before deploying to production.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-latest"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Production build can be tested locally with a static server that mimics IC canister serving behavior",
+        "JavaScript files are served with correct Content-Type headers (application/javascript)",
+        "The application loads successfully in the local production test environment",
+        "All routes render correctly in production mode"
       ]
     }
   ],
   "constraints": [
-    "Do not change the Dashboard's functional behavior (data fetching, aggregations, drill-down navigation)",
-    "Maintain consistency with the existing app-wide visual theme and color palette",
-    "Preserve all existing Dashboard components: metrics summary, revenue by category/subcategory, status breakdown, upcoming/overdue tasks"
+    "Do not modify immutable frontend paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui",
+    "Maintain single-actor Motoko architecture; do not create multiple backend actors",
+    "Keep all user-facing text in English",
+    "Do not introduce new external dependencies or third-party services"
   ],
   "nonGoals": [
-    "Adding new Dashboard features or data aggregations",
-    "Changing the Dashboard layout structure or component organization",
-    "Modifying backend APIs or data models",
-    "Redesigning other pages beyond the Dashboard"
+    "Adding new features or functionality beyond fixing the loading failure",
+    "Redesigning the application architecture",
+    "Implementing additional error recovery mechanisms beyond what is needed for startup",
+    "Optimizing performance unrelated to the loading issue"
   ],
   "imageRequirements": {
     "required": [],

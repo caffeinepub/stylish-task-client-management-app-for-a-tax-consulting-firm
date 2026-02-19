@@ -1,25 +1,91 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-19T01:45:17.195Z",
+  "generatedAt": "2026-02-19T02:08:21.517Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 1,
-    "implemented": 1,
+    "total": 6,
+    "implemented": 5,
     "items": [
       {
-        "id": "REQ-107",
-        "summary": "Update the Dashboard page visual design (frontend/src/pages/DashboardPage.tsx) to apply a more stylish, modern aesthetic appropriate for a tax consulting firm, including enhanced spacing, typography hierarchy, color accents, card shadows/borders, and visual polish while maintaining all existing functional components (metrics cards, revenue aggregations, task breakdowns, drill-down navigation).",
+        "id": "REQ-113",
+        "summary": "Diagnose and resolve the production application loading failure that causes the app to remain stuck on a blank screen or 'Loading...' state after deploying Version 32, with repeated console warnings visible in browser developer tools.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/DashboardPage.tsx",
-          "frontend/src/index.css"
+          "frontend/src/App.tsx",
+          "frontend/src/components/errors/AppStartupErrorBoundary.tsx",
+          "frontend/src/components/errors/StartupErrorScreen.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/pages/DashboardPage.tsx"
+          "frontend/src/App.tsx",
+          "frontend/src/components/errors/AppStartupErrorBoundary.tsx",
+          "frontend/src/components/errors/StartupErrorScreen.tsx"
+        ]
+      },
+      {
+        "id": "REQ-114",
+        "summary": "Add enhanced error logging in the browser console during application startup to capture detailed diagnostic information about router initialization, actor creation, authentication state, and any errors that occur before the first paint, ensuring production issues can be diagnosed from user-reported console logs.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/App.tsx",
+          "frontend/src/hooks/useActor.ts",
+          "frontend/src/hooks/useDeferredUrlCleanup.ts",
+          "frontend/src/hooks/useInternetIdentity.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/App.tsx",
+          "frontend/src/hooks/useDeferredUrlCleanup.ts"
+        ]
+      },
+      {
+        "id": "REQ-115",
+        "summary": "Verify that the useDeferredUrlCleanup hook (frontend/src/hooks/useDeferredUrlCleanup.ts) executes exactly once after mount, does not cause infinite loops or re-renders, and does not interfere with TanStack Router's initialization sequence or route rendering.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useDeferredUrlCleanup.ts",
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useDeferredUrlCleanup.ts",
+          "frontend/src/App.tsx"
+        ]
+      },
+      {
+        "id": "REQ-116",
+        "summary": "Review and harden the actor creation logic in frontend/src/hooks/useActor.ts to ensure it does not cause startup failures, does not pass conflicting parameters to createActor (eliminating 'agent and agentOptions both passed' warnings), and gracefully handles missing or invalid admin tokens without blocking application initialization.",
+        "status": "missing",
+        "plannedFiles": [
+          "frontend/src/hooks/useActor.ts"
+        ],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-117",
+        "summary": "Ensure the AppStartupErrorBoundary component (frontend/src/components/errors/AppStartupErrorBoundary.tsx) catches all errors during application initialization and displays the StartupErrorScreen with actionable error information, preventing the app from remaining in a blank or frozen state when unexpected errors occur.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/errors/AppStartupErrorBoundary.tsx",
+          "frontend/src/components/errors/StartupErrorScreen.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/errors/AppStartupErrorBoundary.tsx",
+          "frontend/src/components/errors/StartupErrorScreen.tsx"
+        ]
+      },
+      {
+        "id": "REQ-118",
+        "summary": "Test the production build locally using a production-like server configuration to reproduce the loading failure, verify JavaScript module serving with correct MIME types, and ensure the application initializes correctly before deploying to production.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/.ic-assets.json5",
+          "frontend/index.html"
+        ],
+        "matchedFiles": [
+          "frontend/.ic-assets.json5",
+          "frontend/index.html"
         ]
       }
     ]
@@ -29,7 +95,12 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/pages/DashboardPage.tsx",
+    "frontend/.ic-assets.json5",
+    "frontend/index.html",
+    "frontend/src/App.tsx",
+    "frontend/src/components/errors/AppStartupErrorBoundary.tsx",
+    "frontend/src/components/errors/StartupErrorScreen.tsx",
+    "frontend/src/hooks/useDeferredUrlCleanup.ts",
     "frontend/src/utils/urlParams.ts",
     "project_state.json",
     "scratch/component-selection.json",

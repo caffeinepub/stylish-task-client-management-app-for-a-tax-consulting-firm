@@ -1,29 +1,146 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Redesign Dashboard UI with more stylish visual theme",
+  "title": "Fix production application loading failure",
   "requirements": [
     {
-      "id": "REQ-107",
-      "summary": "Update Dashboard page visual design to apply a more stylish, modern aesthetic appropriate for a tax consulting firm, including enhanced spacing, typography hierarchy, color accents, card shadows/borders, and visual polish while maintaining all existing functional components",
+      "id": "REQ-113",
+      "summary": "Diagnose and resolve production application loading failure causing blank screen",
       "acceptanceCriteria": [
-        "Dashboard layout uses enhanced spacing and visual hierarchy to create a more polished, professional appearance",
-        "Metrics cards, revenue tables, and task breakdown sections include refined styling with appropriate shadows, borders, or accent colors",
-        "Typography is enhanced with clear size/weight hierarchy for headings, labels, and data values",
-        "The visual theme remains consistent with the existing app color palette (warm neutrals, sage green primary, charcoal tones)",
-        "All existing Dashboard functionality (drill-down navigation, data aggregations, clickable rows) continues to work without regression",
-        "The design maintains responsive behavior on mobile and tablet viewports"
+        "The production application loads successfully and renders the root route UI",
+        "Users can navigate to all routes (/dashboard, /tasks, /clients, etc.) without encountering blank screens",
+        "No console errors or warnings related to router initialization, actor creation, or URL parameter handling appear during startup",
+        "The Loading screen transitions to the signed-in or signed-out UI within a reasonable time frame"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/DashboardPage.tsx",
+          "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Enhance the visual design of DashboardPage with refined styling for a more professional, modern aesthetic. Apply improved spacing with gap utilities and padding adjustments. Enhance metrics cards with subtle shadows (shadow-sm), borders (border border-border), and refined background colors. Add clear typography hierarchy using font-semibold/font-bold for headings, increased text sizes for key metrics (text-3xl/text-4xl), and muted colors for labels. Apply card shadows and borders to revenue aggregation tables and task breakdown sections. Use accent colors from the existing palette (sage green primary, warm neutrals) for visual highlights. Ensure all existing functionality (drill-down navigation via handleNavigation callbacks, data aggregations, clickable table rows) remains intact. Maintain responsive grid layouts and mobile behavior."
+          "description": "Add defensive null checks around router initialization and ensure the Loading component has a timeout fallback that displays an error after 10 seconds. Add console logging at critical startup checkpoints (before router creation, after profile check, before first render) to track initialization progress. Ensure the AppStartupErrorBoundary properly wraps all router and authentication logic."
         },
         {
-          "path": "frontend/src/index.css",
+          "path": "frontend/src/components/errors/AppStartupErrorBoundary.tsx",
           "operation": "modify",
-          "description": "Review and potentially refine global CSS custom properties to ensure the warm neutrals, sage green primary, and charcoal tones are consistently applied across light and dark modes. Verify that border, muted, and accent color variables support the enhanced Dashboard styling. Add any missing utility classes for professional spacing or typography hierarchy if needed."
+          "description": "Enhance error boundary to catch both synchronous and asynchronous errors during startup. Add componentDidCatch lifecycle method to log errors with full context including component stack. Ensure getDerivedStateFromError returns a valid error state even for edge cases."
+        },
+        {
+          "path": "frontend/src/components/errors/StartupErrorScreen.tsx",
+          "operation": "modify",
+          "description": "Add more detailed error information display including timestamp, browser info, and console log history. Make reload button more prominent and add a secondary action to copy all diagnostic information to clipboard for support reporting."
+        }
+      ]
+    },
+    {
+      "id": "REQ-114",
+      "summary": "Add enhanced error logging during application startup for production diagnostics",
+      "acceptanceCriteria": [
+        "Console logs clearly indicate each stage of application initialization (router created, actor initialized, authentication checked, etc.)",
+        "Any errors during startup are logged with full stack traces and context",
+        "Production builds include sufficient logging to diagnose loading failures without requiring source maps"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Add comprehensive console logging throughout the component lifecycle: log when App component mounts, when router is initialized, when authentication state changes, when profile is checked, and before each major render path (Loading, ProfileSetupModal, RouterProvider). Include timestamp and relevant state values in each log entry."
+        },
+        {
+          "path": "frontend/src/hooks/useActor.ts",
+          "operation": "modify",
+          "description": "Add detailed logging for actor creation lifecycle: log when useActor hook is called, when admin token is found/missing, before createActor is invoked, when actor is successfully created, and when any errors occur. Log the actor initialization state transitions and any authentication-related events."
+        },
+        {
+          "path": "frontend/src/hooks/useDeferredUrlCleanup.ts",
+          "operation": "modify",
+          "description": "Add logging at each stage of URL cleanup: when hook mounts, when admin token is extracted, when token is stored in sessionStorage, before URL cleanup delay, and after URL is cleaned. Log the exact URL before and after cleanup to verify the operation completes correctly."
+        },
+        {
+          "path": "frontend/src/hooks/useInternetIdentity.ts",
+          "operation": "modify",
+          "description": "Add logging for Internet Identity lifecycle events: when provider initializes, when login is called, when identity is retrieved, when authentication state changes, and when logout/clear is invoked. Log any errors during AuthClient operations with full context."
+        }
+      ]
+    },
+    {
+      "id": "REQ-115",
+      "summary": "Verify useDeferredUrlCleanup hook executes once and does not interfere with router",
+      "acceptanceCriteria": [
+        "The useDeferredUrlCleanup hook runs only once after the initial component mount",
+        "No infinite loops or repeated executions of the URL cleanup logic occur",
+        "The hook does not prevent TanStack Router from rendering the root route",
+        "Admin token extraction and URL cleanup complete without causing navigation errors"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useDeferredUrlCleanup.ts",
+          "operation": "modify",
+          "description": "Ensure useEffect has an empty dependency array to run only once on mount. Add a ref to track execution and prevent duplicate runs. Verify the cleanup delay (currently setTimeout) completes before router navigation occurs. Add safeguards to ensure URL cleanup does not trigger router re-initialization or cause navigation to fail. Consider increasing the delay or using a more robust timing mechanism if the cleanup interferes with router setup."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Verify that useDeferredUrlCleanup is called at the appropriate point in the component lifecycle (after router is ready but before first navigation). Ensure the hook's URL manipulation does not conflict with TanStack Router's internal state. Add a flag to track when URL cleanup is complete before proceeding with router rendering."
+        }
+      ]
+    },
+    {
+      "id": "REQ-116",
+      "summary": "Review and harden actor creation logic to prevent startup failures",
+      "acceptanceCriteria": [
+        "No console warnings about 'agent and agentOptions both passed to createActor' appear",
+        "Actor creation completes successfully even when admin token is missing or invalid",
+        "Actor initialization errors do not prevent the root route from rendering",
+        "The application can render the signed-out screen when actor/authentication is not ready"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useActor.ts",
+          "operation": "modify",
+          "description": "Review the createActor invocation to ensure only one of 'agent' or 'agentOptions' is passed, never both. If identity is present, pass the agent; otherwise, pass agentOptions. Add error handling around actor creation that catches and logs errors without throwing. Ensure actor creation failures set isFetching to false and return a null actor, allowing the app to render the signed-out screen. Add validation for admin token format before attempting to use it. Wrap access control initialization in try-catch to prevent exceptions from blocking app startup."
+        }
+      ]
+    },
+    {
+      "id": "REQ-117",
+      "summary": "Ensure AppStartupErrorBoundary catches all initialization errors and displays actionable feedback",
+      "acceptanceCriteria": [
+        "Any errors during startup are caught by the error boundary and displayed to users",
+        "The StartupErrorScreen shows clear English error messages without exposing sensitive details",
+        "Users can reload the application from the error screen",
+        "The error boundary does not itself crash or fail to render"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/errors/AppStartupErrorBoundary.tsx",
+          "operation": "modify",
+          "description": "Ensure the error boundary implements both componentDidCatch and getDerivedStateFromError to handle all error scenarios. Add fallback rendering if StartupErrorScreen itself fails. Wrap the error boundary's own render logic in a try-catch to prevent cascading failures. Test that the boundary catches errors from async operations during component initialization."
+        },
+        {
+          "path": "frontend/src/components/errors/StartupErrorScreen.tsx",
+          "operation": "modify",
+          "description": "Sanitize error messages to avoid exposing internal paths, tokens, or sensitive configuration. Provide user-friendly error categories (Network Error, Configuration Error, Authentication Error, etc.) and actionable next steps. Add a reload button that clears all local storage and session storage before reloading to ensure a clean state. Include a copy-to-clipboard button for diagnostic information that users can share with support."
+        }
+      ]
+    },
+    {
+      "id": "REQ-118",
+      "summary": "Test production build locally to reproduce and verify fixes before deployment",
+      "acceptanceCriteria": [
+        "Production build can be tested locally with a static server that mimics IC canister serving behavior",
+        "JavaScript files are served with correct Content-Type headers (application/javascript)",
+        "The application loads successfully in the local production test environment",
+        "All routes render correctly in production mode"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/.ic-assets.json5",
+          "operation": "modify",
+          "description": "Review asset configuration to ensure JavaScript files (.js, .mjs) are served with correct MIME type 'application/javascript' or 'text/javascript'. Verify that the configuration includes proper headers for module scripts and that CSP headers do not block script execution. Check that cache policies do not cause stale builds to be served."
+        },
+        {
+          "path": "frontend/index.html",
+          "operation": "modify",
+          "description": "Ensure the script tag for main.tsx uses type='module' attribute. Verify that the base href is correctly set for production environment. Add a noscript fallback message for users with JavaScript disabled. Check that no inline scripts or styles violate CSP policies."
         }
       ]
     }

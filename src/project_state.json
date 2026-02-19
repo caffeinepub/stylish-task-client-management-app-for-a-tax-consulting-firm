@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 63,
+  "projectStateVersion": 67,
   "summary": "Build a stylish Task/Client Management app for a tax consulting firm.",
   "architectural_notes": [
     "Dashboard should support interactive drill-down: clicking an aggregate metric navigates/filters to the corresponding Tasks list view (e.g., by category/status) and shows the matching items.",
@@ -22,7 +22,9 @@
     "Task edit dialog can crash / fail to open when a stored task has status set to an empty string (\"\"), triggering Radix Select error: \"A Select.Item must have a value prop that is not an empty string.\"",
     "After deploying Version 21, the app is still not loading on the user side (persistent blank/loading screen in production).",
     "Auto-population of Completion Date when marking a task as 'Completed' is either not working or showing an invalid date.",
-    "After deploying Version 29, the app is not loading in production (persistent blank/loading screen)."
+    "After deploying Version 29, the app is not loading in production (persistent blank/loading screen).",
+    "After deploying Version 31, the app is not loading in production (persistent blank/loading screen).",
+    "After deploying Version 32, the app is not loading in production (persistent blank/loading screen)."
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -705,6 +707,78 @@
         "REQ-107"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-diagnose-and-fix-the-production-application-loading-failure-that-causes-the-app-to-remain-stuck-on-the-loading-screen-with-repeated-console-warnings-about-detected-both-agent-and-agentoptions-passed-to-createactor-and-no-visible-ui-rendering",
+      "title": "Diagnose and fix the production application loading failure that causes the app to remain stuck on the 'Loading...' screen with repeated console warnings about 'Detected both agent and agentOptions passed to createActor' and no visible UI rendering.",
+      "reqIds": [
+        "REQ-108"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-verify-that-the-usedeferredurlcleanup-hook-in-frontend-src-hooks-usedeferredurlcleanup-ts-is-not-causing-router-initialization-failures-or-infinite-loops-and-ensure-it-runs-only-once-after-the-initial-mount-without-interfering-with-tanstack-router-s-startup-sequence",
+      "title": "Verify that the useDeferredUrlCleanup hook in frontend/src/hooks/useDeferredUrlCleanup.ts is not causing router initialization failures or infinite loops, and ensure it runs only once after the initial mount without interfering with TanStack Router's startup sequence.",
+      "reqIds": [
+        "REQ-110"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-comprehensive-error-logging-and-error-boundary-handling-at-the-root-level-app-tsx-to-capture-and-display-any-startup-errors-that-prevent-the-application-from-rendering-ensuring-users-see-a-meaningful-error-message-instead-of-an-infinite-loading-screen",
+      "title": "Add comprehensive error logging and error boundary handling at the root level (App.tsx) to capture and display any startup errors that prevent the application from rendering, ensuring users see a meaningful error message instead of an infinite loading screen.",
+      "reqIds": [
+        "REQ-111"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-review-the-tanstack-router-initialization-code-in-frontend-src-app-tsx-to-ensure-the-router-instance-is-created-and-mounted-correctly-validatesearch-functions-do-not-throw-errors-during-startup-and-the-router-can-render-the-root-route-before-any-async-operations-complete",
+      "title": "Review the TanStack Router initialization code in frontend/src/App.tsx to ensure the router instance is created and mounted correctly, validateSearch functions do not throw errors during startup, and the router can render the root route before any async operations complete.",
+      "reqIds": [
+        "REQ-112"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-diagnose-and-resolve-the-production-application-loading-failure-that-causes-the-app-to-remain-stuck-on-a-blank-screen-or-loading-state-after-deploying-version-32-with-repeated-console-warnings-visible-in-browser-developer-tools",
+      "title": "Diagnose and resolve the production application loading failure that causes the app to remain stuck on a blank screen or 'Loading...' state after deploying Version 32, with repeated console warnings visible in browser developer tools.",
+      "reqIds": [
+        "REQ-113"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-enhanced-error-logging-in-the-browser-console-during-application-startup-to-capture-detailed-diagnostic-information-about-router-initialization-actor-creation-authentication-state-and-any-errors-that-occur-before-the-first-paint-ensuring-production-issues-can-be-diagnosed-from-user-reported-console-logs",
+      "title": "Add enhanced error logging in the browser console during application startup to capture detailed diagnostic information about router initialization, actor creation, authentication state, and any errors that occur before the first paint, ensuring production issues can be diagnosed from user-reported console logs.",
+      "reqIds": [
+        "REQ-114"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-verify-that-the-usedeferredurlcleanup-hook-frontend-src-hooks-usedeferredurlcleanup-ts-executes-exactly-once-after-mount-does-not-cause-infinite-loops-or-re-renders-and-does-not-interfere-with-tanstack-router-s-initialization-sequence-or-route-rendering",
+      "title": "Verify that the useDeferredUrlCleanup hook (frontend/src/hooks/useDeferredUrlCleanup.ts) executes exactly once after mount, does not cause infinite loops or re-renders, and does not interfere with TanStack Router's initialization sequence or route rendering.",
+      "reqIds": [
+        "REQ-115"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-the-appstartuperrorboundary-component-frontend-src-components-errors-appstartuperrorboundary-tsx-catches-all-errors-during-application-initialization-and-displays-the-startuperrorscreen-with-actionable-error-information-preventing-the-app-from-remaining-in-a-blank-or-frozen-state-when-unexpected-errors-occur",
+      "title": "Ensure the AppStartupErrorBoundary component (frontend/src/components/errors/AppStartupErrorBoundary.tsx) catches all errors during application initialization and displays the StartupErrorScreen with actionable error information, preventing the app from remaining in a blank or frozen state when unexpected errors occur.",
+      "reqIds": [
+        "REQ-117"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-test-the-production-build-locally-using-a-production-like-server-configuration-to-reproduce-the-loading-failure-verify-javascript-module-serving-with-correct-mime-types-and-ensure-the-application-initializes-correctly-before-deploying-to-production",
+      "title": "Test the production build locally using a production-like server configuration to reproduce the loading failure, verify JavaScript module serving with correct MIME types, and ensure the application initializes correctly before deploying to production.",
+      "reqIds": [
+        "REQ-118"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -1044,6 +1118,22 @@
       "id": "AR-58",
       "summary": "Update the Dashboard UI design to be more stylish and visually appealing.",
       "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-60",
+      "summary": "Review and fix the actor initialization logic in frontend/src/hooks/useActor.ts to eliminate the repeated 'agent and agentOptions both passed to createActor' warnings visible in the browser console, ensuring only the required parameters are passed to the Actor.createActor call.",
+      "reqIds": [
+        "REQ-109"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-64",
+      "summary": "Review and harden the actor creation logic in frontend/src/hooks/useActor.ts to ensure it does not cause startup failures, does not pass conflicting parameters to createActor (eliminating 'agent and agentOptions both passed' warnings), and gracefully handles missing or invalid admin tokens without blocking application initialization.",
+      "reqIds": [
+        "REQ-116"
+      ],
       "status": "pending"
     }
   ],

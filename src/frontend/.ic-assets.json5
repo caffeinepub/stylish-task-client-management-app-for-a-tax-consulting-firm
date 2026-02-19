@@ -2,7 +2,18 @@
   {
     "match": "**/*.js",
     "headers": {
-      "Content-Type": "application/javascript"
+      "Content-Type": "application/javascript",
+      "X-Content-Type-Options": "nosniff"
+    },
+    "cache": {
+      "max_age": 31536000
+    }
+  },
+  {
+    "match": "**/*.mjs",
+    "headers": {
+      "Content-Type": "application/javascript",
+      "X-Content-Type-Options": "nosniff"
     },
     "cache": {
       "max_age": 31536000
@@ -11,7 +22,8 @@
   {
     "match": "**/*.css",
     "headers": {
-      "Content-Type": "text/css"
+      "Content-Type": "text/css",
+      "X-Content-Type-Options": "nosniff"
     },
     "cache": {
       "max_age": 31536000
@@ -20,8 +32,9 @@
   {
     "match": "**/*.html",
     "headers": {
-      "Content-Type": "text/html",
-      "Cache-Control": "no-cache"
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      "X-Content-Type-Options": "nosniff"
     }
   },
   {
@@ -83,7 +96,7 @@
     "headers": {
       "X-Content-Type-Options": "nosniff",
       "X-Frame-Options": "DENY",
-      "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; connect-src 'self' https://*.icp0.io https://*.ic0.app https://icp-api.io; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';"
+      "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; connect-src 'self' https://*.icp0.io https://*.ic0.app https://icp-api.io https://identity.ic0.app; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';"
     }
   }
 ]
