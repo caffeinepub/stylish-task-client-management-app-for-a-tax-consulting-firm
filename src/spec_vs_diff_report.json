@@ -1,46 +1,55 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-19T00:10:37.642Z",
-  "summary": "The diff implements a comprehensive Todo List feature with full CRUD operations, bulk upload/delete functionality, and CSV template support. Captain name display is correctly integrated across all task views (TasksPage, TaskDetailsPanel, ClientDetailPage, DashboardPage) using the formatAssigneeWithCaptain utility. The backend extends Task queries to return TaskWithCaptain including resolved captain names. Implementation follows existing patterns for Clients, Tasks, and Assignees throughout.",
-  "missing_requirements": [],
-  "hallucinated_features": [
+  "generatedAt": "2026-02-19T00:21:47.010Z",
+  "summary": "The diff shows backend migration scaffolding and unrelated URL parameter utilities, but does not implement the core requirements: backend auto-population logic for assignmentDate/completionDate on state transitions (REQ-85, REQ-86), or frontend changes to send complete task payloads during updates (REQ-87). All three requirements are missing from the implementation.",
+  "missing_requirements": [
     {
-      "description": "Todo model includes priority and dueDate fields",
-      "reason": "REQ-81 explicitly states non-goals include Todo priority, due dates, or advanced todo fields beyond standard title/description/completed. The backend Todo type includes optional priority and dueDate fields, and the frontend TodoFormDialog has inputs for priority and dueDate, contradicting the non-goals constraint.",
+      "id": "REQ-85",
+      "requirement": "Update the backend Task update logic so that when a task's assignedName field transitions from null/empty to a non-empty value, the assignmentDate field is automatically set to the current timestamp if assignmentDate is not already set.",
+      "reason": "The backend/main.mo diff is truncated, but no evidence of logic to detect assignedName transitions (null/empty → non-empty) or auto-populate assignmentDate based on state changes. The migration.mo file only contains type definitions and a pass-through migration function with no business logic.",
       "evidence": [
         "backend/main.mo",
-        "frontend/src/components/todos/TodoFormDialog.tsx",
-        "frontend/src/utils/todoCsv.ts"
+        "backend/migration.mo"
+      ]
+    },
+    {
+      "id": "REQ-86",
+      "requirement": "Update the backend Task update logic so that when a task's status field is set to 'Completed', the completionDate field is automatically set to the current timestamp if completionDate is not already set.",
+      "reason": "No evidence in the diff of logic to detect status transitions to 'Completed' or auto-populate completionDate. The truncated backend/main.mo shows type definitions but no updateTask implementation with this behavior.",
+      "evidence": [
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-87",
+      "requirement": "Update the frontend Task mutation hooks (useUpdateTask in frontend/src/hooks/tasks.ts) and all task update UI flows to ensure they send all existing task fields when updating a task.",
+      "reason": "No frontend task mutation or UI component files are present in the diff. The only frontend change is frontend/src/utils/urlParams.ts, which is unrelated to task updates. No evidence of changes to hooks/tasks.ts, TaskFormDialog, TaskQuickStatus, InlineCommentEditor, or bulk edit flows.",
+      "evidence": [
+        "frontend/src/utils/urlParams.ts"
       ]
     }
   ],
-  "confidence": 0.95,
+  "hallucinated_features": [
+    {
+      "description": "Added comprehensive URL parameter utility functions for parsing, persisting, and clearing URL parameters from hash-based routing",
+      "reason": "The urlParams.ts file with functions like getUrlParameter, storeSessionParameter, getPersistedUrlParameter, clearParamFromHash was not requested in the BuildRequest. This appears to be unrelated infrastructure work.",
+      "evidence": [
+        "frontend/src/utils/urlParams.ts"
+      ]
+    },
+    {
+      "description": "Added migration module scaffolding with OldActor/NewActor type definitions",
+      "reason": "The migration.mo file with its extensive type definitions and pass-through migration function was not requested. The BuildRequest makes no mention of data migration needs.",
+      "evidence": [
+        "backend/migration.mo"
+      ]
+    }
+  ],
+  "confidence": 0.85,
   "changed_files": [
     "backend/main.mo",
-    "frontend-file-summaries.txt",
-    "frontend/src/App.tsx",
-    "frontend/src/components/assignees/AssigneeFormDialog.tsx",
-    "frontend/src/components/clients/ClientFormDialog.tsx",
-    "frontend/src/components/layout/AppLayout.tsx",
-    "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
-    "frontend/src/components/tasks/TaskBulkUploadDialog.tsx",
-    "frontend/src/components/tasks/TaskDetailsPanel.tsx",
-    "frontend/src/components/todos/TodoBulkUploadDialog.tsx",
-    "frontend/src/components/todos/TodoFormDialog.tsx",
-    "frontend/src/hooks/assignees.ts",
-    "frontend/src/hooks/clients.ts",
-    "frontend/src/hooks/tasks.ts",
-    "frontend/src/hooks/todos.ts",
-    "frontend/src/pages/ClientDetailPage.tsx",
-    "frontend/src/pages/DashboardPage.tsx",
-    "frontend/src/pages/TasksPage.tsx",
-    "frontend/src/pages/TodosPage.tsx",
-    "frontend/src/utils/taskAggregations.ts",
-    "frontend/src/utils/taskCsv.ts",
-    "frontend/src/utils/taskDisplay.ts",
-    "frontend/src/utils/taskExcel.ts",
-    "frontend/src/utils/todoCsv.ts",
+    "backend/migration.mo",
     "frontend/src/utils/urlParams.ts",
     "project_state.json"
   ]

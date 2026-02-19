@@ -1,105 +1,71 @@
 {
   "kind": "build_request",
-  "title": "Add todo list feature and display captain name after assignee name in task views",
+  "title": "Auto-populate Assignment Date and Completion Date based on task state changes",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-81",
-      "text": "Add a Todo List management feature to the application with full CRUD operations (create, read, update, delete todos) scoped per authenticated user, following the same access control patterns used for Clients, Tasks, and Assignees.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-latest"
-        ],
-        "quotes": [
-          "add todo list also"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Backend provides Todo data model with fields: id, title (required), description (optional), completed (boolean), createdAt (timestamp), and any other standard todo fields",
-        "Backend implements CRUD APIs for todos scoped per authenticated caller (getTodos, createTodo, updateTodo, deleteTodo)",
-        "Backend traps when unauthenticated, consistent with existing Client/Task/Assignee behavior",
-        "Frontend adds React Query hooks for todo CRUD operations following patterns in frontend/src/hooks/tasks.ts and frontend/src/hooks/clients.ts",
-        "Frontend adds a Todos page/section accessible via navigation",
-        "UI includes todo list view, add/edit forms, and delete confirmation",
-        "UI follows existing design system (Tailwind, Shadcn components, CSWA theme)"
-      ]
-    },
-    {
-      "id": "REQ-82",
-      "text": "Add bulk operations support for Todos including bulk upload (CSV template download and upload with validation) and bulk selection with bulk delete, following the existing patterns used for Tasks, Clients, and Assignees.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-latest"
-        ],
-        "quotes": [
-          "add todo list also"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Backend implements bulkCreateTodos and bulkDeleteTodos APIs",
-        "Frontend adds CSV template generator and parser for todos in frontend/src/utils/todoCsv.ts",
-        "Frontend adds TodoBulkUploadDialog component with template download, CSV upload, preview, validation, and commit flow",
-        "Frontend adds bulk selection checkboxes in todo list with bulk delete action",
-        "All bulk operations show clear loading, validation error, and success feedback"
-      ]
-    },
-    {
-      "id": "REQ-83",
-      "text": "Display the captain name in all task result views immediately after the assignee name (team name), showing both the team name and captain in a clear, readable format.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-latest"
-        ],
-        "quotes": [
-          "in task result view add captain name also after assihnee name"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Tasks page table (frontend/src/pages/TasksPage.tsx) shows both assignee team name and captain name in the Assigned Name column",
-        "Task details panel (frontend/src/components/tasks/TaskDetailsPanel.tsx) displays both team name and captain name",
-        "Client detail page task list (frontend/src/pages/ClientDetailPage.tsx) shows both team name and captain name for each task",
-        "Dashboard task widgets show both team name and captain name where assignee is displayed",
-        "Format is clear and readable (e.g., 'Team Name (Captain: Captain Name)' or 'Team Name - Captain Name')",
-        "When a task has an assignee name that matches an existing Assignee record, the captain is looked up and displayed; when assignee is free-text with no matching team, only the assignee name is shown",
-        "Excel export includes both team name and captain name in the assignee column"
-      ]
-    },
-    {
-      "id": "REQ-84",
-      "text": "Extend backend Task queries to include resolved captain name for each task by looking up the task's assignedName against existing Assignees records, and return the captain name as part of the Task response payload so the frontend can display it without additional queries.",
+      "id": "REQ-85",
+      "text": "Update the backend Task update logic so that when a task's assignedName field transitions from null/empty to a non-empty value, the assignmentDate field is automatically set to the current timestamp (Int representing nanoseconds since epoch) if assignmentDate is not already set.",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-latest"
+          "msg-user-auto-update"
         ],
         "quotes": [
-          "in task result view add captain name also after assihnee name"
+          "auto updation of assignment date when assign a task to a assignee"
         ]
       },
       "acceptanceCriteria": [
-        "Backend Task type includes an optional captain field in the response",
-        "getTasks, getTask, and all task query APIs resolve the captain name by matching task.assignedName against assignees[caller].name and returning the corresponding captain value",
-        "When no matching assignee exists, captain field is null",
-        "Captain resolution is performant and does not introduce significant query delays"
+        "When updateTask is called with a non-empty assignedName and the existing task has null/empty assignedName, the backend automatically sets assignmentDate to the current timestamp",
+        "If assignmentDate is already set (non-null), the backend does not overwrite it",
+        "If assignedName remains null/empty or does not change, assignmentDate is not modified"
+      ]
+    },
+    {
+      "id": "REQ-86",
+      "text": "Update the backend Task update logic so that when a task's status field is set to 'Completed', the completionDate field is automatically set to the current timestamp (Int representing nanoseconds since epoch) if completionDate is not already set.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-user-auto-update"
+        ],
+        "quotes": [
+          "update date of completion when mark task statsus  as completed"
+        ]
+      },
+      "acceptanceCriteria": [
+        "When updateTask is called with status='Completed' and the existing task has null completionDate, the backend automatically sets completionDate to the current timestamp",
+        "If completionDate is already set (non-null), the backend does not overwrite it",
+        "If status is set to any value other than 'Completed', completionDate is not automatically modified"
+      ]
+    },
+    {
+      "id": "REQ-87",
+      "text": "Update the frontend Task mutation hooks (useUpdateTask in frontend/src/hooks/tasks.ts) and all task update UI flows (TaskFormDialog, TaskQuickStatus, InlineCommentEditor, bulk edit) to ensure they send all existing task fields when updating a task, so the backend auto-population logic for assignmentDate and completionDate can reliably detect state transitions.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-user-auto-update"
+        ]
+      },
+      "acceptanceCriteria": [
+        "All task update mutations send the complete task payload including current values for assignedName and status",
+        "The backend receives sufficient context to detect assignedName transitions (null → non-empty) and status transitions (→ 'Completed')",
+        "No existing task update flows are broken by these changes"
       ]
     }
   ],
   "constraints": [
-    "Do not modify frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or any files in frontend/src/components/ui (read-only)",
-    "Maintain single-actor backend architecture; all Motoko logic in backend/main.mo",
-    "Use existing access control patterns (trap when unauthenticated) for todos",
-    "Follow existing React Query patterns for mutations and cache invalidation",
-    "Use existing Shadcn UI components and CSWA theme styling"
+    "Maintain single-actor architecture; all Motoko logic in backend/main.mo",
+    "Do not modify immutable frontend paths (hooks/useInternetIdentity.ts, hooks/useActor.ts, main.tsx, components/ui)",
+    "Preserve existing access control behavior (trap when unauthenticated)",
+    "Only auto-populate dates when transitioning to the target state; do not overwrite existing dates"
   ],
   "nonGoals": [
-    "Multi-user todo sharing or collaboration features",
-    "Todo priority, due dates, or advanced todo fields beyond standard title/description/completed",
-    "Changing existing Task, Client, or Assignee data models",
-    "Real-time synchronization or notifications for todos",
-    "Integration with external todo services or APIs"
+    "Changing the Task data model or adding new fields",
+    "Modifying the UI to display these dates differently",
+    "Adding user-configurable auto-population rules",
+    "Auto-populating dates during bulk operations (CSV upload)"
   ],
   "imageRequirements": {
     "required": [],

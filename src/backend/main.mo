@@ -5,9 +5,11 @@ import Time "mo:core/Time";
 import Principal "mo:core/Principal";
 import Nat "mo:core/Nat";
 import Iter "mo:core/Iter";
+import Migration "migration";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
+(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -400,6 +402,32 @@ actor {
     switch (taskStorage.get(taskId)) {
       case (null) { Runtime.trap("Task does not exist") };
       case (?existingTask) {
+        // Set assignmentDate if assignedName is updated with new value and assignmentDate is not provided
+        let finalAssignmentDate = if (assignedName != null) {
+          let isPreviouslyUnassigned = switch (existingTask.assignedName) {
+            case (null) { true };
+            case (?"") { true };
+            case (_) { false };
+          };
+
+          if (
+            isPreviouslyUnassigned and (assignedName != null) and (switch assignedName { case (?value) { value != "" }; case (null) { false } })
+          ) {
+            ?Time.now();
+          } else {
+            assignmentDate;
+          };
+        } else {
+          assignmentDate;
+        };
+
+        // Set completionDate if status is set to "Completed" and completionDate is not provided
+        let finalCompletionDate = if (status != null and status == ?"Completed") {
+          ?Time.now();
+        } else {
+          completionDate;
+        };
+
         let updatedTask : Task = {
           id = taskId;
           clientName;
@@ -409,8 +437,8 @@ actor {
           comment;
           assignedName;
           dueDate;
-          assignmentDate;
-          completionDate;
+          assignmentDate = finalAssignmentDate;
+          completionDate = finalCompletionDate;
           bill;
           advanceReceived;
           outstandingAmount;
@@ -560,3 +588,4 @@ actor {
     todoStorage.values().toArray();
   };
 };
+

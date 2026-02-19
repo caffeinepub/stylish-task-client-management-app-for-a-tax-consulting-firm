@@ -1,21 +1,75 @@
 import Map "mo:core/Map";
-import Nat "mo:core/Nat";
-import Array "mo:core/Array";
 import Principal "mo:core/Principal";
+import Nat "mo:core/Nat";
 
 module {
-  public type ClientId = Nat;
-  public type TaskId = Nat;
-
-  public type OldClient = {
-    id : ClientId;
+  type OldClient = {
+    id : Nat;
     name : Text;
-    contactInfo : Text;
-    projects : [Text];
+    gstin : ?Text;
+    pan : ?Text;
+    notes : ?Text;
     timestamp : Int;
   };
 
-  public type NewClient = {
+  type OldTask = {
+    id : Nat;
+    clientName : Text;
+    taskCategory : Text;
+    subCategory : Text;
+    status : ?Text;
+    comment : ?Text;
+    assignedName : ?Text;
+    dueDate : ?Int;
+    assignmentDate : ?Int;
+    completionDate : ?Int;
+    bill : ?Float;
+    advanceReceived : ?Float;
+    outstandingAmount : ?Float;
+    paymentStatus : ?Text;
+    createdAt : Int;
+  };
+
+  type OldAssignee = {
+    id : Nat;
+    name : Text;
+    captain : ?Text;
+  };
+
+  type OldTodo = {
+    id : Nat;
+    title : Text;
+    description : ?Text;
+    completed : Bool;
+    dueDate : ?Int;
+    priority : ?Nat;
+    createdAt : Int;
+    updatedAt : Int;
+  };
+
+  type OldUserProfile = {
+    name : Text;
+  };
+
+  type OldActor = {
+    clients : Map.Map<Principal, Map.Map<Nat, OldClient>>;
+    tasks : Map.Map<Principal, Map.Map<Nat, OldTask>>;
+    assignees : Map.Map<Principal, Map.Map<Nat, OldAssignee>>;
+    todos : Map.Map<Principal, Map.Map<Nat, OldTodo>>;
+    userProfiles : Map.Map<Principal, OldUserProfile>;
+    nextClientId : Nat;
+    nextTaskId : Nat;
+    nextAssigneeId : Nat;
+    nextTodoId : Nat;
+  };
+
+  // New types (should be identical to current actor's types)
+  type ClientId = Nat;
+  type TaskId = Nat;
+  type AssigneeId = Nat;
+  type TodoId = Nat;
+
+  type NewClient = {
     id : ClientId;
     name : Text;
     gstin : ?Text;
@@ -24,7 +78,7 @@ module {
     timestamp : Int;
   };
 
-  public type OldTask = {
+  type NewTask = {
     id : TaskId;
     clientName : Text;
     taskCategory : Text;
@@ -42,44 +96,50 @@ module {
     createdAt : Int;
   };
 
-  public type OldUserProfile = {
+  type NewAssignee = {
+    id : AssigneeId;
+    name : Text;
+    captain : ?Text;
+  };
+
+  type NewTodo = {
+    id : TodoId;
+    title : Text;
+    description : ?Text;
+    completed : Bool;
+    dueDate : ?Int;
+    priority : ?Nat;
+    createdAt : Int;
+    updatedAt : Int;
+  };
+
+  type NewUserProfile = {
     name : Text;
   };
 
-  public type OldActor = {
-    clients : Map.Map<Principal, Map.Map<ClientId, OldClient>>;
-    tasks : Map.Map<Principal, Map.Map<TaskId, OldTask>>;
-    userProfiles : Map.Map<Principal, OldUserProfile>;
-    nextClientId : Nat;
-    nextTaskId : Nat;
-  };
-
-  public type NewActor = {
+  type NewActor = {
     clients : Map.Map<Principal, Map.Map<ClientId, NewClient>>;
-    tasks : Map.Map<Principal, Map.Map<TaskId, OldTask>>;
-    userProfiles : Map.Map<Principal, OldUserProfile>;
+    tasks : Map.Map<Principal, Map.Map<TaskId, NewTask>>;
+    assignees : Map.Map<Principal, Map.Map<AssigneeId, NewAssignee>>;
+    todos : Map.Map<Principal, Map.Map<TodoId, NewTodo>>;
+    userProfiles : Map.Map<Principal, NewUserProfile>;
     nextClientId : Nat;
     nextTaskId : Nat;
+    nextAssigneeId : Nat;
+    nextTodoId : Nat;
   };
 
   public func run(old : OldActor) : NewActor {
-    let newClients = old.clients.map<Principal, Map.Map<ClientId, OldClient>, Map.Map<ClientId, NewClient>>(
-      func(_principal, clientMap) {
-        clientMap.map<ClientId, OldClient, NewClient>(
-          func(_id, oldClient) {
-            {
-              oldClient with
-              gstin = null;
-              pan = null;
-              notes = ?oldClient.contactInfo;
-            };
-          }
-        );
-      }
-    );
     {
-      old with
-      clients = newClients
+      clients = old.clients;
+      tasks = old.tasks;
+      assignees = old.assignees;
+      todos = old.todos;
+      userProfiles = old.userProfiles;
+      nextClientId = old.nextClientId;
+      nextTaskId = old.nextTaskId;
+      nextAssigneeId = old.nextAssigneeId;
+      nextTodoId = old.nextTodoId;
     };
   };
 };

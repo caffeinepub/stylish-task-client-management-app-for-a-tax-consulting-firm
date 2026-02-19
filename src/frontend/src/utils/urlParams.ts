@@ -152,13 +152,15 @@ export function clearParamFromHash(paramName: string): void {
 }
 
 /**
- * Read a secret from the URL hash without mutating the URL
- * Used during initialization to capture the value before router processes it
+ * Reads a secret from the URL hash fragment without mutating the URL
+ * This is useful for reading secrets during initialization without triggering
+ * router re-renders or history changes
  *
  * @param paramName - The name of the secret parameter
  * @returns The secret value if found in hash, null otherwise
  */
 export function readSecretFromHashNonMutating(paramName: string): string | null {
+    // Try to extract from hash without any side effects
     const hash = window.location.hash;
     if (!hash || hash.length <= 1) {
         return null;

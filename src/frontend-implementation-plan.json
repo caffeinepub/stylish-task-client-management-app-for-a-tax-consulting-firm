@@ -1,119 +1,41 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Add Todo List Feature and Display Captain Name in Task Views",
+  "title": "Auto-populate Assignment Date and Completion Date based on task state changes",
   "requirements": [
     {
-      "id": "REQ-81",
-      "summary": "Add Todo List management feature with full CRUD operations scoped per authenticated user",
+      "id": "REQ-87",
+      "summary": "Update frontend task mutation hooks and UI flows to send complete task payloads for backend auto-population of assignmentDate and completionDate",
       "acceptanceCriteria": [
-        "Frontend adds React Query hooks for todo CRUD operations following patterns in frontend/src/hooks/tasks.ts and frontend/src/hooks/clients.ts",
-        "Frontend adds a Todos page/section accessible via navigation",
-        "UI includes todo list view, add/edit forms, and delete confirmation",
-        "UI follows existing design system (Tailwind, Shadcn components, CSWA theme)"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/todos.ts",
-          "operation": "create",
-          "description": "Create React Query hooks for todo CRUD operations (useGetAllTodos, useGetTodo, useCreateTodo, useUpdateTodo, useDeleteTodo, useBulkCreateTodos, useBulkDeleteTodos) following the same patterns used in frontend/src/hooks/tasks.ts and frontend/src/hooks/clients.ts. Include optimistic updates for mutations and proper cache invalidation."
-        },
-        {
-          "path": "frontend/src/pages/TodosPage.tsx",
-          "operation": "create",
-          "description": "Create the main Todos page component with todo list view, search functionality, filtering by completion status, add/edit dialogs, and delete confirmation. Follow the layout and patterns used in frontend/src/pages/TasksPage.tsx and frontend/src/pages/ClientsPage.tsx. Include bulk selection checkboxes and bulk operations toolbar."
-        },
-        {
-          "path": "frontend/src/components/todos/TodoFormDialog.tsx",
-          "operation": "create",
-          "description": "Create form dialog component for creating and editing individual todos with fields for title (required), description (optional), completed (boolean checkbox), priority (optional number), and dueDate (optional date picker). Follow patterns from frontend/src/components/tasks/TaskFormDialog.tsx and frontend/src/components/clients/ClientFormDialog.tsx. Include delete confirmation dialog for edit mode."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Add route configuration for the Todos page at path '/todos' in the TanStack Router setup. Follow the existing route patterns for clients, tasks, and assignees."
-        },
-        {
-          "path": "frontend/src/components/layout/AppLayout.tsx",
-          "operation": "modify",
-          "description": "Add navigation link for Todos in the sidebar navigation menu. Insert it after the Assignees link. Include active state highlighting using the same pattern as existing navigation links."
-        }
-      ]
-    },
-    {
-      "id": "REQ-82",
-      "summary": "Add bulk operations support for Todos including CSV upload and bulk delete",
-      "acceptanceCriteria": [
-        "Frontend adds CSV template generator and parser for todos in frontend/src/utils/todoCsv.ts",
-        "Frontend adds TodoBulkUploadDialog component with template download, CSV upload, preview, validation, and commit flow",
-        "Frontend adds bulk selection checkboxes in todo list with bulk delete action",
-        "All bulk operations show clear loading, validation error, and success feedback"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/utils/todoCsv.ts",
-          "operation": "create",
-          "description": "Create CSV utility functions for todos including generateTodoCsvTemplate (generates and downloads CSV template with headers: Title, Description, Completed, Priority, Due Date), parseTodoCsv (parses uploaded CSV with quote handling and whitespace trimming), validateTodoRow (validates required title field and formats), and convertToTodoInput (converts parsed rows to PartialTodoInput format). Follow patterns from frontend/src/utils/clientCsv.ts and frontend/src/utils/assigneeCsv.ts."
-        },
-        {
-          "path": "frontend/src/components/todos/TodoBulkUploadDialog.tsx",
-          "operation": "create",
-          "description": "Create bulk upload dialog component for todos with CSV template download button, file input with drag-and-drop support, preview table showing parsed todos with validation errors highlighted, and commit button using useBulkCreateTodos hook. Follow the patterns from frontend/src/components/clients/ClientBulkUploadDialog.tsx and frontend/src/components/assignees/AssigneeBulkUploadDialog.tsx."
-        },
-        {
-          "path": "frontend/src/pages/TodosPage.tsx",
-          "operation": "modify",
-          "description": "Add bulk selection functionality with checkboxes for each todo row, select-all checkbox in table header, bulk delete button in toolbar that appears when todos are selected, and TodoBulkUploadDialog trigger button. Follow the bulk operations patterns from frontend/src/pages/TasksPage.tsx and frontend/src/pages/ClientsPage.tsx."
-        }
-      ]
-    },
-    {
-      "id": "REQ-83",
-      "summary": "Display captain name in all task result views immediately after assignee name",
-      "acceptanceCriteria": [
-        "Tasks page table (frontend/src/pages/TasksPage.tsx) shows both assignee team name and captain name in the Assigned Name column",
-        "Task details panel (frontend/src/components/tasks/TaskDetailsPanel.tsx) displays both team name and captain name",
-        "Client detail page task list (frontend/src/pages/ClientDetailPage.tsx) shows both team name and captain name for each task",
-        "Dashboard task widgets show both team name and captain name where assignee is displayed",
-        "Format is clear and readable (e.g., 'Team Name (Captain: Captain Name)' or 'Team Name - Captain Name')",
-        "When a task has an assignee name that matches an existing Assignee record, the captain is looked up and displayed; when assignee is free-text with no matching team, only the assignee name is shown",
-        "Excel export includes both team name and captain name in the assignee column"
+        "All task update mutations send the complete task payload including current values for assignedName and status",
+        "The backend receives sufficient context to detect assignedName transitions (null → non-empty) and status transitions (→ 'Completed')",
+        "No existing task update flows are broken by these changes"
       ],
       "file_operations": [
         {
           "path": "frontend/src/hooks/tasks.ts",
           "operation": "modify",
-          "description": "Update useGetAllTasks hook to call getAllTasksWithCaptain backend method instead of getAllTasks, returning Array<TaskWithCaptain> which includes both task data and resolved captainName. Update the query key and response type accordingly."
+          "description": "Update useUpdateTask hook to ensure all task update mutations send the complete existing task data as the baseline. When updating specific fields, merge the updates with all current task field values so the backend receives full context to detect state transitions for assignedName (null/empty → non-empty) and status (→ 'Completed'). Preserve the existing optimistic update logic and query invalidation behavior."
         },
         {
-          "path": "frontend/src/utils/taskDisplay.ts",
+          "path": "frontend/src/components/tasks/TaskFormDialog.tsx",
           "operation": "modify",
-          "description": "Add formatAssigneeWithCaptain utility function that takes assignedName (string or undefined) and captainName (string or undefined) and returns formatted display string. Format as 'Team Name (Captain: Captain Name)' when both are present, 'Team Name' when only assignedName exists, or placeholder '—' when neither exists."
+          "description": "Update the task update mutation call to pass all current task field values when submitting the form. Ensure that when editing an existing task, all fields (including assignedName, status, assignmentDate, completionDate) are sent to the backend even if unchanged, providing the backend with complete context for auto-population logic."
         },
         {
-          "path": "frontend/src/pages/TasksPage.tsx",
+          "path": "frontend/src/components/tasks/TaskQuickStatus.tsx",
           "operation": "modify",
-          "description": "Update the Assigned Name column rendering to display both assignee name and captain name using the formatAssigneeWithCaptain utility. Access captainName from the TaskWithCaptain response type returned by useGetAllTasks."
+          "description": "Verify that the status update mutation already sends all existing task fields alongside the new status value. Ensure the complete task object is provided to the backend so it can detect status transitions to 'Completed' and auto-populate completionDate."
         },
         {
-          "path": "frontend/src/components/tasks/TaskDetailsPanel.tsx",
+          "path": "frontend/src/components/tasks/InlineCommentEditor.tsx",
           "operation": "modify",
-          "description": "Update the Assigned Team field rendering to display both assignee name and captain name using the formatAssigneeWithCaptain utility. Accept captainName as an optional prop in the component interface."
+          "description": "Update the comment update mutation to send all existing task field values along with the new comment. Ensure the backend receives complete task context including current assignedName and status values, even though this component only modifies the comment field."
         },
         {
-          "path": "frontend/src/pages/ClientDetailPage.tsx",
+          "path": "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
           "operation": "modify",
-          "description": "Update the task list table rendering in the client detail view to display both assignee name and captain name in the Assigned Name column using formatAssigneeWithCaptain utility. Ensure the tasks query uses getAllTasksWithCaptain and passes captainName to the display logic."
-        },
-        {
-          "path": "frontend/src/pages/DashboardPage.tsx",
-          "operation": "modify",
-          "description": "Update the upcoming tasks and overdue tasks widgets to display both assignee name and captain name wherever assignee is shown. Use formatAssigneeWithCaptain utility for consistent formatting. Ensure the tasks query uses getAllTasksWithCaptain."
-        },
-        {
-          "path": "frontend/src/utils/taskExcel.ts",
-          "operation": "modify",
-          "description": "Update the Excel export function to include captain name in the Assigned Name column by using formatAssigneeWithCaptain utility when converting TaskWithCaptain data to Excel rows. Ensure the combined assignee and captain information is exported in a single readable column."
+          "description": "Update bulk edit logic to ensure each task being updated sends its complete existing field values merged with the bulk edit changes. For fields using the unchanged sentinel value, preserve the existing task values so the backend receives full context for all tasks being updated."
         }
       ]
     }

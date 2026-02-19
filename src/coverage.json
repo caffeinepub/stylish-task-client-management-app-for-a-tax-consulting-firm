@@ -1,113 +1,50 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-19T00:10:37.647Z",
+  "generatedAt": "2026-02-19T00:21:47.014Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 3,
+    "total": 3,
+    "implemented": 0,
     "items": [
       {
-        "id": "REQ-81",
-        "summary": "Add a Todo List management feature to the application with full CRUD operations (create, read, update, delete todos) scoped per authenticated user, following the same access control patterns used for Clients, Tasks, and Assignees.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/todos.ts",
-          "frontend/src/pages/TodosPage.tsx",
-          "frontend/src/components/todos/TodoFormDialog.tsx",
-          "frontend/src/App.tsx",
-          "frontend/src/components/layout/AppLayout.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/hooks/todos.ts",
-          "frontend/src/pages/TodosPage.tsx",
-          "frontend/src/components/todos/TodoFormDialog.tsx",
-          "frontend/src/App.tsx",
-          "frontend/src/components/layout/AppLayout.tsx"
-        ]
-      },
-      {
-        "id": "REQ-82",
-        "summary": "Add bulk operations support for Todos including bulk upload (CSV template download and upload with validation) and bulk selection with bulk delete, following the existing patterns used for Tasks, Clients, and Assignees.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/utils/todoCsv.ts",
-          "frontend/src/components/todos/TodoBulkUploadDialog.tsx",
-          "frontend/src/pages/TodosPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/utils/todoCsv.ts",
-          "frontend/src/components/todos/TodoBulkUploadDialog.tsx",
-          "frontend/src/pages/TodosPage.tsx"
-        ]
-      },
-      {
-        "id": "REQ-83",
-        "summary": "Display the captain name in all task result views immediately after the assignee name (team name), showing both the team name and captain in a clear, readable format.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/tasks.ts",
-          "frontend/src/utils/taskDisplay.ts",
-          "frontend/src/pages/TasksPage.tsx",
-          "frontend/src/components/tasks/TaskDetailsPanel.tsx",
-          "frontend/src/pages/ClientDetailPage.tsx",
-          "frontend/src/pages/DashboardPage.tsx",
-          "frontend/src/utils/taskExcel.ts"
-        ],
-        "matchedFiles": [
-          "frontend/src/hooks/tasks.ts",
-          "frontend/src/utils/taskDisplay.ts",
-          "frontend/src/pages/TasksPage.tsx",
-          "frontend/src/components/tasks/TaskDetailsPanel.tsx",
-          "frontend/src/pages/ClientDetailPage.tsx",
-          "frontend/src/pages/DashboardPage.tsx",
-          "frontend/src/utils/taskExcel.ts"
-        ]
-      },
-      {
-        "id": "REQ-84",
-        "summary": "Extend backend Task queries to include resolved captain name for each task by looking up the task's assignedName against existing Assignees records, and return the captain name as part of the Task response payload so the frontend can display it without additional queries.",
+        "id": "REQ-85",
+        "summary": "Update the backend Task update logic so that when a task's assignedName field transitions from null/empty to a non-empty value, the assignmentDate field is automatically set to the current timestamp (Int representing nanoseconds since epoch) if assignmentDate is not already set.",
         "status": "unknown",
         "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-86",
+        "summary": "Update the backend Task update logic so that when a task's status field is set to 'Completed', the completionDate field is automatically set to the current timestamp (Int representing nanoseconds since epoch) if completionDate is not already set.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-87",
+        "summary": "Update the frontend Task mutation hooks (useUpdateTask in frontend/src/hooks/tasks.ts) and all task update UI flows (TaskFormDialog, TaskQuickStatus, InlineCommentEditor, bulk edit) to ensure they send all existing task fields when updating a task, so the backend auto-population logic for assignmentDate and completionDate can reliably detect state transitions.",
+        "status": "missing",
+        "plannedFiles": [
+          "frontend/src/hooks/tasks.ts",
+          "frontend/src/components/tasks/TaskFormDialog.tsx",
+          "frontend/src/components/tasks/TaskQuickStatus.tsx",
+          "frontend/src/components/tasks/InlineCommentEditor.tsx",
+          "frontend/src/components/tasks/TaskBulkEditDialog.tsx"
+        ],
         "matchedFiles": []
       }
     ]
   },
   "changedFiles": [
     "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
-    "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/App.tsx",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
-    "frontend/src/components/assignees/AssigneeFormDialog.tsx",
-    "frontend/src/components/clients/ClientFormDialog.tsx",
-    "frontend/src/components/layout/AppLayout.tsx",
-    "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
-    "frontend/src/components/tasks/TaskBulkUploadDialog.tsx",
-    "frontend/src/components/tasks/TaskDetailsPanel.tsx",
-    "frontend/src/components/todos/TodoBulkUploadDialog.tsx",
-    "frontend/src/components/todos/TodoFormDialog.tsx",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
-    "frontend/src/hooks/assignees.ts",
-    "frontend/src/hooks/clients.ts",
-    "frontend/src/hooks/tasks.ts",
-    "frontend/src/hooks/todos.ts",
-    "frontend/src/pages/ClientDetailPage.tsx",
-    "frontend/src/pages/DashboardPage.tsx",
-    "frontend/src/pages/TasksPage.tsx",
-    "frontend/src/pages/TodosPage.tsx",
-    "frontend/src/utils/taskAggregations.ts",
-    "frontend/src/utils/taskCsv.ts",
-    "frontend/src/utils/taskDisplay.ts",
-    "frontend/src/utils/taskExcel.ts",
-    "frontend/src/utils/todoCsv.ts",
     "frontend/src/utils/urlParams.ts",
     "project_state.json",
     "scratch/component-selection.json",

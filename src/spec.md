@@ -1,12 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Add a Todo List feature with full CRUD operations and display captain names alongside assignee names in all task views.
+**Goal:** Auto-populate Assignment Date and Completion Date based on task state changes.
 
 **Planned changes:**
-- Add Todo List management with create, read, update, delete operations scoped per authenticated user
-- Add bulk operations for todos including CSV upload/download and bulk delete
-- Display captain name after assignee (team) name in all task result views (tasks table, task details, client detail page, dashboard widgets, Excel exports)
-- Extend backend to resolve and include captain names in task query responses by matching assignedName against existing Assignees records
+- Update backend Task update logic to automatically set assignmentDate when a task is assigned to a user (assignedName transitions from null/empty to non-empty)
+- Update backend Task update logic to automatically set completionDate when task status is changed to 'Completed'
+- Ensure frontend task update mutations send complete task payloads to enable reliable state transition detection
+- Auto-population only occurs when dates are not already set (no overwriting existing dates)
 
-**User-visible outcome:** Users can manage their personal todo lists with full CRUD and bulk operations. In all task views, users will see both the team name and captain name displayed together (e.g., "Team Name (Captain: Captain Name)") for better task assignment visibility.
+**User-visible outcome:** When users assign a task or mark it as completed, the assignment and completion dates are automatically recorded without manual input.

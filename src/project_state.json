@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 49,
+  "projectStateVersion": 51,
   "summary": "Build a stylish Task/Client Management app for a tax consulting firm.",
   "architectural_notes": [
     "Dashboard should support interactive drill-down: clicking an aggregate metric navigates/filters to the corresponding Tasks list view (e.g., by category/status) and shows the matching items.",
@@ -828,6 +828,42 @@
       "summary": "Extend backend Task queries to include resolved captain name for each task by looking up the task's assignedName against existing Assignees records, and return the captain name as part of the Task response payload so the frontend can display it without additional queries.",
       "reqIds": [
         "REQ-84"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-42",
+      "summary": "Auto-populate Assignment Date when a task is assigned to an assignee (when Assigned Name is set).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-43",
+      "summary": "Auto-populate Completion Date when a task's status is changed to 'Completed'.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-44",
+      "summary": "Update the backend Task update logic so that when a task's assignedName field transitions from null/empty to a non-empty value, the assignmentDate field is automatically set to the current timestamp (Int representing nanoseconds since epoch) if assignmentDate is not already set.",
+      "reqIds": [
+        "REQ-85"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-45",
+      "summary": "Update the backend Task update logic so that when a task's status field is set to 'Completed', the completionDate field is automatically set to the current timestamp (Int representing nanoseconds since epoch) if completionDate is not already set.",
+      "reqIds": [
+        "REQ-86"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-46",
+      "summary": "Update the frontend Task mutation hooks (useUpdateTask in frontend/src/hooks/tasks.ts) and all task update UI flows (TaskFormDialog, TaskQuickStatus, InlineCommentEditor, bulk edit) to ensure they send all existing task fields when updating a task, so the backend auto-population logic for assignmentDate and completionDate can reliably detect state transitions.",
+      "reqIds": [
+        "REQ-87"
       ],
       "status": "pending"
     }
