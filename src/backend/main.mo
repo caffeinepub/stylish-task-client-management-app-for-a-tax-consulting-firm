@@ -1,8 +1,8 @@
 import Map "mo:core/Map";
 import List "mo:core/List";
 import Runtime "mo:core/Runtime";
-import Time "mo:core/Time";
 import Principal "mo:core/Principal";
+import Time "mo:core/Time";
 import Nat "mo:core/Nat";
 import Iter "mo:core/Iter";
 import MixinAuthorization "authorization/MixinAuthorization";

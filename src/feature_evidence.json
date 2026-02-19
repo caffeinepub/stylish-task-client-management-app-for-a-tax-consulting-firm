@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-replace-all-existing-dropdown-select-controls-for-client-name-task-category-task-sub-category-assigned-name-and-status-in-the-task-create-edit-dialog-taskformdialog-tsx-with-searchable-filterable-select-components-that-support-typing-to-filter-search-options-when-the-list-is-large",
-      "featureTitle": "Replace all existing dropdown Select controls for Client Name, Task Category, Task Sub Category, Assigned Name, and Status in the Task create/edit dialog (TaskFormDialog.tsx) with searchable/filterable Select components that support typing to filter/search options when the list is large.",
+      "featureId": "feature-ensure-the-production-server-configuration-serves-javascript-files-with-the-correct-content-type-header-application-javascript-or-text-javascript-instead-of-text-html-for-js-and-jsx-files",
+      "featureTitle": "Ensure the production server configuration serves JavaScript files with the correct Content-Type header ('application/javascript' or 'text/javascript') instead of 'text/html' for .js and .jsx files.",
       "files": [
-        "frontend/src/components/tasks/TaskFormDialog.tsx"
+        "frontend/.ic-assets.json5"
       ],
       "components": [
         "authorization@4.0.0",
@@ -16,66 +16,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-100"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-searchable-select-controls-in-the-tasks-page-filter-controls-taskspage-tsx-for-filtering-by-client-name-task-category-sub-category-assigned-name-and-status-so-users-can-efficiently-find-and-select-filter-values-from-large-option-lists",
-      "featureTitle": "Add searchable Select controls in the Tasks page filter controls (TasksPage.tsx) for filtering by Client Name, Task Category, Sub Category, Assigned Name, and Status so users can efficiently find and select filter values from large option lists.",
-      "files": [
-        "frontend/src/pages/TasksPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-101"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-replace-the-client-name-selector-in-the-clientdetailpage-task-list-with-a-searchable-select-component-so-users-can-efficiently-find-and-select-clients-when-the-client-list-is-large",
-      "featureTitle": "Replace the Client Name selector in the ClientDetailPage task list with a searchable Select component so users can efficiently find and select clients when the client list is large.",
-      "files": [
-        "frontend/src/pages/ClientDetailPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-102"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-ensure-all-searchable-select-implementations-use-shadcn-radix-ui-components-with-combobox-pattern-or-command-component-for-search-functionality-maintaining-consistency-with-the-existing-ui-component-library-and-ensuring-accessibility",
-      "featureTitle": "Ensure all searchable Select implementations use Shadcn/Radix UI components with Combobox pattern or Command component for search functionality, maintaining consistency with the existing UI component library and ensuring accessibility.",
-      "files": [
-        "frontend/src/components/tasks/TaskFormDialog.tsx",
-        "frontend/src/pages/ClientDetailPage.tsx",
-        "frontend/src/pages/TasksPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-103"
+        "REQ-106"
       ],
       "confidence": "high"
     }

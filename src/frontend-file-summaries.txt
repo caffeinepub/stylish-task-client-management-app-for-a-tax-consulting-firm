@@ -44,5 +44,6 @@
   "frontend/src/utils/todoCsv.ts": "CSV template generation and parsing utilities for todo bulk upload with validation for required Title field and optional Description, Completed, Priority, and Due Date fields.",
   "frontend/src/components/todos/TodoFormDialog.tsx": "Reusable dialog for creating and editing todos with loading indicators (spinner + 'Saving...' text), disabled form inputs during submission, prevented dialog close while mutation is pending, and validation for required Title field.",
   "frontend/src/components/todos/TodoBulkUploadDialog.tsx": "Dialog component for bulk todo upload via CSV with template download, file parsing, validation preview, and submission to backend bulk create API.",
-  "frontend/src/pages/TodosPage.tsx": "Todo list page with search by title/description, completion status filtering, bulk selection (checkboxes), bulk actions (upload, delete), and responsive table columns for all todo fields."
+  "frontend/src/pages/TodosPage.tsx": "Todo list page with search by title/description, completion status filtering, bulk selection (checkboxes), bulk actions (upload, delete), and responsive table columns for all todo fields.",
+  "frontend/.ic-assets.json5": "Internet Computer asset canister configuration that explicitly sets Content-Type headers for JavaScript, CSS, HTML, and other static assets to ensure proper MIME types are served, preventing module loading errors."
 }

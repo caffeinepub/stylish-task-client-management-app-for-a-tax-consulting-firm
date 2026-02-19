@@ -1,73 +1,54 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-19T01:24:17.248Z",
+  "generatedAt": "2026-02-19T01:36:40.069Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 4,
+    "total": 3,
+    "implemented": 1,
     "items": [
       {
-        "id": "REQ-100",
-        "summary": "Replace all existing dropdown Select controls for Client Name, Task Category, Task Sub Category, Assigned Name, and Status in the Task create/edit dialog (TaskFormDialog.tsx) with searchable/filterable Select components that support typing to filter/search options when the list is large.",
-        "status": "implemented",
+        "id": "REQ-104",
+        "summary": "Fix the JavaScript module loading error 'Failed to load module script: Expected a JavaScript or Wasm module script but the server responded with a MIME type of \"text/html\"' that prevents the application from loading in production by ensuring the build output correctly generates ES module scripts and the server serves them with the correct Content-Type header.",
+        "status": "missing",
         "plannedFiles": [
-          "frontend/src/components/tasks/TaskFormDialog.tsx"
+          "frontend/index.html"
         ],
-        "matchedFiles": [
-          "frontend/src/components/tasks/TaskFormDialog.tsx"
-        ]
+        "matchedFiles": []
       },
       {
-        "id": "REQ-101",
-        "summary": "Add searchable Select controls in the Tasks page filter controls (TasksPage.tsx) for filtering by Client Name, Task Category, Sub Category, Assigned Name, and Status so users can efficiently find and select filter values from large option lists.",
-        "status": "implemented",
+        "id": "REQ-105",
+        "summary": "Verify that the frontend build configuration (vite.config.ts or similar) correctly outputs ES modules and that the index.html script tag includes type=\"module\" attribute for the main entry point.",
+        "status": "missing",
         "plannedFiles": [
-          "frontend/src/pages/TasksPage.tsx"
+          "frontend/vite.config.ts"
         ],
-        "matchedFiles": [
-          "frontend/src/pages/TasksPage.tsx"
-        ]
+        "matchedFiles": []
       },
       {
-        "id": "REQ-102",
-        "summary": "Replace the Client Name selector in the ClientDetailPage task list with a searchable Select component so users can efficiently find and select clients when the client list is large.",
+        "id": "REQ-106",
+        "summary": "Ensure the production server configuration serves JavaScript files with the correct Content-Type header ('application/javascript' or 'text/javascript') instead of 'text/html' for .js and .jsx files.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/pages/ClientDetailPage.tsx"
+          "frontend/.ic-assets.json5",
+          "dfx.json"
         ],
         "matchedFiles": [
-          "frontend/src/pages/ClientDetailPage.tsx"
-        ]
-      },
-      {
-        "id": "REQ-103",
-        "summary": "Ensure all searchable Select implementations use Shadcn/Radix UI components with Combobox pattern or Command component for search functionality, maintaining consistency with the existing UI component library and ensuring accessibility.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/tasks/TaskFormDialog.tsx",
-          "frontend/src/pages/TasksPage.tsx",
-          "frontend/src/pages/ClientDetailPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/tasks/TaskFormDialog.tsx",
-          "frontend/src/pages/TasksPage.tsx",
-          "frontend/src/pages/ClientDetailPage.tsx"
+          "frontend/.ic-assets.json5"
         ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/tasks/TaskFormDialog.tsx",
-    "frontend/src/pages/ClientDetailPage.tsx",
-    "frontend/src/pages/TasksPage.tsx",
+    "frontend/.ic-assets.json5",
     "frontend/src/utils/urlParams.ts",
     "project_state.json",
     "scratch/component-selection.json",

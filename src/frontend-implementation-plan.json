@@ -1,83 +1,58 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Add searchable dropdown/select controls for large lists",
+  "title": "Fix JavaScript module loading error preventing app from loading",
   "requirements": [
     {
-      "id": "REQ-100",
-      "summary": "Replace all dropdown Select controls in TaskFormDialog with searchable/filterable Select components supporting typing to filter options for Client Name, Task Category, Task Sub Category, Assigned Name, and Status",
+      "id": "REQ-104",
+      "summary": "Fix JavaScript module loading error by ensuring correct MIME types and ES module configuration",
       "acceptanceCriteria": [
-        "All dropdown selects in TaskFormDialog support search/filter functionality",
-        "Users can type to filter options in Client Name, Task Category, Sub Category, Assigned Name, and Status selects",
-        "Search/filter works efficiently with large lists (100+ items)",
-        "Filtered results update in real-time as the user types",
-        "UI remains consistent with existing Shadcn/Radix Select styling"
+        "The application loads successfully in production without JavaScript module errors",
+        "The browser console does not show MIME type errors for module scripts",
+        "All routes (dashboard, tasks, clients, assignees, todos) render correctly after the fix"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/tasks/TaskFormDialog.tsx",
+          "path": "frontend/index.html",
           "operation": "modify",
-          "description": "Replace the five dropdown Select controls (Client Name, Task Category, Task Sub Category, Assigned Name, Status) with Shadcn Combobox or Command components that support search/filter functionality. Maintain existing form validation and submission logic. Ensure the search functionality filters options as the user types and works efficiently with large lists (100+ items). Preserve the sentinel value handling for null status."
+          "description": "Verify and ensure the main script tag includes type=\"module\" attribute for proper ES module loading. Confirm the script src points to the correct entry point (e.g., /src/main.tsx in dev or the built bundle path in production)."
         }
       ]
     },
     {
-      "id": "REQ-101",
-      "summary": "Add searchable Select controls in TasksPage filter controls for filtering by Client Name, Task Category, Sub Category, Assigned Name, and Status",
+      "id": "REQ-105",
+      "summary": "Verify frontend build configuration outputs valid ES modules",
       "acceptanceCriteria": [
-        "All filter dropdowns in TasksPage support search functionality",
-        "Users can type to quickly find and select filter values",
-        "Search works across Client Name, Category, Sub Category, Assignee, and Status filters",
-        "Filter selection remains functional with existing URL-based filter state"
+        "The main.tsx script is loaded with type=\"module\" attribute",
+        "The build process generates valid ES module output",
+        "The production bundle loads without module format errors"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/TasksPage.tsx",
+          "path": "frontend/vite.config.ts",
           "operation": "modify",
-          "description": "Replace the filter dropdown Select controls (Client Name, Task Category, Sub Category, Assigned Name, Status) with searchable Shadcn Combobox or Command components. Maintain existing URL-based filter state management and ensure filter selection updates the URL parameters correctly. The search functionality should work efficiently with large option lists and update filtered results in real-time as the user types."
+          "description": "Review and verify the Vite build configuration ensures proper ES module output format. Check that build.rollupOptions.output.format is set to 'es' or left as default (which is 'es'). Ensure the build.outDir is correctly configured and matches the deployment expectations. Verify that no configuration is inadvertently causing HTML responses for JS module requests."
         }
       ]
     },
     {
-      "id": "REQ-102",
-      "summary": "Replace the Client Name selector in ClientDetailPage task list with a searchable Select component",
+      "id": "REQ-106",
+      "summary": "Ensure production server serves JavaScript files with correct Content-Type headers",
       "acceptanceCriteria": [
-        "Client selection in ClientDetailPage supports search/filter",
-        "Users can type to filter client options",
-        "Selection works correctly with existing client detail navigation"
+        "JavaScript module files are served with Content-Type: application/javascript",
+        "No HTML content is returned when requesting JavaScript module files",
+        "The browser successfully loads and executes all JavaScript modules"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/ClientDetailPage.tsx",
-          "operation": "modify",
-          "description": "Replace the Client Name selector control with a searchable Shadcn Combobox or Command component that allows users to type and filter client options. Ensure the selection correctly navigates to the selected client detail page and maintains existing functionality."
-        }
-      ]
-    },
-    {
-      "id": "REQ-103",
-      "summary": "Ensure all searchable Select implementations use Shadcn/Radix UI components with Combobox pattern or Command component for search functionality, maintaining consistency and accessibility",
-      "acceptanceCriteria": [
-        "All searchable selects use consistent Shadcn/Radix UI patterns",
-        "Components maintain accessibility standards (keyboard navigation, ARIA attributes)",
-        "Visual styling matches existing select components",
-        "Search functionality is performant with large option lists (no lag when typing)"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/tasks/TaskFormDialog.tsx",
-          "operation": "modify",
-          "description": "Verify that all searchable Select implementations use Shadcn Combobox or Command component patterns consistently. Ensure keyboard navigation (arrow keys, Enter, Escape) works correctly, ARIA attributes are present for accessibility, and visual styling matches the existing UI. Test performance with large option lists (100+ items) to ensure no lag when typing."
+          "path": "frontend/.ic-assets.json5",
+          "operation": "create",
+          "description": "Create IC asset configuration file to explicitly set Content-Type headers for JavaScript files. Define rules that ensure .js files are served with 'application/javascript' or 'text/javascript' MIME type. Include glob patterns to match all JavaScript module files in the built output and configure appropriate caching headers for production deployment."
         },
         {
-          "path": "frontend/src/pages/TasksPage.tsx",
+          "path": "dfx.json",
           "operation": "modify",
-          "description": "Verify that all filter searchable Select implementations use consistent Shadcn Combobox or Command component patterns. Ensure keyboard navigation, ARIA attributes, visual consistency with existing selects, and performant search with large option lists."
-        },
-        {
-          "path": "frontend/src/pages/ClientDetailPage.tsx",
-          "operation": "modify",
-          "description": "Verify that the Client Name searchable Select uses consistent Shadcn Combobox or Command component patterns. Ensure keyboard navigation, ARIA attributes, visual consistency, and performant search functionality."
+          "description": "Review and verify the asset canister configuration in dfx.json. Ensure the frontend canister type is correctly set to 'assets' and that the source directory matches the Vite build output directory. Verify no misconfiguration is causing incorrect MIME type serving or fallback HTML responses for JavaScript requests."
         }
       ]
     }

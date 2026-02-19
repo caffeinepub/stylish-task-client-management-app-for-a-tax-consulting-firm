@@ -1,0 +1,89 @@
+[
+  {
+    "match": "**/*.js",
+    "headers": {
+      "Content-Type": "application/javascript"
+    },
+    "cache": {
+      "max_age": 31536000
+    }
+  },
+  {
+    "match": "**/*.css",
+    "headers": {
+      "Content-Type": "text/css"
+    },
+    "cache": {
+      "max_age": 31536000
+    }
+  },
+  {
+    "match": "**/*.html",
+    "headers": {
+      "Content-Type": "text/html",
+      "Cache-Control": "no-cache"
+    }
+  },
+  {
+    "match": "**/*.png",
+    "headers": {
+      "Content-Type": "image/png"
+    },
+    "cache": {
+      "max_age": 31536000
+    }
+  },
+  {
+    "match": "**/*.jpg",
+    "headers": {
+      "Content-Type": "image/jpeg"
+    },
+    "cache": {
+      "max_age": 31536000
+    }
+  },
+  {
+    "match": "**/*.jpeg",
+    "headers": {
+      "Content-Type": "image/jpeg"
+    },
+    "cache": {
+      "max_age": 31536000
+    }
+  },
+  {
+    "match": "**/*.svg",
+    "headers": {
+      "Content-Type": "image/svg+xml"
+    },
+    "cache": {
+      "max_age": 31536000
+    }
+  },
+  {
+    "match": "**/*.woff",
+    "headers": {
+      "Content-Type": "font/woff"
+    },
+    "cache": {
+      "max_age": 31536000
+    }
+  },
+  {
+    "match": "**/*.woff2",
+    "headers": {
+      "Content-Type": "font/woff2"
+    },
+    "cache": {
+      "max_age": 31536000
+    }
+  },
+  {
+    "match": "**/*",
+    "headers": {
+      "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "DENY",
+      "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; connect-src 'self' https://*.icp0.io https://*.ic0.app https://icp-api.io; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';"
+    }
+  }
+]

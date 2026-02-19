@@ -1,87 +1,68 @@
 {
   "kind": "build_request",
-  "title": "Add searchable dropdown/select controls for large lists",
-  "priority": "normal",
+  "title": "Fix JavaScript module loading error preventing app from loading",
+  "priority": "high",
   "requirements": [
     {
-      "id": "REQ-100",
-      "text": "Replace all existing dropdown Select controls for Client Name, Task Category, Task Sub Category, Assigned Name, and Status in the Task create/edit dialog (TaskFormDialog.tsx) with searchable/filterable Select components that support typing to filter/search options when the list is large.",
+      "id": "REQ-104",
+      "text": "Fix the JavaScript module loading error 'Failed to load module script: Expected a JavaScript or Wasm module script but the server responded with a MIME type of \"text/html\"' that prevents the application from loading in production by ensuring the build output correctly generates ES module scripts and the server serves them with the correct Content-Type header.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-search-option"
+          "msg-user-final"
         ],
         "quotes": [
-          "search option to select a item from list when it is huge (Task subtype,client etc.)"
+          "not loading"
         ]
       },
       "acceptanceCriteria": [
-        "All dropdown selects in TaskFormDialog support search/filter functionality",
-        "Users can type to filter options in Client Name, Task Category, Sub Category, Assigned Name, and Status selects",
-        "Search/filter works efficiently with large lists (100+ items)",
-        "Filtered results update in real-time as the user types",
-        "UI remains consistent with existing Shadcn/Radix Select styling"
+        "The application loads successfully in production without JavaScript module errors",
+        "The browser console does not show MIME type errors for module scripts",
+        "All routes (dashboard, tasks, clients, assignees, todos) render correctly after the fix"
       ]
     },
     {
-      "id": "REQ-101",
-      "text": "Add searchable Select controls in the Tasks page filter controls (TasksPage.tsx) for filtering by Client Name, Task Category, Sub Category, Assigned Name, and Status so users can efficiently find and select filter values from large option lists.",
+      "id": "REQ-105",
+      "text": "Verify that the frontend build configuration (vite.config.ts or similar) correctly outputs ES modules and that the index.html script tag includes type=\"module\" attribute for the main entry point.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-search-option"
+          "msg-user-final"
         ]
       },
       "acceptanceCriteria": [
-        "All filter dropdowns in TasksPage support search functionality",
-        "Users can type to quickly find and select filter values",
-        "Search works across Client Name, Category, Sub Category, Assignee, and Status filters",
-        "Filter selection remains functional with existing URL-based filter state"
+        "The main.tsx script is loaded with type=\"module\" attribute",
+        "The build process generates valid ES module output",
+        "The production bundle loads without module format errors"
       ]
     },
     {
-      "id": "REQ-102",
-      "text": "Replace the Client Name selector in the ClientDetailPage task list with a searchable Select component so users can efficiently find and select clients when the client list is large.",
-      "target": "frontend",
+      "id": "REQ-106",
+      "text": "Ensure the production server configuration serves JavaScript files with the correct Content-Type header ('application/javascript' or 'text/javascript') instead of 'text/html' for .js and .jsx files.",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-user-search-option"
+          "msg-user-final"
         ]
       },
       "acceptanceCriteria": [
-        "Client selection in ClientDetailPage supports search/filter",
-        "Users can type to filter client options",
-        "Selection works correctly with existing client detail navigation"
-      ]
-    },
-    {
-      "id": "REQ-103",
-      "text": "Ensure all searchable Select implementations use Shadcn/Radix UI components with Combobox pattern or Command component for search functionality, maintaining consistency with the existing UI component library and ensuring accessibility.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-user-search-option"
-        ]
-      },
-      "acceptanceCriteria": [
-        "All searchable selects use consistent Shadcn/Radix UI patterns",
-        "Components maintain accessibility standards (keyboard navigation, ARIA attributes)",
-        "Visual styling matches existing select components",
-        "Search functionality is performant with large option lists (no lag when typing)"
+        "JavaScript module files are served with Content-Type: application/javascript",
+        "No HTML content is returned when requesting JavaScript module files",
+        "The browser successfully loads and executes all JavaScript modules"
       ]
     }
   ],
   "constraints": [
-    "Do not modify immutable frontend paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui",
-    "Use only Shadcn UI and Radix UI components for searchable select implementation",
-    "Maintain existing form validation and submission logic",
-    "Preserve existing filter state management and URL-based filtering"
+    "Do not modify Internet Identity integration hooks (frontend/src/hooks/useInternetIdentity.ts, useInternetIdentity.tsx)",
+    "Do not modify frontend/src/hooks/useActor.ts or frontend/src/main.tsx",
+    "Do not modify Shadcn UI components in frontend/src/components/ui",
+    "Maintain single-actor backend architecture in backend/main.mo"
   ],
   "nonGoals": [
-    "Adding search to other entity lists (Assignees, Todos) unless they also have dropdowns with large option sets",
-    "Implementing server-side filtering or pagination for dropdown options",
-    "Changing the underlying data fetching or storage mechanisms",
-    "Adding new filter criteria beyond existing fields"
+    "Changing the application's core functionality or features",
+    "Modifying existing UI components beyond what's needed for the fix",
+    "Changing the authentication flow or access control logic",
+    "Adding new features or capabilities"
   ],
   "imageRequirements": {
     "required": [],

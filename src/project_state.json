@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 59,
+  "projectStateVersion": 61,
   "summary": "Build a stylish Task/Client Management app for a tax consulting firm.",
   "architectural_notes": [
     "Dashboard should support interactive drill-down: clicking an aggregate metric navigates/filters to the corresponding Tasks list view (e.g., by category/status) and shows the matching items.",
@@ -21,7 +21,8 @@
     "App stuck on Loading screen/blank UI again due to root route initialization hang caused by getSecretParameter('caffeineAdminToken') running at startup and mutating the URL (history.replaceState), triggering TanStack Router freeze.",
     "Task edit dialog can crash / fail to open when a stored task has status set to an empty string (\"\"), triggering Radix Select error: \"A Select.Item must have a value prop that is not an empty string.\"",
     "After deploying Version 21, the app is still not loading on the user side (persistent blank/loading screen in production).",
-    "Auto-population of Completion Date when marking a task as 'Completed' is either not working or showing an invalid date."
+    "Auto-population of Completion Date when marking a task as 'Completed' is either not working or showing an invalid date.",
+    "After deploying Version 29, the app is not loading in production (persistent blank/loading screen)."
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -688,6 +689,14 @@
         "REQ-103"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-ensure-the-production-server-configuration-serves-javascript-files-with-the-correct-content-type-header-application-javascript-or-text-javascript-instead-of-text-html-for-js-and-jsx-files",
+      "title": "Ensure the production server configuration serves JavaScript files with the correct Content-Type header ('application/javascript' or 'text/javascript') instead of 'text/html' for .js and .jsx files.",
+      "reqIds": [
+        "REQ-106"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -1005,6 +1014,22 @@
       "id": "AR-55",
       "summary": "Add a search or filter option to select items from dropdowns/lists when they are huge (e.g., Task sub category, Client Name, etc.).",
       "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-56",
+      "summary": "Fix the JavaScript module loading error 'Failed to load module script: Expected a JavaScript or Wasm module script but the server responded with a MIME type of \"text/html\"' that prevents the application from loading in production by ensuring the build output correctly generates ES module scripts and the server serves them with the correct Content-Type header.",
+      "reqIds": [
+        "REQ-104"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-57",
+      "summary": "Verify that the frontend build configuration (vite.config.ts or similar) correctly outputs ES modules and that the index.html script tag includes type=\"module\" attribute for the main entry point.",
+      "reqIds": [
+        "REQ-105"
+      ],
       "status": "pending"
     }
   ],

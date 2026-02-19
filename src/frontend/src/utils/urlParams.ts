@@ -99,6 +99,35 @@ export function clearSessionParameter(key: string): void {
 }
 
 /**
+ * Reads a secret from the URL hash without mutating the URL
+ * This is used to capture secrets before router initialization
+ *
+ * @param paramName - The name of the secret parameter
+ * @returns The secret value if found in hash, null otherwise
+ */
+export function readSecretFromHashNonMutating(paramName: string): string | null {
+    const hash = window.location.hash;
+    if (!hash || hash.length <= 1) {
+        return null;
+    }
+
+    // Remove the leading #
+    const hashContent = hash.substring(1);
+    
+    // Split route path from query string
+    const queryStartIndex = hashContent.indexOf('?');
+    
+    if (queryStartIndex === -1) {
+        // No query string in hash
+        return null;
+    }
+
+    const queryString = hashContent.substring(queryStartIndex + 1);
+    const params = new URLSearchParams(queryString);
+    return params.get(paramName);
+}
+
+/**
  * Removes a specific parameter from the URL hash without reloading the page
  * Preserves route information and other parameters in the hash
  * Used to remove sensitive data from the address bar after extracting it
@@ -149,25 +178,6 @@ export function clearParamFromHash(paramName: string): void {
     // If we still have content in the hash, keep it; otherwise remove the hash entirely
     const newUrl = window.location.pathname + window.location.search + (newHash ? '#' + newHash : '');
     window.history.replaceState(null, '', newUrl);
-}
-
-/**
- * Reads a secret from the URL hash fragment without mutating the URL
- * Used during initialization to capture the secret before router processes the URL
- *
- * @param paramName - The name of the secret parameter
- * @returns The secret value if found in hash, null otherwise
- */
-export function readSecretFromHashNonMutating(paramName: string): string | null {
-    const hash = window.location.hash;
-    if (!hash || hash.length <= 1) {
-        return null;
-    }
-
-    // Remove the leading #
-    const hashContent = hash.substring(1);
-    const params = new URLSearchParams(hashContent);
-    return params.get(paramName);
 }
 
 /**

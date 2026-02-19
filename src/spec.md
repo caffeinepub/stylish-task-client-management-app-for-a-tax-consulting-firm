@@ -1,12 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Add searchable dropdown/select controls to improve usability when selecting from large lists of clients, task categories, assignees, and statuses.
+**Goal:** Fix the JavaScript module loading error that prevents the application from loading in production.
 
 **Planned changes:**
-- Replace all dropdown selects in the Task create/edit dialog with searchable/filterable select components
-- Add searchable select controls to the Tasks page filter controls for Client Name, Task Category, Sub Category, Assigned Name, and Status
-- Replace the Client Name selector in the ClientDetailPage task list with a searchable select component
-- Implement all searchable selects using Shadcn/Radix UI Combobox or Command components for consistency and accessibility
+- Verify and fix the frontend build configuration to correctly output ES modules
+- Ensure index.html includes type="module" attribute for the main script entry point
+- Configure the production server to serve JavaScript files with the correct Content-Type header (application/javascript instead of text/html)
+- Test that all routes (dashboard, tasks, clients, assignees, todos) load successfully after the fix
 
-**User-visible outcome:** Users can type to search and filter options in all dropdown selects for clients, task categories, sub-categories, assignees, and statuses, making it easier to work with large lists.
+**User-visible outcome:** The application loads successfully in production without module script errors, and all routes render correctly in the browser.
