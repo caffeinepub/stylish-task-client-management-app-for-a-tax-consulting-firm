@@ -9,6 +9,7 @@ import ClientsPage from './pages/ClientsPage';
 import ClientDetailPage from './pages/ClientDetailPage';
 import TasksPage from './pages/TasksPage';
 import AssigneesPage from './pages/AssigneesPage';
+import TodosPage from './pages/TodosPage';
 import SignedOutScreen from './components/auth/SignedOutScreen';
 import AppStartupErrorBoundary from './components/errors/AppStartupErrorBoundary';
 import StartupErrorScreen from './components/errors/StartupErrorScreen';
@@ -107,6 +108,12 @@ const assigneesRoute = createRoute({
   component: AssigneesPage,
 });
 
+const todosRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/todos',
+  component: TodosPage,
+});
+
 // Create route tree
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -114,6 +121,7 @@ const routeTree = rootRoute.addChildren([
   clientDetailRoute,
   tasksRoute,
   assigneesRoute,
+  todosRoute,
 ]);
 
 // Create router

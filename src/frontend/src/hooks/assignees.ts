@@ -1,9 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
 import type { Assignee, AssigneeId, PartialAssigneeInput } from '../backend';
 
 export function useGetAllAssignees() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching: actorFetching } = useActor();
 
   return useQuery<Assignee[]>({
     queryKey: ['assignees'],
@@ -11,12 +11,12 @@ export function useGetAllAssignees() {
       if (!actor) return [];
       return actor.getAllAssignees();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !actorFetching,
   });
 }
 
 export function useGetAssignee(assigneeId: AssigneeId) {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching: actorFetching } = useActor();
 
   return useQuery<Assignee | null>({
     queryKey: ['assignee', assigneeId.toString()],
@@ -24,7 +24,7 @@ export function useGetAssignee(assigneeId: AssigneeId) {
       if (!actor) return null;
       return actor.getAssignee(assigneeId);
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !actorFetching,
   });
 }
 
@@ -48,56 +48,50 @@ export function useUpdateAssignee() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ assigneeId, ...assignee }: PartialAssigneeInput & { assigneeId: AssigneeId }) => {
+    mutationFn: async (data: { assigneeId: AssigneeId; assignee: PartialAssigneeInput }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.updateAssignee(assigneeId, assignee);
+      return actor.updateAssignee(data.assigneeId, data.assignee);
     },
-    onMutate: async (newAssignee) => {
-      // Cancel outgoing refetches
+    onMutate: async (data) => {
       await queryClient.cancelQueries({ queryKey: ['assignees'] });
-      await queryClient.cancelQueries({ queryKey: ['assignee', newAssignee.assigneeId.toString()] });
+      await queryClient.cancelQueries({ queryKey: ['assignee', data.assigneeId.toString()] });
 
-      // Snapshot previous values
       const previousAssignees = queryClient.getQueryData<Assignee[]>(['assignees']);
-      const previousAssignee = queryClient.getQueryData<Assignee | null>(['assignee', newAssignee.assigneeId.toString()]);
+      const previousAssignee = queryClient.getQueryData<Assignee | null>(['assignee', data.assigneeId.toString()]);
 
-      // Optimistically update assignees list
       if (previousAssignees) {
         queryClient.setQueryData<Assignee[]>(['assignees'], (old) =>
           old?.map((assignee) =>
-            assignee.id === newAssignee.assigneeId
+            assignee.id === data.assigneeId
               ? {
                   ...assignee,
-                  name: newAssignee.name,
-                  captain: newAssignee.captain,
+                  name: data.assignee.name,
+                  captain: data.assignee.captain ?? undefined,
                 }
               : assignee
           ) || []
         );
       }
 
-      // Optimistically update single assignee
       if (previousAssignee) {
-        queryClient.setQueryData<Assignee | null>(['assignee', newAssignee.assigneeId.toString()], {
+        queryClient.setQueryData<Assignee | null>(['assignee', data.assigneeId.toString()], {
           ...previousAssignee,
-          name: newAssignee.name,
-          captain: newAssignee.captain,
+          name: data.assignee.name,
+          captain: data.assignee.captain ?? undefined,
         });
       }
 
       return { previousAssignees, previousAssignee };
     },
-    onError: (err, newAssignee, context) => {
-      // Rollback on error
+    onError: (err, data, context) => {
       if (context?.previousAssignees) {
         queryClient.setQueryData(['assignees'], context.previousAssignees);
       }
       if (context?.previousAssignee) {
-        queryClient.setQueryData(['assignee', newAssignee.assigneeId.toString()], context.previousAssignee);
+        queryClient.setQueryData(['assignee', data.assigneeId.toString()], context.previousAssignee);
       }
     },
     onSettled: (_, __, variables) => {
-      // Refetch to ensure consistency
       queryClient.invalidateQueries({ queryKey: ['assignees'] });
       queryClient.invalidateQueries({ queryKey: ['assignee', variables.assigneeId.toString()] });
     },
@@ -126,7 +120,8 @@ export function useBulkCreateAssignees() {
   return useMutation({
     mutationFn: async (assignees: PartialAssigneeInput[]) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.bulkCreateAssignees(assignees);
+      const promises = assignees.map(assignee => actor.createAssignee(assignee));
+      return Promise.all(promises);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assignees'] });
@@ -141,7 +136,8 @@ export function useBulkDeleteAssignees() {
   return useMutation({
     mutationFn: async (assigneeIds: AssigneeId[]) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.bulkDeleteAssignees(assigneeIds);
+      const promises = assigneeIds.map(id => actor.deleteAssignee(id));
+      return Promise.all(promises);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assignees'] });

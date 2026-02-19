@@ -1,15 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import type { Task, TaskId, TaskInput, PartialTaskUpdate } from '../backend';
+import type { Task, TaskId, TaskWithCaptain } from '../backend';
 
 export function useGetAllTasks() {
   const { actor, isFetching: actorFetching } = useActor();
 
-  return useQuery<Task[]>({
+  return useQuery<TaskWithCaptain[]>({
     queryKey: ['tasks'],
     queryFn: async () => {
       if (!actor) return [];
-      return actor.getAllTasks();
+      return actor.getAllTasksWithCaptain();
     },
     enabled: !!actor && !actorFetching,
   });
@@ -92,31 +92,34 @@ export function useUpdateTask() {
       await queryClient.cancelQueries({ queryKey: ['task', newTask.taskId.toString()] });
 
       // Snapshot previous values
-      const previousTasks = queryClient.getQueryData<Task[]>(['tasks']);
+      const previousTasks = queryClient.getQueryData<TaskWithCaptain[]>(['tasks']);
       const previousTask = queryClient.getQueryData<Task | null>(['task', newTask.taskId.toString()]);
 
       // Optimistically update tasks list
       if (previousTasks) {
-        queryClient.setQueryData<Task[]>(['tasks'], (old) =>
-          old?.map((task) =>
-            task.id === newTask.taskId
+        queryClient.setQueryData<TaskWithCaptain[]>(['tasks'], (old) =>
+          old?.map((taskWithCaptain) =>
+            taskWithCaptain.task.id === newTask.taskId
               ? {
-                  ...task,
-                  clientName: newTask.clientName,
-                  taskCategory: newTask.taskCategory,
-                  subCategory: newTask.subCategory,
-                  status: newTask.status ?? undefined,
-                  comment: newTask.comment ?? undefined,
-                  assignedName: newTask.assignedName ?? undefined,
-                  dueDate: newTask.dueDate ?? undefined,
-                  assignmentDate: newTask.assignmentDate ?? undefined,
-                  completionDate: newTask.completionDate ?? undefined,
-                  bill: newTask.bill ?? undefined,
-                  advanceReceived: newTask.advanceReceived ?? undefined,
-                  outstandingAmount: newTask.outstandingAmount ?? undefined,
-                  paymentStatus: newTask.paymentStatus ?? undefined,
+                  ...taskWithCaptain,
+                  task: {
+                    ...taskWithCaptain.task,
+                    clientName: newTask.clientName,
+                    taskCategory: newTask.taskCategory,
+                    subCategory: newTask.subCategory,
+                    status: newTask.status ?? undefined,
+                    comment: newTask.comment ?? undefined,
+                    assignedName: newTask.assignedName ?? undefined,
+                    dueDate: newTask.dueDate ?? undefined,
+                    assignmentDate: newTask.assignmentDate ?? undefined,
+                    completionDate: newTask.completionDate ?? undefined,
+                    bill: newTask.bill ?? undefined,
+                    advanceReceived: newTask.advanceReceived ?? undefined,
+                    outstandingAmount: newTask.outstandingAmount ?? undefined,
+                    paymentStatus: newTask.paymentStatus ?? undefined,
+                  },
                 }
-              : task
+              : taskWithCaptain
           ) || []
         );
       }
@@ -180,9 +183,10 @@ export function useBulkCreateTasks() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (taskInputs: TaskInput[]) => {
+    mutationFn: async (tasks: Array<{ clientName: string; taskCategory: string; subCategory: string }>) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.bulkCreateTasks(taskInputs);
+      const promises = tasks.map(task => actor.createTask(task.clientName, task.taskCategory, task.subCategory));
+      return Promise.all(promises);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
@@ -197,7 +201,8 @@ export function useBulkDeleteTasks() {
   return useMutation({
     mutationFn: async (taskIds: TaskId[]) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.bulkDeleteTasks(taskIds);
+      const promises = taskIds.map(id => actor.deleteTask(id));
+      return Promise.all(promises);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
@@ -210,9 +215,32 @@ export function useBulkUpdateTasks() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (taskUpdates: Array<[TaskId, PartialTaskUpdate]>) => {
+    mutationFn: async (taskUpdates: Array<{ taskId: TaskId; status?: string }>) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.bulkUpdateTasks(taskUpdates);
+      const promises = taskUpdates.map(update => {
+        // For bulk updates, we need to get the current task data first
+        // This is a simplified version - in production you'd want to batch this better
+        return actor.getTask(update.taskId).then(task => {
+          if (!task) throw new Error(`Task ${update.taskId} not found`);
+          return actor.updateTask(
+            update.taskId,
+            task.clientName,
+            task.taskCategory,
+            task.subCategory,
+            update.status || task.status || null,
+            task.comment || null,
+            task.assignedName || null,
+            task.dueDate || null,
+            task.assignmentDate || null,
+            task.completionDate || null,
+            task.bill || null,
+            task.advanceReceived || null,
+            task.outstandingAmount || null,
+            task.paymentStatus || null
+          );
+        });
+      });
+      return Promise.all(promises);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
@@ -227,21 +255,41 @@ export function useUpdateTaskComment() {
   return useMutation({
     mutationFn: async (data: { taskId: TaskId; comment: string }) => {
       if (!actor) throw new Error('Actor not available');
-      const update: PartialTaskUpdate = { comment: data.comment };
-      return actor.bulkUpdateTasks([[data.taskId, update]]);
+      // Get current task to preserve other fields
+      const task = await actor.getTask(data.taskId);
+      if (!task) throw new Error('Task not found');
+      
+      return actor.updateTask(
+        data.taskId,
+        task.clientName,
+        task.taskCategory,
+        task.subCategory,
+        task.status || null,
+        data.comment,
+        task.assignedName || null,
+        task.dueDate || null,
+        task.assignmentDate || null,
+        task.completionDate || null,
+        task.bill || null,
+        task.advanceReceived || null,
+        task.outstandingAmount || null,
+        task.paymentStatus || null
+      );
     },
     onMutate: async (data) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['tasks'] });
 
       // Snapshot previous value
-      const previousTasks = queryClient.getQueryData<Task[]>(['tasks']);
+      const previousTasks = queryClient.getQueryData<TaskWithCaptain[]>(['tasks']);
 
       // Optimistically update
       if (previousTasks) {
-        queryClient.setQueryData<Task[]>(['tasks'], (old) =>
-          old?.map((task) =>
-            task.id === data.taskId ? { ...task, comment: data.comment } : task
+        queryClient.setQueryData<TaskWithCaptain[]>(['tasks'], (old) =>
+          old?.map((taskWithCaptain) =>
+            taskWithCaptain.task.id === data.taskId 
+              ? { ...taskWithCaptain, task: { ...taskWithCaptain.task, comment: data.comment } }
+              : taskWithCaptain
           ) || []
         );
       }

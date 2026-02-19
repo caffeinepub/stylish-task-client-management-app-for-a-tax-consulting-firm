@@ -1,15 +1,12 @@
 import Map "mo:core/Map";
 import List "mo:core/List";
-import Array "mo:core/Array";
 import Runtime "mo:core/Runtime";
 import Time "mo:core/Time";
 import Principal "mo:core/Principal";
-import Iter "mo:core/Iter";
 import Nat "mo:core/Nat";
+import Iter "mo:core/Iter";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
-
-
 
 actor {
   let accessControlState = AccessControl.initState();
@@ -18,6 +15,7 @@ actor {
   type ClientId = Nat;
   type TaskId = Nat;
   type AssigneeId = Nat;
+  type TodoId = Nat;
 
   public type Client = {
     id : ClientId;
@@ -50,6 +48,17 @@ actor {
     id : AssigneeId;
     name : Text;
     captain : ?Text;
+  };
+
+  public type Todo = {
+    id : TodoId;
+    title : Text;
+    description : ?Text;
+    completed : Bool;
+    dueDate : ?Int;
+    priority : ?Nat;
+    createdAt : Int;
+    updatedAt : Int;
   };
 
   public type PartialTaskUpdate = {
@@ -100,16 +109,31 @@ actor {
     captain : ?Text;
   };
 
+  public type PartialTodoInput = {
+    title : Text;
+    description : ?Text;
+    completed : Bool;
+    dueDate : ?Int;
+    priority : ?Nat;
+  };
+
+  public type TaskWithCaptain = {
+    task : Task;
+    captainName : ?Text;
+  };
+
   let clients = Map.empty<Principal, Map.Map<ClientId, Client>>();
   let tasks = Map.empty<Principal, Map.Map<TaskId, Task>>();
   let assignees = Map.empty<Principal, Map.Map<AssigneeId, Assignee>>();
+  let todos = Map.empty<Principal, Map.Map<TodoId, Todo>>();
   let userProfiles = Map.empty<Principal, UserProfile>();
   var nextClientId = 0;
   var nextTaskId = 0;
   var nextAssigneeId = 0;
+  var nextTodoId = 0;
 
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view profiles");
     };
     userProfiles.get(caller);
@@ -123,7 +147,7 @@ actor {
   };
 
   public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can save profiles");
     };
     userProfiles.add(caller, profile);
@@ -162,10 +186,22 @@ actor {
     };
   };
 
-  // ===== ASSIGNEE CRUD OPERATIONS =====
+  func getTodoStorage(caller : Principal) : Map.Map<TodoId, Todo> {
+    switch (todos.get(caller)) {
+      case (?todoMap) { todoMap };
+      case (null) {
+        let newTodoMap = Map.empty<TodoId, Todo>();
+        todos.add(caller, newTodoMap);
+        newTodoMap;
+      };
+    };
+  };
 
+  // ===== CRUD OPERATIONS =====
+
+  // Assignees
   public shared ({ caller }) func createAssignee(assignee : PartialAssigneeInput) : async AssigneeId {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Please sign in to continue");
     };
 
@@ -184,7 +220,7 @@ actor {
   };
 
   public shared ({ caller }) func updateAssignee(assigneeId : AssigneeId, assignee : PartialAssigneeInput) : async () {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Please sign in to continue");
     };
 
@@ -203,7 +239,7 @@ actor {
   };
 
   public shared ({ caller }) func deleteAssignee(assigneeId : AssigneeId) : async () {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Please sign in to continue");
     };
 
@@ -215,7 +251,7 @@ actor {
   };
 
   public query ({ caller }) func getAssignee(assigneeId : AssigneeId) : async ?Assignee {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Please sign in to continue");
     };
     let assigneeStorage = getAssigneeStorage(caller);
@@ -223,7 +259,7 @@ actor {
   };
 
   public query ({ caller }) func getAllAssignees() : async [Assignee] {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view data, please sign in to continue");
     };
 
@@ -231,50 +267,9 @@ actor {
     assigneeStorage.values().toArray();
   };
 
-  // ===== ASSIGNEE BULK OPERATIONS =====
-
-  public shared ({ caller }) func bulkCreateAssignees(assigneeInputs : [PartialAssigneeInput]) : async [AssigneeId] {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
-      Runtime.trap("Unauthorized: Only users can create assignees");
-    };
-
-    let assigneeStorage = getAssigneeStorage(caller);
-    let createdAssigneeIds = List.empty<AssigneeId>();
-
-    for (input in assigneeInputs.values()) {
-      let assigneeId = nextAssigneeId;
-      nextAssigneeId += 1;
-
-      let newAssignee : Assignee = {
-        id = assigneeId;
-        name = input.name;
-        captain = input.captain;
-      };
-
-      assigneeStorage.add(assigneeId, newAssignee);
-      createdAssigneeIds.add(assigneeId);
-    };
-
-    createdAssigneeIds.toArray();
-  };
-
-  public shared ({ caller }) func bulkDeleteAssignees(assigneeIds : [AssigneeId]) : async () {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
-      Runtime.trap("Unauthorized: Please sign in to continue");
-    };
-
-    let assigneeStorage = getAssigneeStorage(caller);
-    for (assigneeId in assigneeIds.values()) {
-      if (assigneeStorage.containsKey(assigneeId)) {
-        assigneeStorage.remove(assigneeId);
-      };
-    };
-  };
-
-  // ===== CLIENT CRUD OPERATIONS =====
-
+  // Clients
   public shared ({ caller }) func createClient(client : PartialClientInput) : async ClientId {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Please sign in to continue");
     };
 
@@ -296,7 +291,7 @@ actor {
   };
 
   public shared ({ caller }) func updateClient(clientId : ClientId, client : PartialClientInput) : async () {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Please sign in to continue");
     };
 
@@ -318,7 +313,7 @@ actor {
   };
 
   public shared ({ caller }) func deleteClient(clientId : ClientId) : async () {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Please sign in to continue");
     };
 
@@ -330,7 +325,7 @@ actor {
   };
 
   public query ({ caller }) func getClient(clientId : ClientId) : async ?Client {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Please sign in to continue");
     };
     let clientStorage = getClientStorage(caller);
@@ -338,62 +333,20 @@ actor {
   };
 
   public query ({ caller }) func getAllClients() : async [Client] {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Please sign in to continue");
     };
     let clientStorage = getClientStorage(caller);
     clientStorage.values().toArray();
   };
 
-  public shared ({ caller }) func bulkCreateClients(clientInputs : [PartialClientInput]) : async [ClientId] {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
-      Runtime.trap("Unauthorized: Only users can create clients");
-    };
-
-    let clientStorage = getClientStorage(caller);
-    let createdClientIds = List.empty<ClientId>();
-
-    for (input in clientInputs.values()) {
-      let clientId = nextClientId;
-      nextClientId += 1;
-
-      let newClient : Client = {
-        id = clientId;
-        name = input.name;
-        gstin = input.gstin;
-        pan = input.pan;
-        notes = input.notes;
-        timestamp = Time.now();
-      };
-
-      clientStorage.add(clientId, newClient);
-      createdClientIds.add(clientId);
-    };
-
-    createdClientIds.toArray();
-  };
-
-  public shared ({ caller }) func bulkDeleteClients(clientIds : [ClientId]) : async () {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
-      Runtime.trap("Unauthorized: Please sign in to continue");
-    };
-
-    let clientStorage = getClientStorage(caller);
-    for (clientId in clientIds.values()) {
-      if (clientStorage.containsKey(clientId)) {
-        clientStorage.remove(clientId);
-      };
-    };
-  };
-
-  // ===== TASK CRUD OPERATIONS =====
-
+  // Tasks
   public shared ({ caller }) func createTask(
     clientName : Text,
     taskCategory : Text,
     subCategory : Text
   ) : async TaskId {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Please sign in to continue");
     };
 
@@ -439,7 +392,7 @@ actor {
     outstandingAmount : ?Float,
     paymentStatus : ?Text
   ) : async () {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Please sign in to continue");
     };
 
@@ -470,7 +423,7 @@ actor {
   };
 
   public shared ({ caller }) func deleteTask(taskId : TaskId) : async () {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Please sign in to continue");
     };
 
@@ -482,7 +435,7 @@ actor {
   };
 
   public query ({ caller }) func getTask(taskId : TaskId) : async ?Task {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Please sign in to continue");
     };
     let taskStorage = getTaskStorage(caller);
@@ -490,132 +443,120 @@ actor {
   };
 
   public query ({ caller }) func getAllTasks() : async [Task] {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Please sign in to continue");
     };
     let taskStorage = getTaskStorage(caller);
     taskStorage.values().toArray();
   };
 
-  public shared ({ caller }) func bulkCreateTasks(taskInputs : [TaskInput]) : async [TaskId] {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+  public query ({ caller }) func getAllTasksWithCaptain() : async [TaskWithCaptain] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Please sign in to continue");
     };
-
     let taskStorage = getTaskStorage(caller);
-    let createdTaskIds = List.empty<TaskId>();
+    let assigneeStorage = getAssigneeStorage(caller);
 
-    for (taskInput in taskInputs.values()) {
-      let taskId = nextTaskId;
-      nextTaskId += 1;
+    let resultList = List.empty<TaskWithCaptain>();
 
-      let newTask : Task = {
-        id = taskId;
-        clientName = taskInput.clientName;
-        taskCategory = taskInput.taskCategory;
-        subCategory = taskInput.subCategory;
-        status = taskInput.status;
-        comment = taskInput.comment;
-        assignedName = taskInput.assignedName;
-        dueDate = taskInput.dueDate;
-        assignmentDate = taskInput.assignmentDate;
-        completionDate = taskInput.completionDate;
-        bill = taskInput.bill;
-        advanceReceived = taskInput.advanceReceived;
-        outstandingAmount = taskInput.outstandingAmount;
-        paymentStatus = taskInput.paymentStatus;
-        createdAt = Time.now();
-      };
-
-      taskStorage.add(taskId, newTask);
-      createdTaskIds.add(taskId);
-    };
-
-    createdTaskIds.toArray();
-  };
-
-  public shared ({ caller }) func bulkDeleteTasks(taskIds : [TaskId]) : async () {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
-      Runtime.trap("Unauthorized: Please sign in to continue");
-    };
-
-    let taskStorage = getTaskStorage(caller);
-    for (taskId in taskIds.values()) {
-      if (taskStorage.containsKey(taskId)) {
-        taskStorage.remove(taskId);
-      };
-    };
-  };
-
-  public shared ({ caller }) func bulkUpdateTasks(taskUpdates : [(TaskId, PartialTaskUpdate)]) : async () {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
-      Runtime.trap("Unauthorized: Please sign in to continue");
-    };
-
-    let taskStorage = getTaskStorage(caller);
-    for ((taskId, updates) in taskUpdates.values()) {
-      switch (taskStorage.get(taskId)) {
-        case (null) {};
-        case (?existingTask) {
-          let updatedTask : Task = {
-            id = taskId;
-            clientName = switch (updates.clientName) {
-              case (null) { existingTask.clientName };
-              case (?newValue) { newValue };
+    for (task in taskStorage.values()) {
+      let captainName = switch (task.assignedName) {
+        case (null) { null };
+        case (?assignedName) {
+          let filteredAssignees = assigneeStorage.filter(
+            func(_id, assignee) { assignee.name == assignedName }
+          );
+          if (filteredAssignees.size() > 0) {
+            switch (filteredAssignees.values().toArray()[0].captain) {
+              case (null) { null };
+              case (?name) { ?name };
             };
-            taskCategory = switch (updates.taskCategory) {
-              case (null) { existingTask.taskCategory };
-              case (?newValue) { newValue };
-            };
-            subCategory = switch (updates.subCategory) {
-              case (null) { existingTask.subCategory };
-              case (?newValue) { newValue };
-            };
-            status = switch (updates.status) {
-              case (null) { existingTask.status };
-              case (?newValue) { ?newValue };
-            };
-            comment = switch (updates.comment) {
-              case (null) { existingTask.comment };
-              case (?newValue) { ?newValue };
-            };
-            assignedName = switch (updates.assignedName) {
-              case (null) { existingTask.assignedName };
-              case (?newValue) { ?newValue };
-            };
-            dueDate = switch (updates.dueDate) {
-              case (null) { existingTask.dueDate };
-              case (?newValue) { ?newValue };
-            };
-            assignmentDate = switch (updates.assignmentDate) {
-              case (null) { existingTask.assignmentDate };
-              case (?newValue) { ?newValue };
-            };
-            completionDate = switch (updates.completionDate) {
-              case (null) { existingTask.completionDate };
-              case (?newValue) { ?newValue };
-            };
-            bill = switch (updates.bill) {
-              case (null) { existingTask.bill };
-              case (?newValue) { ?newValue };
-            };
-            advanceReceived = switch (updates.advanceReceived) {
-              case (null) { existingTask.advanceReceived };
-              case (?newValue) { ?newValue };
-            };
-            outstandingAmount = switch (updates.outstandingAmount) {
-              case (null) { existingTask.outstandingAmount };
-              case (?newValue) { ?newValue };
-            };
-            paymentStatus = switch (updates.paymentStatus) {
-              case (null) { existingTask.paymentStatus };
-              case (?newValue) { ?newValue };
-            };
-            createdAt = existingTask.createdAt;
+          } else {
+            null;
           };
-          taskStorage.add(taskId, updatedTask);
         };
       };
+
+      resultList.add({ task; captainName });
     };
+
+    resultList.toArray();
+  };
+
+  // Todos
+  public shared ({ caller }) func createTodo(todo : PartialTodoInput) : async TodoId {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can create todos");
+    };
+
+    let todoId = nextTodoId;
+    nextTodoId += 1;
+
+    let newTodo : Todo = {
+      id = todoId;
+      title = todo.title;
+      description = todo.description;
+      completed = todo.completed;
+      dueDate = todo.dueDate;
+      priority = todo.priority;
+      createdAt = Time.now();
+      updatedAt = Time.now();
+    };
+
+    let todoStorage = getTodoStorage(caller);
+    todoStorage.add(todoId, newTodo);
+    todoId;
+  };
+
+  public shared ({ caller }) func updateTodo(todoId : TodoId, todo : PartialTodoInput) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can update todos");
+    };
+
+    let todoStorage = getTodoStorage(caller);
+    switch (todoStorage.get(todoId)) {
+      case (null) { Runtime.trap("Todo does not exist") };
+      case (?existingTodo) {
+        let updatedTodo : Todo = {
+          id = todoId;
+          title = todo.title;
+          description = todo.description;
+          completed = todo.completed;
+          dueDate = todo.dueDate;
+          priority = todo.priority;
+          createdAt = existingTodo.createdAt;
+          updatedAt = Time.now();
+        };
+        todoStorage.add(todoId, updatedTodo);
+      };
+    };
+  };
+
+  public shared ({ caller }) func deleteTodo(todoId : TodoId) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can delete todos");
+    };
+
+    let todoStorage = getTodoStorage(caller);
+    if (not todoStorage.containsKey(todoId)) {
+      Runtime.trap("Todo does not exist");
+    };
+    todoStorage.remove(todoId);
+  };
+
+  public query ({ caller }) func getTodo(todoId : TodoId) : async ?Todo {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view todos");
+    };
+    let todoStorage = getTodoStorage(caller);
+    todoStorage.get(todoId);
+  };
+
+  public query ({ caller }) func getAllTodos() : async [Todo] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view todos");
+    };
+    let todoStorage = getTodoStorage(caller);
+    todoStorage.values().toArray();
   };
 };

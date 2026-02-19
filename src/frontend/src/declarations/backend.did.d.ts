@@ -35,20 +35,12 @@ export interface PartialClientInput {
   'gstin' : [] | [string],
   'notes' : [] | [string],
 }
-export interface PartialTaskUpdate {
-  'status' : [] | [string],
-  'subCategory' : [] | [string],
-  'paymentStatus' : [] | [string],
-  'completionDate' : [] | [bigint],
-  'clientName' : [] | [string],
-  'assignmentDate' : [] | [bigint],
-  'bill' : [] | [number],
-  'advanceReceived' : [] | [number],
+export interface PartialTodoInput {
+  'title' : string,
+  'completed' : boolean,
   'dueDate' : [] | [bigint],
-  'comment' : [] | [string],
-  'outstandingAmount' : [] | [number],
-  'taskCategory' : [] | [string],
-  'assignedName' : [] | [string],
+  'description' : [] | [string],
+  'priority' : [] | [bigint],
 }
 export interface Task {
   'id' : TaskId,
@@ -68,21 +60,21 @@ export interface Task {
   'assignedName' : [] | [string],
 }
 export type TaskId = bigint;
-export interface TaskInput {
-  'status' : [] | [string],
-  'subCategory' : string,
-  'paymentStatus' : [] | [string],
-  'completionDate' : [] | [bigint],
-  'clientName' : string,
-  'assignmentDate' : [] | [bigint],
-  'bill' : [] | [number],
-  'advanceReceived' : [] | [number],
-  'dueDate' : [] | [bigint],
-  'comment' : [] | [string],
-  'outstandingAmount' : [] | [number],
-  'taskCategory' : string,
-  'assignedName' : [] | [string],
+export interface TaskWithCaptain {
+  'captainName' : [] | [string],
+  'task' : Task,
 }
+export interface Todo {
+  'id' : TodoId,
+  'title' : string,
+  'createdAt' : bigint,
+  'completed' : boolean,
+  'dueDate' : [] | [bigint],
+  'description' : [] | [string],
+  'updatedAt' : bigint,
+  'priority' : [] | [bigint],
+}
+export type TodoId = bigint;
 export interface UserProfile { 'name' : string }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
@@ -90,36 +82,25 @@ export type UserRole = { 'admin' : null } |
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
-  'bulkCreateAssignees' : ActorMethod<
-    [Array<PartialAssigneeInput>],
-    Array<AssigneeId>
-  >,
-  'bulkCreateClients' : ActorMethod<
-    [Array<PartialClientInput>],
-    Array<ClientId>
-  >,
-  'bulkCreateTasks' : ActorMethod<[Array<TaskInput>], Array<TaskId>>,
-  'bulkDeleteAssignees' : ActorMethod<[Array<AssigneeId>], undefined>,
-  'bulkDeleteClients' : ActorMethod<[Array<ClientId>], undefined>,
-  'bulkDeleteTasks' : ActorMethod<[Array<TaskId>], undefined>,
-  'bulkUpdateTasks' : ActorMethod<
-    [Array<[TaskId, PartialTaskUpdate]>],
-    undefined
-  >,
   'createAssignee' : ActorMethod<[PartialAssigneeInput], AssigneeId>,
   'createClient' : ActorMethod<[PartialClientInput], ClientId>,
   'createTask' : ActorMethod<[string, string, string], TaskId>,
+  'createTodo' : ActorMethod<[PartialTodoInput], TodoId>,
   'deleteAssignee' : ActorMethod<[AssigneeId], undefined>,
   'deleteClient' : ActorMethod<[ClientId], undefined>,
   'deleteTask' : ActorMethod<[TaskId], undefined>,
+  'deleteTodo' : ActorMethod<[TodoId], undefined>,
   'getAllAssignees' : ActorMethod<[], Array<Assignee>>,
   'getAllClients' : ActorMethod<[], Array<Client>>,
   'getAllTasks' : ActorMethod<[], Array<Task>>,
+  'getAllTasksWithCaptain' : ActorMethod<[], Array<TaskWithCaptain>>,
+  'getAllTodos' : ActorMethod<[], Array<Todo>>,
   'getAssignee' : ActorMethod<[AssigneeId], [] | [Assignee]>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getClient' : ActorMethod<[ClientId], [] | [Client]>,
   'getTask' : ActorMethod<[TaskId], [] | [Task]>,
+  'getTodo' : ActorMethod<[TodoId], [] | [Todo]>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
@@ -144,6 +125,7 @@ export interface _SERVICE {
     ],
     undefined
   >,
+  'updateTodo' : ActorMethod<[TodoId, PartialTodoInput], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Menu, LayoutDashboard, Users, CheckSquare, UserCheck } from 'lucide-react';
+import { Menu, LayoutDashboard, Users, CheckSquare, UserCheck, ListTodo } from 'lucide-react';
 import { useInternetIdentity } from '../../hooks/useInternetIdentity';
 import { useGetCallerUserProfile } from '../../hooks/useCurrentUserProfile';
 import { useQueryClient } from '@tanstack/react-query';
@@ -28,6 +28,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { path: '/clients', label: 'Clients', icon: Users },
     { path: '/tasks', label: 'Tasks', icon: CheckSquare },
     { path: '/assignees', label: 'Assignees', icon: UserCheck },
+    { path: '/todos', label: 'Todos', icon: ListTodo },
   ];
 
   const isActive = (path: string) => {

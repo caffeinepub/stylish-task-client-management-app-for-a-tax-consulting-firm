@@ -82,7 +82,7 @@ export default function ClientFormDialog({ open, onOpenChange, client, trigger }
       updateClient(
         {
           clientId: client.id,
-          ...clientData,
+          client: clientData,
         },
         {
           onSuccess: () => {

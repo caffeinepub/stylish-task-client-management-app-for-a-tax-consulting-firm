@@ -1,14 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Replace the application logo with the new CSWA Group of Companies branding and optimize data update performance to make mutations feel instant.
+**Goal:** Add a Todo List feature with full CRUD operations and display captain names alongside assignee names in all task views.
 
 **Planned changes:**
-- Replace all existing CSWA logo assets with the new user-provided logo image
-- Update logo references in SignedOutScreen and AppLayout header
-- Optimize React Query mutation hooks to use targeted cache invalidation instead of broad wildcards
-- Add optimistic updates to task, client, and assignee mutations where safe
-- Implement loading states and disable UI controls during mutation submission
-- Add visual feedback (spinners, 'Saving...' text) to form dialogs during updates
+- Add Todo List management with create, read, update, delete operations scoped per authenticated user
+- Add bulk operations for todos including CSV upload/download and bulk delete
+- Display captain name after assignee (team) name in all task result views (tasks table, task details, client detail page, dashboard widgets, Excel exports)
+- Extend backend to resolve and include captain names in task query responses by matching assignedName against existing Assignees records
 
-**User-visible outcome:** Users see the new CSWA Group of Companies logo throughout the application and experience near-instant feedback when updating tasks, clients, or assignees with clear loading indicators during save operations.
+**User-visible outcome:** Users can manage their personal todo lists with full CRUD and bulk operations. In all task views, users will see both the team name and captain name displayed together (e.g., "Team Name (Captain: Captain Name)") for better task assignment visibility.

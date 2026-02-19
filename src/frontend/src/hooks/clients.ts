@@ -1,9 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
 import type { Client, ClientId, PartialClientInput } from '../backend';
 
 export function useGetAllClients() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching: actorFetching } = useActor();
 
   return useQuery<Client[]>({
     queryKey: ['clients'],
@@ -11,12 +11,12 @@ export function useGetAllClients() {
       if (!actor) return [];
       return actor.getAllClients();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !actorFetching,
   });
 }
 
 export function useGetClient(clientId: ClientId) {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching: actorFetching } = useActor();
 
   return useQuery<Client | null>({
     queryKey: ['client', clientId.toString()],
@@ -24,7 +24,7 @@ export function useGetClient(clientId: ClientId) {
       if (!actor) return null;
       return actor.getClient(clientId);
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !actorFetching,
   });
 }
 
@@ -48,62 +48,54 @@ export function useUpdateClient() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ clientId, ...client }: PartialClientInput & { clientId: ClientId }) => {
+    mutationFn: async (data: { clientId: ClientId; client: PartialClientInput }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.updateClient(clientId, client);
+      return actor.updateClient(data.clientId, data.client);
     },
-    onMutate: async (newClient) => {
-      // Cancel outgoing refetches
+    onMutate: async (data) => {
       await queryClient.cancelQueries({ queryKey: ['clients'] });
-      await queryClient.cancelQueries({ queryKey: ['client', newClient.clientId.toString()] });
+      await queryClient.cancelQueries({ queryKey: ['client', data.clientId.toString()] });
 
-      // Snapshot previous values
       const previousClients = queryClient.getQueryData<Client[]>(['clients']);
-      const previousClient = queryClient.getQueryData<Client | null>(['client', newClient.clientId.toString()]);
+      const previousClient = queryClient.getQueryData<Client | null>(['client', data.clientId.toString()]);
 
-      // Optimistically update clients list
       if (previousClients) {
         queryClient.setQueryData<Client[]>(['clients'], (old) =>
           old?.map((client) =>
-            client.id === newClient.clientId
+            client.id === data.clientId
               ? {
                   ...client,
-                  name: newClient.name,
-                  gstin: newClient.gstin,
-                  pan: newClient.pan,
-                  notes: newClient.notes,
-                  timestamp: BigInt(Date.now()),
+                  name: data.client.name,
+                  gstin: data.client.gstin ?? undefined,
+                  pan: data.client.pan ?? undefined,
+                  notes: data.client.notes ?? undefined,
                 }
               : client
           ) || []
         );
       }
 
-      // Optimistically update single client
       if (previousClient) {
-        queryClient.setQueryData<Client | null>(['client', newClient.clientId.toString()], {
+        queryClient.setQueryData<Client | null>(['client', data.clientId.toString()], {
           ...previousClient,
-          name: newClient.name,
-          gstin: newClient.gstin,
-          pan: newClient.pan,
-          notes: newClient.notes,
-          timestamp: BigInt(Date.now()),
+          name: data.client.name,
+          gstin: data.client.gstin ?? undefined,
+          pan: data.client.pan ?? undefined,
+          notes: data.client.notes ?? undefined,
         });
       }
 
       return { previousClients, previousClient };
     },
-    onError: (err, newClient, context) => {
-      // Rollback on error
+    onError: (err, data, context) => {
       if (context?.previousClients) {
         queryClient.setQueryData(['clients'], context.previousClients);
       }
       if (context?.previousClient) {
-        queryClient.setQueryData(['client', newClient.clientId.toString()], context.previousClient);
+        queryClient.setQueryData(['client', data.clientId.toString()], context.previousClient);
       }
     },
     onSettled: (_, __, variables) => {
-      // Refetch to ensure consistency
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       queryClient.invalidateQueries({ queryKey: ['client', variables.clientId.toString()] });
     },
@@ -132,7 +124,8 @@ export function useBulkCreateClients() {
   return useMutation({
     mutationFn: async (clients: PartialClientInput[]) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.bulkCreateClients(clients);
+      const promises = clients.map(client => actor.createClient(client));
+      return Promise.all(promises);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
@@ -147,7 +140,8 @@ export function useBulkDeleteClients() {
   return useMutation({
     mutationFn: async (clientIds: ClientId[]) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.bulkDeleteClients(clientIds);
+      const promises = clientIds.map(id => actor.deleteClient(id));
+      return Promise.all(promises);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });

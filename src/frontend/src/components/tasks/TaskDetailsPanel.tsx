@@ -1,93 +1,92 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { formatTaskDate, formatCurrency, formatOptionalText } from '@/utils/taskDisplay';
-import { getStatusDisplayLabel } from '@/constants/taskStatus';
-import type { Task } from '@/backend';
+import { Separator } from '@/components/ui/separator';
+import { formatTaskDate, formatCurrency, formatOptionalText, formatAssigneeWithCaptain } from '../../utils/taskDisplay';
+import { getStatusDisplayLabel } from '../../constants/taskStatus';
+import type { Task } from '../../backend';
 
 interface TaskDetailsPanelProps {
   task: Task;
-  showClientName?: boolean;
+  captainName?: string;
 }
 
-/**
- * Reusable read-only Task details presentation component
- * Displays all task fields in a mobile-friendly stacked layout
- */
-export default function TaskDetailsPanel({ task, showClientName = false }: TaskDetailsPanelProps) {
-  const statusLabel = getStatusDisplayLabel(task.status);
-
+export default function TaskDetailsPanel({ task, captainName }: TaskDetailsPanelProps) {
   return (
-    <div className="space-y-3 text-sm">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {showClientName && (
+    <Card>
+      <CardHeader>
+        <div className="flex items-start justify-between">
           <div>
-            <span className="text-muted-foreground font-medium">Client:</span>
-            <span className="ml-2">{task.clientName}</span>
+            <CardTitle className="text-xl">{task.clientName}</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              {task.taskCategory} • {task.subCategory}
+            </p>
           </div>
+          {task.status && (
+            <Badge variant="outline">{getStatusDisplayLabel(task.status)}</Badge>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">Assigned Team</p>
+            <p className="text-sm mt-1">
+              {formatAssigneeWithCaptain(task.assignedName, captainName)}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">Due Date</p>
+            <p className="text-sm mt-1">{formatTaskDate(task.dueDate)}</p>
+          </div>
+
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">Assignment Date</p>
+            <p className="text-sm mt-1">{formatTaskDate(task.assignmentDate)}</p>
+          </div>
+
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">Completion Date</p>
+            <p className="text-sm mt-1">{formatTaskDate(task.completionDate)}</p>
+          </div>
+        </div>
+
+        <Separator />
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">Bill Amount</p>
+            <p className="text-sm font-semibold mt-1">{formatCurrency(task.bill)}</p>
+          </div>
+
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">Advance Received</p>
+            <p className="text-sm font-semibold mt-1">{formatCurrency(task.advanceReceived)}</p>
+          </div>
+
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">Outstanding</p>
+            <p className="text-sm font-semibold mt-1">{formatCurrency(task.outstandingAmount)}</p>
+          </div>
+        </div>
+
+        <Separator />
+
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">Payment Status</p>
+          <p className="text-sm mt-1">{formatOptionalText(task.paymentStatus)}</p>
+        </div>
+
+        {task.comment && (
+          <>
+            <Separator />
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Comment</p>
+              <p className="text-sm mt-1 whitespace-pre-wrap">{task.comment}</p>
+            </div>
+          </>
         )}
-        <div>
-          <span className="text-muted-foreground font-medium">Category:</span>
-          <Badge variant="outline" className="ml-2">
-            {task.taskCategory}
-          </Badge>
-        </div>
-        <div>
-          <span className="text-muted-foreground font-medium">Sub Category:</span>
-          <Badge variant="secondary" className="ml-2">
-            {task.subCategory}
-          </Badge>
-        </div>
-        <div>
-          <span className="text-muted-foreground font-medium">Status:</span>
-          <span className="ml-2">{statusLabel}</span>
-        </div>
-      </div>
-
-      {task.comment && (
-        <div>
-          <span className="text-muted-foreground font-medium">Comment:</span>
-          <p className="mt-1 text-foreground" title={task.comment}>
-            {task.comment}
-          </p>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <span className="text-muted-foreground font-medium">Assigned To:</span>
-          <span className="ml-2">{formatOptionalText(task.assignedName)}</span>
-        </div>
-        <div>
-          <span className="text-muted-foreground font-medium">Due Date:</span>
-          <span className="ml-2">{formatTaskDate(task.dueDate)}</span>
-        </div>
-        <div>
-          <span className="text-muted-foreground font-medium">Assignment Date:</span>
-          <span className="ml-2">{formatTaskDate(task.assignmentDate)}</span>
-        </div>
-        <div>
-          <span className="text-muted-foreground font-medium">Completion Date:</span>
-          <span className="ml-2">{formatTaskDate(task.completionDate)}</span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <span className="text-muted-foreground font-medium">Bill:</span>
-          <span className="ml-2">{formatCurrency(task.bill)}</span>
-        </div>
-        <div>
-          <span className="text-muted-foreground font-medium">Advance Received:</span>
-          <span className="ml-2">{formatCurrency(task.advanceReceived)}</span>
-        </div>
-        <div>
-          <span className="text-muted-foreground font-medium">Outstanding Amount:</span>
-          <span className="ml-2">{formatCurrency(task.outstandingAmount)}</span>
-        </div>
-        <div>
-          <span className="text-muted-foreground font-medium">Payment Status:</span>
-          <span className="ml-2">{formatOptionalText(task.paymentStatus)}</span>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

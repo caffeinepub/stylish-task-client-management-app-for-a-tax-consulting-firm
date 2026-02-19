@@ -76,7 +76,7 @@ export default function AssigneeFormDialog({ open, onOpenChange, assignee, trigg
       updateAssignee(
         {
           assigneeId: assignee.id,
-          ...assigneeData,
+          assignee: assigneeData,
         },
         {
           onSuccess: () => {

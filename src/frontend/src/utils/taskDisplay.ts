@@ -44,3 +44,22 @@ export function formatOptionalText(text: string | undefined | null): string {
   if (!text || text.trim() === '') return PLACEHOLDER;
   return text;
 }
+
+/**
+ * Format assignee name with captain name
+ * Returns formatted string like "Team Name (Captain: Captain Name)" or just "Team Name"
+ */
+export function formatAssigneeWithCaptain(
+  assignedName: string | undefined | null,
+  captainName: string | undefined | null
+): string {
+  if (!assignedName || assignedName.trim() === '') {
+    return PLACEHOLDER;
+  }
+
+  if (captainName && captainName.trim() !== '') {
+    return `${assignedName} (Captain: ${captainName})`;
+  }
+
+  return assignedName;
+}

@@ -1,29 +1,46 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-18T23:45:53.448Z",
-  "summary": "The diff implements all four requirements: logo replacement (REQ-77), React Query cache optimization (REQ-78/79), and loading indicators (REQ-80). Logo files are replaced in AppLayout and SignedOutScreen. All three mutation hook files (tasks.ts, clients.ts, assignees.ts) add optimistic updates with onMutate/onError/onSettled callbacks and targeted invalidation. All three form dialogs add isPending checks, disabled inputs, loading button text, and prevented closure during mutations.",
+  "generatedAt": "2026-02-19T00:10:37.642Z",
+  "summary": "The diff implements a comprehensive Todo List feature with full CRUD operations, bulk upload/delete functionality, and CSV template support. Captain name display is correctly integrated across all task views (TasksPage, TaskDetailsPanel, ClientDetailPage, DashboardPage) using the formatAssigneeWithCaptain utility. The backend extends Task queries to return TaskWithCaptain including resolved captain names. Implementation follows existing patterns for Clients, Tasks, and Assignees throughout.",
   "missing_requirements": [],
   "hallucinated_features": [
     {
-      "description": "urlParams.ts utility file added or modified with extensive URL parameter parsing and session storage functions",
-      "reason": "BuildRequest does not mention URL parameter handling, session storage utilities, or any requirement to modify urlParams.ts. This appears to be unrelated infrastructure work.",
+      "description": "Todo model includes priority and dueDate fields",
+      "reason": "REQ-81 explicitly states non-goals include Todo priority, due dates, or advanced todo fields beyond standard title/description/completed. The backend Todo type includes optional priority and dueDate fields, and the frontend TodoFormDialog has inputs for priority and dueDate, contradicting the non-goals constraint.",
       "evidence": [
-        "frontend/src/utils/urlParams.ts"
+        "backend/main.mo",
+        "frontend/src/components/todos/TodoFormDialog.tsx",
+        "frontend/src/utils/todoCsv.ts"
       ]
     }
   ],
-  "confidence": 0.92,
+  "confidence": 0.95,
   "changed_files": [
+    "backend/main.mo",
     "frontend-file-summaries.txt",
+    "frontend/src/App.tsx",
     "frontend/src/components/assignees/AssigneeFormDialog.tsx",
-    "frontend/src/components/auth/SignedOutScreen.tsx",
     "frontend/src/components/clients/ClientFormDialog.tsx",
     "frontend/src/components/layout/AppLayout.tsx",
-    "frontend/src/components/tasks/TaskFormDialog.tsx",
+    "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
+    "frontend/src/components/tasks/TaskBulkUploadDialog.tsx",
+    "frontend/src/components/tasks/TaskDetailsPanel.tsx",
+    "frontend/src/components/todos/TodoBulkUploadDialog.tsx",
+    "frontend/src/components/todos/TodoFormDialog.tsx",
     "frontend/src/hooks/assignees.ts",
     "frontend/src/hooks/clients.ts",
     "frontend/src/hooks/tasks.ts",
+    "frontend/src/hooks/todos.ts",
+    "frontend/src/pages/ClientDetailPage.tsx",
+    "frontend/src/pages/DashboardPage.tsx",
+    "frontend/src/pages/TasksPage.tsx",
+    "frontend/src/pages/TodosPage.tsx",
+    "frontend/src/utils/taskAggregations.ts",
+    "frontend/src/utils/taskCsv.ts",
+    "frontend/src/utils/taskDisplay.ts",
+    "frontend/src/utils/taskExcel.ts",
+    "frontend/src/utils/todoCsv.ts",
     "frontend/src/utils/urlParams.ts",
     "project_state.json"
   ]

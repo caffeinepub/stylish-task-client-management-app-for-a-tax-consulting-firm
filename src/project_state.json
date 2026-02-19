@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 47,
+  "projectStateVersion": 49,
   "summary": "Build a stylish Task/Client Management app for a tax consulting firm.",
   "architectural_notes": [
     "Dashboard should support interactive drill-down: clicking an aggregate metric navigates/filters to the corresponding Tasks list view (e.g., by category/status) and shows the matching items.",
@@ -11,7 +11,8 @@
     "TanStack Router may hang on a blank screen if routes use validateSearch while the root route performs async initialization (e.g., Internet Identity/user loading); ensure root-route initialization and search validation are wired to avoid pre-render hangs.",
     "Avoid reading/mutating URL (e.g., via getSecretParameter('caffeineAdminToken')/history.replaceState) during initial router bootstrap; ensure useActor/root init defers any URL cleanup until after the router has rendered.",
     "When opening the Task edit dialog, treat stored task.status === \"\" (empty string) the same as null/undefined and map it to a safe non-empty sentinel value so Radix Select never receives \"\" as its controlled value.",
-    "Admin token (caffeineAdminToken) must not be read via getSecretParameter during startup; useActor should read it from sessionStorage only, while useDeferredUrlCleanup extracts it from URL and clears the URL after mount."
+    "Admin token (caffeineAdminToken) must not be read via getSecretParameter during startup; useActor should read it from sessionStorage only, while useDeferredUrlCleanup extracts it from URL and clears the URL after mount.",
+    "Task result view should display assignee (team) information including both the team name and captain name for clarity and traceability."
   ],
   "known_issues": [
     "Single task addition (Add Task dialog) is not working while bulk task addition works; likely due to Add Task form crash related to dropdown/select rendering/default values.",
@@ -23,7 +24,6 @@
     "Data updates are slow/delayed after clicking update button (task/client/assignee editing)."
   ],
   "isFixRequest": true,
-  "imageRequirements": "## Edit Images\n- Replace the CSWA Group of Companies logo with the user-provided logo maintaining professional quality and dimensions appropriate for both header and landing page usage (cswa-logo.png > cswa-logo-new.dim_800x200.png)",
   "existing_features": [
     {
       "id": "feature-create-an-authenticated-single-tenant-experience-using-internet-identity-so-a-signed-in-user-can-access-their-own-data-require-sign-in-before-viewing-or-editing-any-clients-tasks",
@@ -560,6 +560,30 @@
         "REQ-80"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-add-a-todo-list-management-feature-to-the-application-with-full-crud-operations-create-read-update-delete-todos-scoped-per-authenticated-user-following-the-same-access-control-patterns-used-for-clients-tasks-and-assignees",
+      "title": "Add a Todo List management feature to the application with full CRUD operations (create, read, update, delete todos) scoped per authenticated user, following the same access control patterns used for Clients, Tasks, and Assignees.",
+      "reqIds": [
+        "REQ-81"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-bulk-operations-support-for-todos-including-bulk-upload-csv-template-download-and-upload-with-validation-and-bulk-selection-with-bulk-delete-following-the-existing-patterns-used-for-tasks-clients-and-assignees",
+      "title": "Add bulk operations support for Todos including bulk upload (CSV template download and upload with validation) and bulk selection with bulk delete, following the existing patterns used for Tasks, Clients, and Assignees.",
+      "reqIds": [
+        "REQ-82"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-display-the-captain-name-in-all-task-result-views-immediately-after-the-assignee-name-team-name-showing-both-the-team-name-and-captain-in-a-clear-readable-format",
+      "title": "Display the captain name in all task result views immediately after the assignee name (team name), showing both the team name and captain in a clear, readable format.",
+      "reqIds": [
+        "REQ-83"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -785,6 +809,26 @@
       "id": "AR-35",
       "summary": "Improve data update responsiveness (currently slow when clicking update button).",
       "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-36",
+      "summary": "Add a todo list feature to the application.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-37",
+      "summary": "Display the captain name in the task result view after the assignee name.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-41",
+      "summary": "Extend backend Task queries to include resolved captain name for each task by looking up the task's assignedName against existing Assignees records, and return the captain name as part of the Task response payload so the frontend can display it without additional queries.",
+      "reqIds": [
+        "REQ-84"
+      ],
       "status": "pending"
     }
   ],

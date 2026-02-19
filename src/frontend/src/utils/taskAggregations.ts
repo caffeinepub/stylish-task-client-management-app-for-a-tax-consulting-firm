@@ -4,6 +4,7 @@ import { isCompletedStatus, getStatusDisplayLabel } from '../constants/taskStatu
 export interface CategoryRevenue {
   category: string;
   revenue: number;
+  count: number;
 }
 
 export interface StatusCount {
@@ -14,6 +15,7 @@ export interface StatusCount {
 export interface SubCategoryRevenue {
   subCategory: string;
   revenue: number;
+  count: number;
 }
 
 export interface SubCategoryCount {
@@ -41,57 +43,45 @@ export interface TaskStats {
 }
 
 /**
- * Aggregate tasks by category to calculate total revenue per category
+ * Aggregate tasks by category to calculate total revenue and count per category
  */
-export function aggregateRevenueByCategory(tasks: Task[]): CategoryRevenue[] {
-  const categoryMap = new Map<string, number>();
+export function aggregateByCategory(tasks: Task[]): CategoryRevenue[] {
+  const categoryMap = new Map<string, { revenue: number; count: number }>();
 
   tasks.forEach((task) => {
     const revenue = task.bill || 0;
-    const current = categoryMap.get(task.taskCategory) || 0;
-    categoryMap.set(task.taskCategory, current + revenue);
+    const current = categoryMap.get(task.taskCategory) || { revenue: 0, count: 0 };
+    categoryMap.set(task.taskCategory, {
+      revenue: current.revenue + revenue,
+      count: current.count + 1,
+    });
   });
 
   const result = Array.from(categoryMap.entries())
-    .map(([category, revenue]) => ({ category, revenue }))
+    .map(([category, data]) => ({ category, revenue: data.revenue, count: data.count }))
     .sort((a, b) => b.revenue - a.revenue);
 
   return result;
 }
 
 /**
- * Aggregate tasks by sub category to calculate total revenue per sub category
+ * Aggregate tasks by sub category to calculate total revenue and count per sub category
  */
-export function aggregateRevenueBySubCategory(tasks: Task[]): SubCategoryRevenue[] {
-  const subCategoryMap = new Map<string, number>();
+export function aggregateBySubCategory(tasks: Task[]): SubCategoryRevenue[] {
+  const subCategoryMap = new Map<string, { revenue: number; count: number }>();
 
   tasks.forEach((task) => {
     const revenue = task.bill || 0;
-    const current = subCategoryMap.get(task.subCategory) || 0;
-    subCategoryMap.set(task.subCategory, current + revenue);
+    const current = subCategoryMap.get(task.subCategory) || { revenue: 0, count: 0 };
+    subCategoryMap.set(task.subCategory, {
+      revenue: current.revenue + revenue,
+      count: current.count + 1,
+    });
   });
 
   const result = Array.from(subCategoryMap.entries())
-    .map(([subCategory, revenue]) => ({ subCategory, revenue }))
+    .map(([subCategory, data]) => ({ subCategory, revenue: data.revenue, count: data.count }))
     .sort((a, b) => b.revenue - a.revenue);
-
-  return result;
-}
-
-/**
- * Aggregate tasks by sub category to get count per sub category
- */
-export function aggregateTasksBySubCategory(tasks: Task[]): SubCategoryCount[] {
-  const subCategoryMap = new Map<string, number>();
-
-  tasks.forEach((task) => {
-    const current = subCategoryMap.get(task.subCategory) || 0;
-    subCategoryMap.set(task.subCategory, current + 1);
-  });
-
-  const result = Array.from(subCategoryMap.entries())
-    .map(([subCategory, count]) => ({ subCategory, count }))
-    .sort((a, b) => b.count - a.count);
 
   return result;
 }
@@ -130,7 +120,7 @@ export function aggregateByCategoryAndSubCategory(tasks: Task[]): CategorySubCat
  * Aggregate tasks by status to get count per status
  * Groups all non-completed statuses as "Open"
  */
-export function aggregateTasksByStatus(tasks: Task[]): StatusCount[] {
+export function aggregateByStatus(tasks: Task[]): StatusCount[] {
   const statusMap = new Map<string, number>();
 
   tasks.forEach((task) => {
@@ -161,10 +151,10 @@ export function calculateTaskStats(tasks: Task[]): TaskStats {
 
   const totalRevenue = tasks.reduce((sum, task) => sum + (task.bill || 0), 0);
 
-  const categoryRevenue = aggregateRevenueByCategory(tasks);
-  const statusBreakdown = aggregateTasksByStatus(tasks);
-  const subCategoryRevenue = aggregateRevenueBySubCategory(tasks);
-  const subCategoryCount = aggregateTasksBySubCategory(tasks);
+  const categoryRevenue = aggregateByCategory(tasks);
+  const statusBreakdown = aggregateByStatus(tasks);
+  const subCategoryRevenue = aggregateBySubCategory(tasks);
+  const subCategoryCount = aggregateBySubCategory(tasks);
   const categorySubCategoryRows = aggregateByCategoryAndSubCategory(tasks);
 
   return {

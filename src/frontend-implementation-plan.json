@@ -1,114 +1,119 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Replace app logo and optimize data update performance",
+  "title": "Add Todo List Feature and Display Captain Name in Task Views",
   "requirements": [
     {
-      "id": "REQ-77",
-      "summary": "Replace CSWA logo assets with user-provided logo across all branding surfaces",
+      "id": "REQ-81",
+      "summary": "Add Todo List management feature with full CRUD operations scoped per authenticated user",
       "acceptanceCriteria": [
-        "The new logo replaces all existing CSWA logo files in frontend/public/assets/generated",
-        "The logo appears correctly in the SignedOutScreen component",
-        "The logo appears correctly in the AppLayout header",
-        "The logo maintains appropriate dimensions and aspect ratio across all viewports"
+        "Frontend adds React Query hooks for todo CRUD operations following patterns in frontend/src/hooks/tasks.ts and frontend/src/hooks/clients.ts",
+        "Frontend adds a Todos page/section accessible via navigation",
+        "UI includes todo list view, add/edit forms, and delete confirmation",
+        "UI follows existing design system (Tailwind, Shadcn components, CSWA theme)"
       ],
       "file_operations": [
         {
-          "path": "frontend/public/assets/generated/cswa-logo-new.dim_800x200.png",
+          "path": "frontend/src/hooks/todos.ts",
           "operation": "create",
-          "description": "Create the new CSWA logo asset from the user-provided image (WhatsApp Image 2026-01-25 at 8.23.55 AM-1.jpeg), resized and optimized to 800x200 dimensions for use across the application"
+          "description": "Create React Query hooks for todo CRUD operations (useGetAllTodos, useGetTodo, useCreateTodo, useUpdateTodo, useDeleteTodo, useBulkCreateTodos, useBulkDeleteTodos) following the same patterns used in frontend/src/hooks/tasks.ts and frontend/src/hooks/clients.ts. Include optimistic updates for mutations and proper cache invalidation."
         },
         {
-          "path": "frontend/src/components/auth/SignedOutScreen.tsx",
+          "path": "frontend/src/pages/TodosPage.tsx",
+          "operation": "create",
+          "description": "Create the main Todos page component with todo list view, search functionality, filtering by completion status, add/edit dialogs, and delete confirmation. Follow the layout and patterns used in frontend/src/pages/TasksPage.tsx and frontend/src/pages/ClientsPage.tsx. Include bulk selection checkboxes and bulk operations toolbar."
+        },
+        {
+          "path": "frontend/src/components/todos/TodoFormDialog.tsx",
+          "operation": "create",
+          "description": "Create form dialog component for creating and editing individual todos with fields for title (required), description (optional), completed (boolean checkbox), priority (optional number), and dueDate (optional date picker). Follow patterns from frontend/src/components/tasks/TaskFormDialog.tsx and frontend/src/components/clients/ClientFormDialog.tsx. Include delete confirmation dialog for edit mode."
+        },
+        {
+          "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Update the logo image reference to use the new logo asset at frontend/public/assets/generated/cswa-logo-new.dim_800x200.png, ensuring proper aspect ratio and responsive sizing for the landing screen"
+          "description": "Add route configuration for the Todos page at path '/todos' in the TanStack Router setup. Follow the existing route patterns for clients, tasks, and assignees."
         },
         {
           "path": "frontend/src/components/layout/AppLayout.tsx",
           "operation": "modify",
-          "description": "Update the header logo reference to use the new logo asset at frontend/public/assets/generated/cswa-logo-new.dim_800x200.png, maintaining appropriate header dimensions and responsive behavior"
+          "description": "Add navigation link for Todos in the sidebar navigation menu. Insert it after the Assignees link. Include active state highlighting using the same pattern as existing navigation links."
         }
       ]
     },
     {
-      "id": "REQ-78",
-      "summary": "Optimize React Query mutation and cache invalidation to reduce update delays",
+      "id": "REQ-82",
+      "summary": "Add bulk operations support for Todos including CSV upload and bulk delete",
       "acceptanceCriteria": [
-        "Task updates reflect in the UI within 500ms of clicking update",
-        "Client updates reflect in the UI within 500ms of clicking update",
-        "Assignee updates reflect in the UI within 500ms of clicking update",
-        "Cache invalidation is scoped to affected queries only (no unnecessary global refetches)",
-        "Optimistic updates are applied where data integrity allows"
+        "Frontend adds CSV template generator and parser for todos in frontend/src/utils/todoCsv.ts",
+        "Frontend adds TodoBulkUploadDialog component with template download, CSV upload, preview, validation, and commit flow",
+        "Frontend adds bulk selection checkboxes in todo list with bulk delete action",
+        "All bulk operations show clear loading, validation error, and success feedback"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/utils/todoCsv.ts",
+          "operation": "create",
+          "description": "Create CSV utility functions for todos including generateTodoCsvTemplate (generates and downloads CSV template with headers: Title, Description, Completed, Priority, Due Date), parseTodoCsv (parses uploaded CSV with quote handling and whitespace trimming), validateTodoRow (validates required title field and formats), and convertToTodoInput (converts parsed rows to PartialTodoInput format). Follow patterns from frontend/src/utils/clientCsv.ts and frontend/src/utils/assigneeCsv.ts."
+        },
+        {
+          "path": "frontend/src/components/todos/TodoBulkUploadDialog.tsx",
+          "operation": "create",
+          "description": "Create bulk upload dialog component for todos with CSV template download button, file input with drag-and-drop support, preview table showing parsed todos with validation errors highlighted, and commit button using useBulkCreateTodos hook. Follow the patterns from frontend/src/components/clients/ClientBulkUploadDialog.tsx and frontend/src/components/assignees/AssigneeBulkUploadDialog.tsx."
+        },
+        {
+          "path": "frontend/src/pages/TodosPage.tsx",
+          "operation": "modify",
+          "description": "Add bulk selection functionality with checkboxes for each todo row, select-all checkbox in table header, bulk delete button in toolbar that appears when todos are selected, and TodoBulkUploadDialog trigger button. Follow the bulk operations patterns from frontend/src/pages/TasksPage.tsx and frontend/src/pages/ClientsPage.tsx."
+        }
+      ]
+    },
+    {
+      "id": "REQ-83",
+      "summary": "Display captain name in all task result views immediately after assignee name",
+      "acceptanceCriteria": [
+        "Tasks page table (frontend/src/pages/TasksPage.tsx) shows both assignee team name and captain name in the Assigned Name column",
+        "Task details panel (frontend/src/components/tasks/TaskDetailsPanel.tsx) displays both team name and captain name",
+        "Client detail page task list (frontend/src/pages/ClientDetailPage.tsx) shows both team name and captain name for each task",
+        "Dashboard task widgets show both team name and captain name where assignee is displayed",
+        "Format is clear and readable (e.g., 'Team Name (Captain: Captain Name)' or 'Team Name - Captain Name')",
+        "When a task has an assignee name that matches an existing Assignee record, the captain is looked up and displayed; when assignee is free-text with no matching team, only the assignee name is shown",
+        "Excel export includes both team name and captain name in the assignee column"
       ],
       "file_operations": [
         {
           "path": "frontend/src/hooks/tasks.ts",
           "operation": "modify",
-          "description": "Add optimistic updates to useUpdateTask mutation to immediately reflect changes in the UI cache before backend confirmation. Use onMutate to optimistically update the task query cache, onError to roll back on failure, and onSettled to ensure final consistency"
+          "description": "Update useGetAllTasks hook to call getAllTasksWithCaptain backend method instead of getAllTasks, returning Array<TaskWithCaptain> which includes both task data and resolved captainName. Update the query key and response type accordingly."
         },
         {
-          "path": "frontend/src/hooks/clients.ts",
+          "path": "frontend/src/utils/taskDisplay.ts",
           "operation": "modify",
-          "description": "Add optimistic updates to useUpdateClient mutation to immediately reflect changes in the UI cache before backend confirmation. Use onMutate to optimistically update the client query cache, onError to roll back on failure, and onSettled to ensure final consistency"
+          "description": "Add formatAssigneeWithCaptain utility function that takes assignedName (string or undefined) and captainName (string or undefined) and returns formatted display string. Format as 'Team Name (Captain: Captain Name)' when both are present, 'Team Name' when only assignedName exists, or placeholder '—' when neither exists."
         },
         {
-          "path": "frontend/src/hooks/assignees.ts",
+          "path": "frontend/src/pages/TasksPage.tsx",
           "operation": "modify",
-          "description": "Add optimistic updates to useUpdateAssignee mutation to immediately reflect changes in the UI cache before backend confirmation. Use onMutate to optimistically update the assignee query cache, onError to roll back on failure, and onSettled to ensure final consistency"
-        }
-      ]
-    },
-    {
-      "id": "REQ-79",
-      "summary": "Refine query key invalidation patterns to minimize unnecessary refetches",
-      "acceptanceCriteria": [
-        "All mutation hooks use specific query key invalidation patterns",
-        "No mutation triggers invalidation of unrelated data queries",
-        "Loading states are minimized during update operations",
-        "Network request count is reduced compared to current implementation"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/tasks.ts",
-          "operation": "modify",
-          "description": "Replace broad queryClient.invalidateQueries(['tasks']) with specific invalidation patterns: use ['tasks', taskId] for single-task updates, ['tasks'] only for list-affecting operations (create/delete), and avoid invalidating client or assignee queries unless the mutation changes those relationships"
+          "description": "Update the Assigned Name column rendering to display both assignee name and captain name using the formatAssigneeWithCaptain utility. Access captainName from the TaskWithCaptain response type returned by useGetAllTasks."
         },
         {
-          "path": "frontend/src/hooks/clients.ts",
+          "path": "frontend/src/components/tasks/TaskDetailsPanel.tsx",
           "operation": "modify",
-          "description": "Replace broad queryClient.invalidateQueries(['clients']) with specific invalidation patterns: use ['clients', clientId] for single-client updates, ['clients'] only for list-affecting operations (create/delete), and avoid invalidating task queries on client name-only updates"
+          "description": "Update the Assigned Team field rendering to display both assignee name and captain name using the formatAssigneeWithCaptain utility. Accept captainName as an optional prop in the component interface."
         },
         {
-          "path": "frontend/src/hooks/assignees.ts",
+          "path": "frontend/src/pages/ClientDetailPage.tsx",
           "operation": "modify",
-          "description": "Replace broad queryClient.invalidateQueries(['assignees']) with specific invalidation patterns: use ['assignees', assigneeId] for single-assignee updates, ['assignees'] only for list-affecting operations (create/delete), and avoid invalidating task queries on assignee name-only updates"
-        }
-      ]
-    },
-    {
-      "id": "REQ-80",
-      "summary": "Add loading indicators and disable UI controls during mutation submission",
-      "acceptanceCriteria": [
-        "Submit buttons show loading state (spinner + 'Saving...' text) during mutations",
-        "Form inputs are disabled during mutation submission",
-        "Dialog cannot be closed while mutation is pending",
-        "Success feedback is shown before dialog closes"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/tasks/TaskFormDialog.tsx",
-          "operation": "modify",
-          "description": "Add isPending state from the mutation hooks to the submit button (show spinner and 'Saving...' text), disable all form inputs during submission using the disabled attribute tied to isPending, prevent dialog close by disabling the close button and escape key handler while isPending is true, and optionally show a brief success toast before closing"
+          "description": "Update the task list table rendering in the client detail view to display both assignee name and captain name in the Assigned Name column using formatAssigneeWithCaptain utility. Ensure the tasks query uses getAllTasksWithCaptain and passes captainName to the display logic."
         },
         {
-          "path": "frontend/src/components/clients/ClientFormDialog.tsx",
+          "path": "frontend/src/pages/DashboardPage.tsx",
           "operation": "modify",
-          "description": "Add isPending state from the mutation hooks to the submit button (show spinner and 'Saving...' text), disable all form inputs during submission using the disabled attribute tied to isPending, prevent dialog close by disabling the close button and escape key handler while isPending is true, and optionally show a brief success toast before closing"
+          "description": "Update the upcoming tasks and overdue tasks widgets to display both assignee name and captain name wherever assignee is shown. Use formatAssigneeWithCaptain utility for consistent formatting. Ensure the tasks query uses getAllTasksWithCaptain."
         },
         {
-          "path": "frontend/src/components/assignees/AssigneeFormDialog.tsx",
+          "path": "frontend/src/utils/taskExcel.ts",
           "operation": "modify",
-          "description": "Add isPending state from the mutation hooks to the submit button (show spinner and 'Saving...' text), disable all form inputs during submission using the disabled attribute tied to isPending, prevent dialog close by disabling the close button and escape key handler while isPending is true, and optionally show a brief success toast before closing"
+          "description": "Update the Excel export function to include captain name in the Assigned Name column by using formatAssigneeWithCaptain utility when converting TaskWithCaptain data to Excel rows. Ensure the combined assignee and captain information is exported in a single readable column."
         }
       ]
     }

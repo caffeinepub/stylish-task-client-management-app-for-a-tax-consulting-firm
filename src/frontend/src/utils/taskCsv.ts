@@ -1,4 +1,3 @@
-import type { TaskInput } from '../backend';
 import { isValidStatus } from '../constants/taskStatus';
 
 export interface ValidationError {
@@ -10,7 +9,10 @@ export interface ValidationError {
 /**
  * Extended task input with all optional fields for CSV parsing and preview
  */
-export interface ExtendedTaskInput extends TaskInput {
+export interface ExtendedTaskInput {
+  clientName: string;
+  taskCategory: string;
+  subCategory: string;
   status?: string;
   comment?: string;
   assignedName?: string;
@@ -222,121 +224,107 @@ export function parseCsvFile(csvContent: string): ParsedCsvData {
       errors.push({
         row: rowNumber,
         column: 'Status',
-        message: `Invalid status "${status}". Must be one of: Pending, Docs Pending, In Progress, Checking, Payment Pending, Completed, Hold`,
+        message: `Invalid status: "${status}"`,
       });
     }
 
-    // Validate and parse dates
-    let dueDate: bigint | undefined = undefined;
-    let assignmentDate: bigint | undefined = undefined;
-    let completionDate: bigint | undefined = undefined;
+    // Parse dates
+    const dueDate = parseDateToTimestamp(dueDateStr);
+    const assignmentDate = parseDateToTimestamp(assignmentDateStr);
+    const completionDate = parseDateToTimestamp(completionDateStr);
 
-    if (dueDateStr) {
-      const parsed = parseDateToTimestamp(dueDateStr);
-      if (parsed === null) {
-        errors.push({
-          row: rowNumber,
-          column: 'Due Date',
-          message: `Invalid date format "${dueDateStr}". Use YYYY-MM-DD format`,
-        });
-      } else {
-        dueDate = parsed;
-      }
+    if (dueDateStr && !dueDate) {
+      errors.push({
+        row: rowNumber,
+        column: 'Due Date',
+        message: 'Invalid date format (use YYYY-MM-DD)',
+      });
     }
 
-    if (assignmentDateStr) {
-      const parsed = parseDateToTimestamp(assignmentDateStr);
-      if (parsed === null) {
-        errors.push({
-          row: rowNumber,
-          column: 'Assignment Date',
-          message: `Invalid date format "${assignmentDateStr}". Use YYYY-MM-DD format`,
-        });
-      } else {
-        assignmentDate = parsed;
-      }
+    if (assignmentDateStr && !assignmentDate) {
+      errors.push({
+        row: rowNumber,
+        column: 'Assignment Date',
+        message: 'Invalid date format (use YYYY-MM-DD)',
+      });
     }
 
-    if (completionDateStr) {
-      const parsed = parseDateToTimestamp(completionDateStr);
-      if (parsed === null) {
-        errors.push({
-          row: rowNumber,
-          column: 'Completion Date',
-          message: `Invalid date format "${completionDateStr}". Use YYYY-MM-DD format`,
-        });
-      } else {
-        completionDate = parsed;
-      }
+    if (completionDateStr && !completionDate) {
+      errors.push({
+        row: rowNumber,
+        column: 'Completion Date',
+        message: 'Invalid date format (use YYYY-MM-DD)',
+      });
     }
 
-    // Validate and parse numeric fields
-    let bill: number | undefined = undefined;
-    let advanceReceived: number | undefined = undefined;
-    let outstandingAmount: number | undefined = undefined;
+    // Parse numbers
+    const bill = parseNumber(billStr);
+    const advanceReceived = parseNumber(advanceReceivedStr);
+    const outstandingAmount = parseNumber(outstandingAmountStr);
 
-    if (billStr) {
-      const parsed = parseNumber(billStr);
-      if (parsed === null) {
-        errors.push({
-          row: rowNumber,
-          column: 'Bill',
-          message: `Invalid number format "${billStr}"`,
-        });
-      } else {
-        bill = parsed;
-      }
+    if (billStr && bill === null) {
+      errors.push({
+        row: rowNumber,
+        column: 'Bill',
+        message: 'Invalid number format',
+      });
     }
 
-    if (advanceReceivedStr) {
-      const parsed = parseNumber(advanceReceivedStr);
-      if (parsed === null) {
-        errors.push({
-          row: rowNumber,
-          column: 'Advance Received',
-          message: `Invalid number format "${advanceReceivedStr}"`,
-        });
-      } else {
-        advanceReceived = parsed;
-      }
+    if (advanceReceivedStr && advanceReceived === null) {
+      errors.push({
+        row: rowNumber,
+        column: 'Advance Received',
+        message: 'Invalid number format',
+      });
     }
 
-    if (outstandingAmountStr) {
-      const parsed = parseNumber(outstandingAmountStr);
-      if (parsed === null) {
-        errors.push({
-          row: rowNumber,
-          column: 'Outstanding Amount',
-          message: `Invalid number format "${outstandingAmountStr}"`,
-        });
-      } else {
-        outstandingAmount = parsed;
-      }
+    if (outstandingAmountStr && outstandingAmount === null) {
+      errors.push({
+        row: rowNumber,
+        column: 'Outstanding Amount',
+        message: 'Invalid number format',
+      });
     }
 
-    // Only add task if all required fields are present
-    if (clientName && taskCategory && subCategory) {
-      const task: ExtendedTaskInput = {
-        clientName,
-        taskCategory,
-        subCategory,
-      };
+    // Build task object with all fields
+    const task: ExtendedTaskInput = {
+      clientName,
+      taskCategory,
+      subCategory,
+    };
 
-      // Add optional fields only if they have values
-      if (status) task.status = status;
-      if (comment) task.comment = comment;
-      if (assignedName) task.assignedName = assignedName;
-      if (dueDate !== undefined) task.dueDate = dueDate;
-      if (assignmentDate !== undefined) task.assignmentDate = assignmentDate;
-      if (completionDate !== undefined) task.completionDate = completionDate;
-      if (bill !== undefined) task.bill = bill;
-      if (advanceReceived !== undefined) task.advanceReceived = advanceReceived;
-      if (outstandingAmount !== undefined) task.outstandingAmount = outstandingAmount;
-      if (paymentStatus) task.paymentStatus = paymentStatus;
+    // Add optional fields only if they have values
+    if (status) task.status = status;
+    if (comment) task.comment = comment;
+    if (assignedName) task.assignedName = assignedName;
+    if (dueDate) task.dueDate = dueDate;
+    if (assignmentDate) task.assignmentDate = assignmentDate;
+    if (completionDate) task.completionDate = completionDate;
+    if (bill !== null) task.bill = bill;
+    if (advanceReceived !== null) task.advanceReceived = advanceReceived;
+    if (outstandingAmount !== null) task.outstandingAmount = outstandingAmount;
+    if (paymentStatus) task.paymentStatus = paymentStatus;
 
-      tasks.push(task);
-    }
+    tasks.push(task);
   }
 
   return { tasks, errors };
+}
+
+/**
+ * Download CSV template file
+ */
+export function downloadTaskCsvTemplate(): void {
+  const csvContent = generateTaskCsvTemplate();
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  
+  link.setAttribute('href', url);
+  link.setAttribute('download', `task_template_${new Date().toISOString().split('T')[0]}.csv`);
+  link.style.visibility = 'hidden';
+  
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
