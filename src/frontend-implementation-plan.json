@@ -1,78 +1,68 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Optimize bulk update performance to reduce lag during task updates",
+  "title": "Fix Completion Date auto-population when marking tasks as Completed",
   "requirements": [
     {
-      "id": "REQ-92",
-      "summary": "Implement optimistic updates in useBulkUpdateTasks mutation hook to show immediate UI feedback before server response",
+      "id": "REQ-98",
+      "summary": "Verify frontend task update mutations send complete task payloads including status field",
       "acceptanceCriteria": [
-        "Bulk task updates show immediate UI feedback before server confirmation",
-        "Selected tasks reflect updated values instantly in the task table",
-        "Loading indicators show during server processing but don't block UI updates",
-        "Failed updates roll back optimistic changes and show clear error messages"
+        "All task update API calls include the status field in the request payload",
+        "The backend receives accurate status values to determine when a transition to 'Completed' occurs",
+        "No frontend validation or encoding errors prevent the status from being sent correctly"
       ],
       "file_operations": [
         {
           "path": "frontend/src/hooks/tasks.ts",
           "operation": "modify",
-          "description": "Add optimistic update logic to the useBulkUpdateTasks mutation by implementing an onMutate callback that updates the React Query cache immediately with the new task values before the server responds. Store the previous state for rollback on error. In onError, restore the previous cache state and display an error toast. Ensure the optimistic updates correctly merge partial task changes with existing task data from the cache."
-        }
-      ]
-    },
-    {
-      "id": "REQ-93",
-      "summary": "Add immediate visual feedback in TaskBulkEditDialog with loading states during mutation submission",
-      "acceptanceCriteria": [
-        "Submit button shows loading spinner and 'Updating...' text during mutation",
-        "All form inputs are disabled during submission to prevent editing",
-        "Dialog remains open with loading state visible until mutation completes",
-        "Success feedback closes dialog and clears bulk selection smoothly"
-      ],
-      "file_operations": [
+          "description": "Review and verify that useUpdateTask mutation includes the status field in all update calls. Ensure the mutation properly passes the status value from TaskFormDialog, TaskQuickStatus, and TaskBulkEditDialog components. Confirm that useBulkUpdateTasks sends status for each task in the updates array. Add explicit status field handling if missing to ensure backend receives complete payloads for detecting status transitions to 'Completed'."
+        },
         {
-          "path": "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
+          "path": "frontend/src/components/tasks/TaskFormDialog.tsx",
           "operation": "modify",
-          "description": "Extract the isPending state from the useBulkUpdateTasks mutation hook and use it to disable all form inputs and the submit button during submission. Update the submit button to show a loading spinner icon and 'Updating...' text when isPending is true. Ensure the dialog remains open with the loading state visible until the mutation completes successfully or fails."
-        }
-      ]
-    },
-    {
-      "id": "REQ-94",
-      "summary": "Optimize cache invalidation strategy to use precise query keys and avoid unnecessary refetches",
-      "acceptanceCriteria": [
-        "Mutation onSuccess invalidates only ['tasks'] and individual task queries",
-        "No unnecessary refetches of unrelated data (clients, assignees, dashboard)",
-        "Task list updates reflect changes without full page reload",
-        "Network tab shows minimal requests after bulk update completes"
-      ],
-      "file_operations": [
+          "description": "Verify that the form submission includes the current status value in the update payload sent to useUpdateTask. Ensure status is not accidentally omitted when other fields are updated. Confirm form state properly tracks status changes and passes them to the mutation."
+        },
         {
-          "path": "frontend/src/hooks/tasks.ts",
+          "path": "frontend/src/components/tasks/TaskQuickStatus.tsx",
           "operation": "modify",
-          "description": "Refine the onSuccess callback in useBulkUpdateTasks to invalidate only the ['tasks'] query key (which covers getAllTasksWithCaptain) and individual task query keys ['task', taskId] for each updated task. Remove any broad invalidations that might trigger unnecessary refetches of clients, assignees, or dashboard data. Ensure the cache invalidation is precise and targeted to minimize network overhead."
-        }
-      ]
-    },
-    {
-      "id": "REQ-96",
-      "summary": "Add success toast notification when bulk updates complete successfully",
-      "acceptanceCriteria": [
-        "Toast appears immediately after successful bulk update",
-        "Message clearly states number of tasks updated (e.g., '12 tasks updated successfully')",
-        "Toast auto-dismisses after 3 seconds",
-        "Toast styling matches existing UI theme and patterns"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/tasks.ts",
-          "operation": "modify",
-          "description": "Import and use the toast utility (likely from shadcn/ui) in the useBulkUpdateTasks mutation's onSuccess callback. Display a success toast with a message like '{count} tasks updated successfully' where count is the number of tasks updated. Configure the toast to auto-dismiss after 3 seconds. Ensure the toast styling matches the existing UI theme."
+          "description": "Verify that the quick status change component sends the complete task payload with the new status value to the update mutation. Ensure all existing task fields are preserved when updating only the status field."
         },
         {
           "path": "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
           "operation": "modify",
-          "description": "After successful mutation completion, close the dialog smoothly and ensure any bulk selection state is cleared in the parent component (TasksPage). Coordinate with the toast notification from the mutation hook to provide seamless feedback to the user."
+          "description": "Verify that bulk edit operations include status in the PartialTaskUpdate objects for tasks being updated. Ensure the unchanged sentinel pattern properly handles status field updates and that status values are sent to useBulkUpdateTasks for all tasks where status is being changed."
+        }
+      ]
+    },
+    {
+      "id": "REQ-99",
+      "summary": "Add defensive date validation in frontend task display utilities for completionDate timestamps",
+      "acceptanceCriteria": [
+        "The formatDate utility handles null/undefined timestamps gracefully (displays '—' or empty)",
+        "Invalid or malformed timestamps do not cause 'Invalid Date' to appear in the UI",
+        "Completion Date column in the Tasks table displays valid dates for all completed tasks",
+        "Task detail views (TaskDetailsPanel, ClientDetailPage task lists) show valid completion dates"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/utils/taskDisplay.ts",
+          "operation": "modify",
+          "description": "Add defensive validation to the formatDate utility function to handle edge cases: check for null/undefined timestamps and return '—'; validate that timestamp is a valid number within the valid Date range (not NaN, Infinity, or outside JavaScript Date bounds); detect timestamps that produce 'Invalid Date' when converted and return '—' instead. Ensure completionDate timestamps from the backend (bigint nanoseconds) are properly converted to milliseconds and validated before creating Date objects. Add unit test coverage for edge cases including null, undefined, 0, negative values, extremely large values, and invalid timestamp formats."
+        },
+        {
+          "path": "frontend/src/pages/TasksPage.tsx",
+          "operation": "modify",
+          "description": "Verify that the Completion Date column uses the updated formatDate utility from taskDisplay.ts. Ensure the column properly handles cases where completionDate is null, undefined, or invalid. Test that 'Invalid Date' no longer appears in the UI for completed tasks."
+        },
+        {
+          "path": "frontend/src/components/tasks/TaskDetailsPanel.tsx",
+          "operation": "modify",
+          "description": "Verify that completionDate display in the task details panel uses the updated formatDate utility. Ensure invalid dates show as '—' instead of 'Invalid Date'. Confirm the panel gracefully handles null/undefined completionDate values."
+        },
+        {
+          "path": "frontend/src/pages/ClientDetailPage.tsx",
+          "operation": "modify",
+          "description": "Verify that task lists shown on client detail pages use the updated formatDate utility for completionDate display. Ensure consistency with TasksPage and TaskDetailsPanel in handling invalid dates."
         }
       ]
     }

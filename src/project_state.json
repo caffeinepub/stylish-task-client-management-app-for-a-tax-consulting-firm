@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 55,
+  "projectStateVersion": 57,
   "summary": "Build a stylish Task/Client Management app for a tax consulting firm.",
   "architectural_notes": [
     "Dashboard should support interactive drill-down: clicking an aggregate metric navigates/filters to the corresponding Tasks list view (e.g., by category/status) and shows the matching items.",
@@ -20,7 +20,8 @@
     "Task edit flow is not working (user reports cannot edit tasks).",
     "App stuck on Loading screen/blank UI again due to root route initialization hang caused by getSecretParameter('caffeineAdminToken') running at startup and mutating the URL (history.replaceState), triggering TanStack Router freeze.",
     "Task edit dialog can crash / fail to open when a stored task has status set to an empty string (\"\"), triggering Radix Select error: \"A Select.Item must have a value prop that is not an empty string.\"",
-    "After deploying Version 21, the app is still not loading on the user side (persistent blank/loading screen in production)."
+    "After deploying Version 21, the app is still not loading on the user side (persistent blank/loading screen in production).",
+    "Auto-population of Completion Date when marking a task as 'Completed' is either not working or showing an invalid date."
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -639,6 +640,22 @@
         "REQ-96"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-verify-that-the-frontend-task-update-mutations-in-frontend-src-hooks-tasks-ts-useupdatetask-usebulkupdatetasks-and-all-task-update-ui-components-taskformdialog-taskquickstatus-taskbulkeditdialog-are-sending-complete-task-payloads-to-the-backend-including-the-current-status-value-so-the-backend-can-correctly-detect-status-transitions-to-completed",
+      "title": "Verify that the frontend task update mutations in frontend/src/hooks/tasks.ts (useUpdateTask, useBulkUpdateTasks) and all task update UI components (TaskFormDialog, TaskQuickStatus, TaskBulkEditDialog) are sending complete task payloads to the backend, including the current status value, so the backend can correctly detect status transitions to 'Completed'.",
+      "reqIds": [
+        "REQ-98"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-defensive-date-validation-in-the-frontend-task-display-utilities-frontend-src-utils-taskdisplay-ts-to-ensure-completiondate-timestamps-are-properly-converted-to-readable-date-strings-handling-edge-cases-like-null-values-invalid-timestamps-or-timestamps-outside-valid-date-ranges",
+      "title": "Add defensive date validation in the frontend task display utilities (frontend/src/utils/taskDisplay.ts) to ensure completionDate timestamps are properly converted to readable date strings, handling edge cases like null values, invalid timestamps, or timestamps outside valid Date ranges.",
+      "reqIds": [
+        "REQ-99"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -941,6 +958,14 @@
       "summary": "Review and optimize the backend bulkUpdateTasks implementation in backend/main.mo to ensure it processes updates efficiently, minimizing computational overhead and response time when updating multiple tasks simultaneously.",
       "reqIds": [
         "REQ-95"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-54",
+      "summary": "Fix the backend Task update logic in backend/main.mo so that when a task's status is changed to 'Completed', the completionDate field is reliably set to the current timestamp (Time.now()) if it is not already set, ensuring the auto-population works correctly and produces valid dates.",
+      "reqIds": [
+        "REQ-97"
       ],
       "status": "pending"
     }

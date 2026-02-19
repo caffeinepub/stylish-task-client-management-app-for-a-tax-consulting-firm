@@ -1,13 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Optimize bulk task update performance to eliminate lag and provide immediate user feedback during task modifications.
+**Goal:** Fix the auto-population of Completion Date when tasks are marked as Completed, ensuring valid dates are displayed instead of "Invalid Date".
 
 **Planned changes:**
-- Implement optimistic UI updates for bulk task edits to show changes instantly before server confirmation
-- Add immediate visual feedback (loading spinner, disabled inputs) in bulk edit dialog during submission
-- Optimize React Query cache invalidation to target only affected queries and reduce network overhead
-- Review and optimize backend bulkUpdateTasks implementation for faster processing
-- Add success toast notification showing number of tasks updated
+- Fix backend Task update logic to automatically set completionDate to Time.now() when status changes to 'Completed'
+- Verify frontend task update mutations send complete payloads including status field to enable backend detection of status transitions
+- Add defensive date validation in frontend utilities to handle null, invalid, or out-of-range timestamps gracefully
 
-**User-visible outcome:** Users experience instant feedback when bulk editing tasks, with no perceived lag, clear loading states during processing, and confirmation messages upon completion.
+**User-visible outcome:** When users mark a task as Completed, the Completion Date field automatically populates with a valid, readable date instead of showing "Invalid Date" or remaining empty.

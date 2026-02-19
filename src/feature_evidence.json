@@ -2,68 +2,12 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-implement-optimistic-updates-in-the-usebulkupdatetasks-mutation-hook-frontend-src-hooks-tasks-ts-so-the-ui-reflects-changes-immediately-before-the-server-responds-reducing-perceived-lag-during-bulk-task-edits",
-      "featureTitle": "Implement optimistic updates in the useBulkUpdateTasks mutation hook (frontend/src/hooks/tasks.ts) so the UI reflects changes immediately before the server responds, reducing perceived lag during bulk task edits.",
-      "files": [
-        "frontend/src/hooks/tasks.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-92"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-immediate-visual-feedback-in-taskbulkeditdialog-frontend-src-components-tasks-taskbulkeditdialog-tsx-by-disabling-form-controls-and-showing-a-spinner-on-the-submit-button-during-mutation-submission-preventing-multiple-clicks-and-clarifying-that-the-update-is-processing",
-      "featureTitle": "Add immediate visual feedback in TaskBulkEditDialog (frontend/src/components/tasks/TaskBulkEditDialog.tsx) by disabling form controls and showing a spinner on the submit button during mutation submission, preventing multiple clicks and clarifying that the update is processing.",
-      "files": [
-        "frontend/src/components/tasks/TaskBulkEditDialog.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-93"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-optimize-the-usebulkupdatetasks-mutation-s-cache-invalidation-strategy-to-use-precise-query-keys-targeting-only-the-affected-task-queries-avoiding-full-task-list-refetches-and-reducing-network-overhead-after-bulk-updates",
-      "featureTitle": "Optimize the useBulkUpdateTasks mutation's cache invalidation strategy to use precise query keys targeting only the affected task queries, avoiding full task list refetches and reducing network overhead after bulk updates.",
-      "files": [
-        "frontend/src/hooks/tasks.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-94"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-a-subtle-success-toast-notification-when-bulk-updates-complete-successfully-providing-clear-confirmation-without-requiring-users-to-verify-changes-manually-in-the-task-list",
-      "featureTitle": "Add a subtle success toast notification when bulk updates complete successfully, providing clear confirmation without requiring users to verify changes manually in the task list.",
+      "featureId": "feature-verify-that-the-frontend-task-update-mutations-in-frontend-src-hooks-tasks-ts-useupdatetask-usebulkupdatetasks-and-all-task-update-ui-components-taskformdialog-taskquickstatus-taskbulkeditdialog-are-sending-complete-task-payloads-to-the-backend-including-the-current-status-value-so-the-backend-can-correctly-detect-status-transitions-to-completed",
+      "featureTitle": "Verify that the frontend task update mutations in frontend/src/hooks/tasks.ts (useUpdateTask, useBulkUpdateTasks) and all task update UI components (TaskFormDialog, TaskQuickStatus, TaskBulkEditDialog) are sending complete task payloads to the backend, including the current status value, so the backend can correctly detect status transitions to 'Completed'.",
       "files": [
         "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
-        "frontend/src/hooks/tasks.ts"
+        "frontend/src/components/tasks/TaskFormDialog.tsx",
+        "frontend/src/components/tasks/TaskQuickStatus.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -74,7 +18,26 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-96"
+        "REQ-98"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-defensive-date-validation-in-the-frontend-task-display-utilities-frontend-src-utils-taskdisplay-ts-to-ensure-completiondate-timestamps-are-properly-converted-to-readable-date-strings-handling-edge-cases-like-null-values-invalid-timestamps-or-timestamps-outside-valid-date-ranges",
+      "featureTitle": "Add defensive date validation in the frontend task display utilities (frontend/src/utils/taskDisplay.ts) to ensure completionDate timestamps are properly converted to readable date strings, handling edge cases like null values, invalid timestamps, or timestamps outside valid Date ranges.",
+      "files": [
+        "frontend/src/utils/taskDisplay.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-99"
       ],
       "confidence": "high"
     }

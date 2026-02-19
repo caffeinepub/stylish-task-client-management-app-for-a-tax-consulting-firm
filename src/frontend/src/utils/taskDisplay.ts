@@ -7,11 +7,35 @@ export const PLACEHOLDER = '—';
 
 /**
  * Format a bigint timestamp to a readable date string
+ * Handles nanosecond timestamps from the backend and validates for edge cases
  */
 export function formatTaskDate(timestamp: bigint | undefined | null): string {
+  // Handle null/undefined
   if (!timestamp) return PLACEHOLDER;
+  
   try {
-    return new Date(Number(timestamp)).toLocaleDateString('en-IN', {
+    // Convert bigint nanoseconds to milliseconds
+    // Backend stores timestamps as nanoseconds (Time.now() in Motoko)
+    const milliseconds = Number(timestamp) / 1_000_000;
+    
+    // Validate the timestamp is within valid Date range
+    if (!isFinite(milliseconds) || isNaN(milliseconds)) {
+      return PLACEHOLDER;
+    }
+    
+    // JavaScript Date valid range: approximately -8,640,000,000,000,000 to 8,640,000,000,000,000 milliseconds
+    if (milliseconds < -8640000000000000 || milliseconds > 8640000000000000) {
+      return PLACEHOLDER;
+    }
+    
+    // Create date and validate it's not Invalid Date
+    const date = new Date(milliseconds);
+    if (isNaN(date.getTime())) {
+      return PLACEHOLDER;
+    }
+    
+    // Format the valid date
+    return date.toLocaleDateString('en-IN', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',

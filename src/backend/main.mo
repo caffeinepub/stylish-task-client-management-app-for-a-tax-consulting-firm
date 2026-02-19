@@ -5,13 +5,9 @@ import Time "mo:core/Time";
 import Principal "mo:core/Principal";
 import Nat "mo:core/Nat";
 import Iter "mo:core/Iter";
-import Migration "migration";
-
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
-// Specify the data migration function in with-clause
-(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -427,10 +423,17 @@ actor {
         };
 
         // Set completionDate if status is set to "Completed" and completionDate is not provided
-        let finalCompletionDate = if (status != null and status == ?"Completed") {
-          ?Time.now();
-        } else {
-          completionDate;
+        let finalCompletionDate = switch (status, completionDate) {
+          // If status is not provided, keep the existing completion date
+          case (null, _) { completionDate };
+          // If completionDate is already provided, use it regardless of status
+          case (_, ?_) { completionDate };
+          // Set completionDate only if status is "Completed" and no completionDate is provided
+          case (?"Completed", null) {
+            ?Time.now();
+          };
+          // All other cases, keep the existing completion date
+          case (_, null) { null };
         };
 
         let updatedTask : Task = {

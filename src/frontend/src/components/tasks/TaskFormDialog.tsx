@@ -53,9 +53,9 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
         setStatus(coerceStatusForSelect(task.status, STATUS_NONE_SENTINEL));
         setComment(task.comment || '');
         setAssignedName(task.assignedName || '');
-        setDueDate(task.dueDate ? new Date(Number(task.dueDate)).toISOString().split('T')[0] : '');
-        setAssignmentDate(task.assignmentDate ? new Date(Number(task.assignmentDate)).toISOString().split('T')[0] : '');
-        setCompletionDate(task.completionDate ? new Date(Number(task.completionDate)).toISOString().split('T')[0] : '');
+        setDueDate(task.dueDate ? new Date(Number(task.dueDate) / 1_000_000).toISOString().split('T')[0] : '');
+        setAssignmentDate(task.assignmentDate ? new Date(Number(task.assignmentDate) / 1_000_000).toISOString().split('T')[0] : '');
+        setCompletionDate(task.completionDate ? new Date(Number(task.completionDate) / 1_000_000).toISOString().split('T')[0] : '');
         setBill(task.bill !== undefined && task.bill !== null ? task.bill.toString() : '');
         setAdvanceReceived(task.advanceReceived !== undefined && task.advanceReceived !== null ? task.advanceReceived.toString() : '');
         setOutstandingAmount(task.outstandingAmount !== undefined && task.outstandingAmount !== null ? task.outstandingAmount.toString() : '');
@@ -82,6 +82,7 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Convert status sentinel to null for backend
     const statusValue = status === STATUS_NONE_SENTINEL ? null : status;
 
     if (isEditing && task) {
@@ -94,9 +95,9 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
           status: statusValue,
           comment: comment || null,
           assignedName: assignedName || null,
-          dueDate: dueDate ? BigInt(new Date(dueDate).getTime()) : null,
-          assignmentDate: assignmentDate ? BigInt(new Date(assignmentDate).getTime()) : null,
-          completionDate: completionDate ? BigInt(new Date(completionDate).getTime()) : null,
+          dueDate: dueDate ? BigInt(new Date(dueDate).getTime()) * BigInt(1_000_000) : null,
+          assignmentDate: assignmentDate ? BigInt(new Date(assignmentDate).getTime()) * BigInt(1_000_000) : null,
+          completionDate: completionDate ? BigInt(new Date(completionDate).getTime()) * BigInt(1_000_000) : null,
           bill: bill ? parseFloat(bill) : null,
           advanceReceived: advanceReceived ? parseFloat(advanceReceived) : null,
           outstandingAmount: outstandingAmount ? parseFloat(outstandingAmount) : null,
@@ -128,85 +129,88 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
   const error = createError || updateError;
 
   return (
-    <Dialog open={open} onOpenChange={(newOpen) => !isPending && onOpenChange(newOpen)}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" onEscapeKeyDown={(e) => isPending && e.preventDefault()} onPointerDownOutside={(e) => isPending && e.preventDefault()}>
+    <Dialog open={open} onOpenChange={isPending ? undefined : onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Edit Task' : 'Create New Task'}</DialogTitle>
           <DialogDescription>
-            {isEditing ? 'Update task details below' : 'Fill in the task details below'}
+            {isEditing ? 'Update task details below.' : 'Fill in the task details below.'}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-              {error instanceof Error ? error.message : 'An error occurred. Please try again.'}
-            </div>
-          )}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+            {/* Client Name */}
             <div className="space-y-2">
-              <Label htmlFor="clientName">Client Name *</Label>
+              <Label htmlFor="clientName">
+                Client Name <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="clientName"
                 value={clientName}
                 onChange={(e) => setClientName(e.target.value)}
-                placeholder="Enter client name"
                 required
                 disabled={isPending}
               />
             </div>
 
+            {/* Task Category */}
             <div className="space-y-2">
-              <Label htmlFor="taskCategory">Task Category *</Label>
+              <Label htmlFor="taskCategory">
+                Task Category <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="taskCategory"
                 value={taskCategory}
                 onChange={(e) => setTaskCategory(e.target.value)}
-                placeholder="e.g., GST Return, Income Tax"
                 required
                 disabled={isPending}
               />
             </div>
 
+            {/* Sub Category */}
             <div className="space-y-2">
-              <Label htmlFor="subCategory">Sub Category *</Label>
+              <Label htmlFor="subCategory">
+                Sub Category <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="subCategory"
                 value={subCategory}
                 onChange={(e) => setSubCategory(e.target.value)}
-                placeholder="e.g., GSTR-1, ITR-4"
                 required
                 disabled={isPending}
               />
             </div>
 
+            {/* Status */}
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
               <Select value={status} onValueChange={setStatus} disabled={isPending}>
-                <SelectTrigger>
+                <SelectTrigger id="status">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={STATUS_NONE_SENTINEL}>None</SelectItem>
-                  {ALLOWED_TASK_STATUSES.map((statusOption) => (
-                    <SelectItem key={statusOption} value={statusOption}>
-                      {statusOption}
+                  <SelectItem value={STATUS_NONE_SENTINEL}>— None —</SelectItem>
+                  {ALLOWED_TASK_STATUSES.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
+            {/* Assigned Name */}
             <div className="space-y-2">
-              <Label htmlFor="assignedName">Assignee</Label>
+              <Label htmlFor="assignedName">Assigned To</Label>
               <Input
                 id="assignedName"
                 value={assignedName}
                 onChange={(e) => setAssignedName(e.target.value)}
-                placeholder="Enter assignee name"
                 disabled={isPending}
               />
             </div>
 
+            {/* Due Date */}
             <div className="space-y-2">
               <Label htmlFor="dueDate">Due Date</Label>
               <Input
@@ -218,6 +222,7 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
               />
             </div>
 
+            {/* Assignment Date */}
             <div className="space-y-2">
               <Label htmlFor="assignmentDate">Assignment Date</Label>
               <Input
@@ -229,6 +234,7 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
               />
             </div>
 
+            {/* Completion Date */}
             <div className="space-y-2">
               <Label htmlFor="completionDate">Completion Date</Label>
               <Input
@@ -240,68 +246,74 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
               />
             </div>
 
+            {/* Bill */}
             <div className="space-y-2">
-              <Label htmlFor="bill">Bill Amount (₹)</Label>
+              <Label htmlFor="bill">Bill Amount</Label>
               <Input
                 id="bill"
                 type="number"
                 step="0.01"
                 value={bill}
                 onChange={(e) => setBill(e.target.value)}
-                placeholder="0.00"
                 disabled={isPending}
               />
             </div>
 
+            {/* Advance Received */}
             <div className="space-y-2">
-              <Label htmlFor="advanceReceived">Advance Received (₹)</Label>
+              <Label htmlFor="advanceReceived">Advance Received</Label>
               <Input
                 id="advanceReceived"
                 type="number"
                 step="0.01"
                 value={advanceReceived}
                 onChange={(e) => setAdvanceReceived(e.target.value)}
-                placeholder="0.00"
                 disabled={isPending}
               />
             </div>
 
+            {/* Outstanding Amount */}
             <div className="space-y-2">
-              <Label htmlFor="outstandingAmount">Outstanding Amount (₹)</Label>
+              <Label htmlFor="outstandingAmount">Outstanding Amount</Label>
               <Input
                 id="outstandingAmount"
                 type="number"
                 step="0.01"
                 value={outstandingAmount}
                 onChange={(e) => setOutstandingAmount(e.target.value)}
-                placeholder="0.00"
                 disabled={isPending}
               />
             </div>
 
+            {/* Payment Status */}
             <div className="space-y-2">
               <Label htmlFor="paymentStatus">Payment Status</Label>
               <Input
                 id="paymentStatus"
                 value={paymentStatus}
                 onChange={(e) => setPaymentStatus(e.target.value)}
-                placeholder="e.g., Paid, Pending"
                 disabled={isPending}
+              />
+            </div>
+
+            {/* Comment - Full width */}
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="comment">Comment</Label>
+              <Textarea
+                id="comment"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                disabled={isPending}
+                rows={3}
               />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="comment">Comment</Label>
-            <Textarea
-              id="comment"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="Add any additional notes..."
-              rows={3}
-              disabled={isPending}
-            />
-          </div>
+          {error && (
+            <div className="text-sm text-destructive mb-4">
+              {error instanceof Error ? error.message : 'An error occurred'}
+            </div>
+          )}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
@@ -311,10 +323,12 @@ export default function TaskFormDialog({ open, onOpenChange, task }: TaskFormDia
               {isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isEditing ? 'Saving...' : 'Creating...'}
+                  Saving...
                 </>
+              ) : isEditing ? (
+                'Update Task'
               ) : (
-                isEditing ? 'Update Task' : 'Create Task'
+                'Create Task'
               )}
             </Button>
           </DialogFooter>

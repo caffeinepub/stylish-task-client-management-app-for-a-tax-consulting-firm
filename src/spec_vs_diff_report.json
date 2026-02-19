@@ -1,33 +1,18 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-19T00:47:34.674Z",
-  "summary": "The diff implements all five requirements (REQ-92 through REQ-96) for optimizing bulk update performance. Frontend changes include optimistic updates in useBulkUpdateTasks, loading states in TaskBulkEditDialog, precise cache invalidation, and success toast notifications. Backend changes optimize bulkUpdateTasks with improved data processing. All acceptance criteria appear to be addressed.",
+  "generatedAt": "2026-02-19T01:08:20.661Z",
+  "summary": "All three requirements (REQ-97, REQ-98, REQ-99) are implemented. Backend logic sets completionDate on status 'Completed' transition, frontend components include status in all update payloads, and defensive date validation is in place.",
   "missing_requirements": [],
-  "hallucinated_features": [
-    {
-      "description": "Added backend/migration.mo file implementing data migration infrastructure with OldActor/NewActor types and migration.run function",
-      "reason": "BuildRequest contains no requirements about implementing data migration functionality or creating migration.mo. The backend optimization requirement (REQ-95) focuses on performance improvements to bulkUpdateTasks, not migration infrastructure.",
-      "evidence": [
-        "backend/migration.mo",
-        "backend/main.mo"
-      ]
-    },
-    {
-      "description": "Added frontend/src/utils/urlParams.ts utility module with URL parameter parsing, sessionStorage management, and hash parameter clearing functions",
-      "reason": "BuildRequest contains no requirements about URL parameter handling, sessionStorage utilities, or hash-based routing. This appears unrelated to bulk update performance optimization.",
-      "evidence": [
-        "frontend/src/utils/urlParams.ts"
-      ]
-    }
-  ],
-  "confidence": 0.92,
+  "hallucinated_features": [],
+  "confidence": 0.95,
   "changed_files": [
     "backend/main.mo",
-    "backend/migration.mo",
     "frontend-file-summaries.txt",
     "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
-    "frontend/src/hooks/tasks.ts",
+    "frontend/src/components/tasks/TaskFormDialog.tsx",
+    "frontend/src/components/tasks/TaskQuickStatus.tsx",
+    "frontend/src/utils/taskDisplay.ts",
     "frontend/src/utils/urlParams.ts",
     "project_state.json"
   ]

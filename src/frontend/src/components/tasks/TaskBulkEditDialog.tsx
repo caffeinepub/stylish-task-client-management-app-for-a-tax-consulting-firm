@@ -104,6 +104,7 @@ export default function TaskBulkEditDialog({ open, onOpenChange, selectedTasks, 
         update.subCategory = subCategory.trim();
       }
       if (status !== UNCHANGED_SENTINEL) {
+        // Explicitly include status field even if empty/null to trigger backend logic
         update.status = status;
       }
       if (comment.trim() !== '') {
