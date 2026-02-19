@@ -1,63 +1,78 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Enable full field editing in bulk task edit flow",
+  "title": "Optimize bulk update performance to reduce lag during task updates",
   "requirements": [
     {
-      "id": "REQ-88",
-      "summary": "Update TaskBulkEditDialog to include form fields for all editable Task properties with optional 'Unchanged' sentinel values",
+      "id": "REQ-92",
+      "summary": "Implement optimistic updates in useBulkUpdateTasks mutation hook to show immediate UI feedback before server response",
       "acceptanceCriteria": [
-        "Bulk edit dialog displays form inputs for all Task fields (Client Name, Task Category, Sub Category, Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, Payment Status)",
-        "Each field has a default 'Unchanged' option/value that preserves the existing value when not explicitly set by the user",
-        "Form validation handles all field types appropriately (text, dates, numbers, status enum)",
-        "User can update any combination of fields across selected tasks without overwriting unchanged fields"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
-          "operation": "modify",
-          "description": "Expand the bulk edit form to include input fields for all Task properties: clientName (text input with autocomplete from existing clients), taskCategory (text input), subCategory (text input), status (dropdown with task statuses from taskStatus.ts), comment (textarea), assignedName (text input with autocomplete from assignees), dueDate (date picker), assignmentDate (date picker), completionDate (date picker), bill (number input), advanceReceived (number input), outstandingAmount (number input), and paymentStatus (text input). Each field must support an 'Unchanged' sentinel value (empty string for text, null for dates/numbers, or a dedicated 'unchanged' option for dropdowns) so the user can selectively update only the fields they specify. Update form state management to track all fields and preserve the sentinel pattern throughout submission."
-        }
-      ]
-    },
-    {
-      "id": "REQ-90",
-      "summary": "Update useBulkUpdateTasks mutation hook to send all user-specified field updates with proper type encoding",
-      "acceptanceCriteria": [
-        "Mutation hook sends only the fields the user explicitly set in the bulk edit form",
-        "Date fields are converted to backend-expected timestamp format (Int nanoseconds)",
-        "Numeric fields (Bill, Advance Received, Outstanding Amount) are sent as numbers",
-        "Cache invalidation updates the Tasks list immediately after successful bulk update",
-        "Loading and error states are properly handled and displayed to the user"
+        "Bulk task updates show immediate UI feedback before server confirmation",
+        "Selected tasks reflect updated values instantly in the task table",
+        "Loading indicators show during server processing but don't block UI updates",
+        "Failed updates roll back optimistic changes and show clear error messages"
       ],
       "file_operations": [
         {
           "path": "frontend/src/hooks/tasks.ts",
           "operation": "modify",
-          "description": "Update the useBulkUpdateTasks mutation to accept all Task field updates from the expanded bulk edit form. The mutation should map the form values to PartialTaskUpdate objects for each selected task, converting dates to nanosecond timestamps (BigInt) and ensuring numeric fields (bill, advanceReceived, outstandingAmount) are sent as numbers. Only include fields that are not set to the 'Unchanged' sentinel value. Ensure cache invalidation triggers for the 'tasks' and 'tasksWithCaptain' query keys after successful mutation, and provide clear loading/error feedback through mutation state."
+          "description": "Add optimistic update logic to the useBulkUpdateTasks mutation by implementing an onMutate callback that updates the React Query cache immediately with the new task values before the server responds. Store the previous state for rollback on error. In onError, restore the previous cache state and display an error toast. Ensure the optimistic updates correctly merge partial task changes with existing task data from the cache."
         }
       ]
     },
     {
-      "id": "REQ-91",
-      "summary": "Wire the expanded TaskBulkEditDialog form submission to the updated useBulkUpdateTasks mutation with proper state management",
+      "id": "REQ-93",
+      "summary": "Add immediate visual feedback in TaskBulkEditDialog with loading states during mutation submission",
       "acceptanceCriteria": [
-        "Submitting the bulk edit form updates only the selected tasks with the specified field changes",
-        "Dialog closes automatically after successful update",
-        "Bulk selection checkboxes are cleared after successful update",
-        "Success/error feedback is displayed to the user in English",
-        "Updated tasks reflect the new values immediately in the Tasks list table"
+        "Submit button shows loading spinner and 'Updating...' text during mutation",
+        "All form inputs are disabled during submission to prevent editing",
+        "Dialog remains open with loading state visible until mutation completes",
+        "Success feedback closes dialog and clears bulk selection smoothly"
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
           "operation": "modify",
-          "description": "Wire the form submission handler to call the updated useBulkUpdateTasks mutation with all user-provided field values. On successful mutation, close the dialog, clear bulk selection state (pass onSuccess callback to parent), and display a success toast message. On error, display an error toast with the error message. Ensure loading state disables the submit button during mutation execution. Filter out unchanged sentinel values before passing data to the mutation hook."
+          "description": "Extract the isPending state from the useBulkUpdateTasks mutation hook and use it to disable all form inputs and the submit button during submission. Update the submit button to show a loading spinner icon and 'Updating...' text when isPending is true. Ensure the dialog remains open with the loading state visible until the mutation completes successfully or fails."
+        }
+      ]
+    },
+    {
+      "id": "REQ-94",
+      "summary": "Optimize cache invalidation strategy to use precise query keys and avoid unnecessary refetches",
+      "acceptanceCriteria": [
+        "Mutation onSuccess invalidates only ['tasks'] and individual task queries",
+        "No unnecessary refetches of unrelated data (clients, assignees, dashboard)",
+        "Task list updates reflect changes without full page reload",
+        "Network tab shows minimal requests after bulk update completes"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/tasks.ts",
+          "operation": "modify",
+          "description": "Refine the onSuccess callback in useBulkUpdateTasks to invalidate only the ['tasks'] query key (which covers getAllTasksWithCaptain) and individual task query keys ['task', taskId] for each updated task. Remove any broad invalidations that might trigger unnecessary refetches of clients, assignees, or dashboard data. Ensure the cache invalidation is precise and targeted to minimize network overhead."
+        }
+      ]
+    },
+    {
+      "id": "REQ-96",
+      "summary": "Add success toast notification when bulk updates complete successfully",
+      "acceptanceCriteria": [
+        "Toast appears immediately after successful bulk update",
+        "Message clearly states number of tasks updated (e.g., '12 tasks updated successfully')",
+        "Toast auto-dismisses after 3 seconds",
+        "Toast styling matches existing UI theme and patterns"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/tasks.ts",
+          "operation": "modify",
+          "description": "Import and use the toast utility (likely from shadcn/ui) in the useBulkUpdateTasks mutation's onSuccess callback. Display a success toast with a message like '{count} tasks updated successfully' where count is the number of tasks updated. Configure the toast to auto-dismiss after 3 seconds. Ensure the toast styling matches the existing UI theme."
         },
         {
-          "path": "frontend/src/pages/TasksPage.tsx",
+          "path": "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
           "operation": "modify",
-          "description": "Update the TasksPage component to handle the onSuccess callback from TaskBulkEditDialog by clearing the selectedTaskIds state after successful bulk update. Ensure the bulk edit dialog receives all necessary props including the expanded field update capability and the selected task objects (not just IDs) if needed for default values or validation."
+          "description": "After successful mutation completion, close the dialog smoothly and ensure any bulk selection state is cleared in the parent component (TasksPage). Coordinate with the toast notification from the mutation hook to provide seamless feedback to the user."
         }
       ]
     }

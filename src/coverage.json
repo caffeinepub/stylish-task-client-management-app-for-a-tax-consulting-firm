@@ -1,18 +1,29 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-19T00:34:43.005Z",
+  "generatedAt": "2026-02-19T00:47:34.679Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 3,
+    "total": 5,
+    "implemented": 4,
     "items": [
       {
-        "id": "REQ-88",
-        "summary": "Update the TaskBulkEditDialog component (frontend/src/components/tasks/TaskBulkEditDialog.tsx) to include form fields for all editable Task components: Client Name, Task Category, Sub Category, Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, and Payment Status. Each field must remain optional with an 'Unchanged' sentinel value so users can selectively update only the fields they specify.",
+        "id": "REQ-92",
+        "summary": "Implement optimistic updates in the useBulkUpdateTasks mutation hook (frontend/src/hooks/tasks.ts) so the UI reflects changes immediately before the server responds, reducing perceived lag during bulk task edits.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/tasks.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/tasks.ts"
+        ]
+      },
+      {
+        "id": "REQ-93",
+        "summary": "Add immediate visual feedback in TaskBulkEditDialog (frontend/src/components/tasks/TaskBulkEditDialog.tsx) by disabling form controls and showing a spinner on the submit button during mutation submission, preventing multiple clicks and clarifying that the update is processing.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/components/tasks/TaskBulkEditDialog.tsx"
@@ -22,34 +33,34 @@
         ]
       },
       {
-        "id": "REQ-89",
-        "summary": "Extend the backend bulkUpdateTasks API (if not already present) or update the existing bulk update logic in backend/main.mo to accept partial updates for all Task fields (clientName, taskCategory, subCategory, status, comment, assignedName, dueDate, assignmentDate, completionDate, bill, advanceReceived, outstandingAmount, paymentStatus). The API must apply only the fields provided in the request payload, leaving omitted fields unchanged in the stored task records.",
+        "id": "REQ-94",
+        "summary": "Optimize the useBulkUpdateTasks mutation's cache invalidation strategy to use precise query keys targeting only the affected task queries, avoiding full task list refetches and reducing network overhead after bulk updates.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/tasks.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/tasks.ts"
+        ]
+      },
+      {
+        "id": "REQ-95",
+        "summary": "Review and optimize the backend bulkUpdateTasks implementation in backend/main.mo to ensure it processes updates efficiently, minimizing computational overhead and response time when updating multiple tasks simultaneously.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
-        "id": "REQ-90",
-        "summary": "Update the useBulkUpdateTasks mutation hook in frontend/src/hooks/tasks.ts to send all user-specified field updates from the bulk edit form to the backend bulk update API, properly encoding dates as timestamps and numbers as numeric types. Ensure the mutation triggers appropriate cache invalidation and provides clear loading/success/error feedback.",
+        "id": "REQ-96",
+        "summary": "Add a subtle success toast notification when bulk updates complete successfully, providing clear confirmation without requiring users to verify changes manually in the task list.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/tasks.ts"
+          "frontend/src/hooks/tasks.ts",
+          "frontend/src/components/tasks/TaskBulkEditDialog.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/tasks.ts"
-        ]
-      },
-      {
-        "id": "REQ-91",
-        "summary": "Wire the expanded TaskBulkEditDialog form submission to call the updated useBulkUpdateTasks mutation with all user-provided field values, ensuring the bulk edit flow remains consistent with existing UI patterns (dialog closure on success, error display, bulk selection state clearing after successful update).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
-          "frontend/src/pages/TasksPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
-          "frontend/src/pages/TasksPage.tsx"
+          "frontend/src/hooks/tasks.ts",
+          "frontend/src/components/tasks/TaskBulkEditDialog.tsx"
         ]
       }
     ]
@@ -61,13 +72,8 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
     "frontend/src/components/tasks/TaskBulkEditDialog.tsx",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
     "frontend/src/hooks/tasks.ts",
-    "frontend/src/pages/TasksPage.tsx",
     "frontend/src/utils/urlParams.ts",
     "project_state.json",
     "scratch/component-selection.json",

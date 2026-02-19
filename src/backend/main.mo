@@ -10,11 +10,13 @@ import Migration "migration";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
+// Specify the data migration function in with-clause
 (with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
+  // Type definitions
   type ClientId = Nat;
   type TaskId = Nat;
   type AssigneeId = Nat;
@@ -126,6 +128,7 @@ actor {
     captainName : ?Text;
   };
 
+  // Persistent data structures
   let clients = Map.empty<Principal, Map.Map<ClientId, Client>>();
   let tasks = Map.empty<Principal, Map.Map<TaskId, Task>>();
   let assignees = Map.empty<Principal, Map.Map<AssigneeId, Assignee>>();

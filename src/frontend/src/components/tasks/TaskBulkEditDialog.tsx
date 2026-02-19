@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2 } from 'lucide-react';
 import { useBulkUpdateTasks } from '../../hooks/tasks';
 import { useGetAllClients } from '../../hooks/clients';
 import { useGetAllAssignees } from '../../hooks/assignees';
@@ -159,12 +160,12 @@ export default function TaskBulkEditDialog({ open, onOpenChange, selectedTasks, 
 
     bulkUpdateTasks(updates, {
       onSuccess: () => {
-        toast.success(`Successfully updated ${selectedTasks.length} task(s)`);
         onOpenChange(false);
         onSuccess?.();
       },
       onError: (error: any) => {
-        toast.error(`Failed to update tasks: ${error.message || 'Unknown error'}`);
+        // Error toast is already handled in the mutation hook
+        console.error('Bulk update error:', error);
       },
     });
   };
@@ -379,7 +380,14 @@ export default function TaskBulkEditDialog({ open, onOpenChange, selectedTasks, 
               Cancel
             </Button>
             <Button type="submit" disabled={isPending}>
-              {isPending ? 'Updating...' : 'Update Tasks'}
+              {isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                'Update Tasks'
+              )}
             </Button>
           </DialogFooter>
         </form>

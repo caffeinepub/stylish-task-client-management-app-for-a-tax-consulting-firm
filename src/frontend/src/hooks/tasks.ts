@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
+import { toast } from 'sonner';
 import type { Task, TaskId, TaskWithCaptain, PartialTaskUpdate } from '../backend';
 
 export function useGetAllTasks() {
@@ -220,8 +221,67 @@ export function useBulkUpdateTasks() {
       // Use the backend's bulkUpdateTasks method
       return actor.bulkUpdateTasks(updates);
     },
-    onSuccess: () => {
+    onMutate: async (updates) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['tasks'] });
+
+      // Snapshot previous value
+      const previousTasks = queryClient.getQueryData<TaskWithCaptain[]>(['tasks']);
+
+      // Optimistically update the cache
+      if (previousTasks) {
+        queryClient.setQueryData<TaskWithCaptain[]>(['tasks'], (old) => {
+          if (!old) return [];
+          
+          return old.map((taskWithCaptain) => {
+            // Find if this task has an update
+            const update = updates.find(u => u.id === taskWithCaptain.task.id);
+            if (!update) return taskWithCaptain;
+
+            // Merge the update with existing task data
+            return {
+              ...taskWithCaptain,
+              task: {
+                ...taskWithCaptain.task,
+                ...(update.clientName !== undefined && { clientName: update.clientName }),
+                ...(update.taskCategory !== undefined && { taskCategory: update.taskCategory }),
+                ...(update.subCategory !== undefined && { subCategory: update.subCategory }),
+                ...(update.status !== undefined && { status: update.status }),
+                ...(update.comment !== undefined && { comment: update.comment }),
+                ...(update.assignedName !== undefined && { assignedName: update.assignedName }),
+                ...(update.dueDate !== undefined && { dueDate: update.dueDate }),
+                ...(update.assignmentDate !== undefined && { assignmentDate: update.assignmentDate }),
+                ...(update.completionDate !== undefined && { completionDate: update.completionDate }),
+                ...(update.bill !== undefined && { bill: update.bill }),
+                ...(update.advanceReceived !== undefined && { advanceReceived: update.advanceReceived }),
+                ...(update.outstandingAmount !== undefined && { outstandingAmount: update.outstandingAmount }),
+                ...(update.paymentStatus !== undefined && { paymentStatus: update.paymentStatus }),
+              },
+            };
+          });
+        });
+      }
+
+      return { previousTasks };
+    },
+    onError: (err, updates, context) => {
+      // Rollback on error
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks'], context.previousTasks);
+      }
+      toast.error(`Failed to update tasks: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    },
+    onSuccess: (_, updates) => {
+      // Show success toast
+      toast.success(`${updates.length} task${updates.length === 1 ? '' : 's'} updated successfully`);
+      
+      // Invalidate only tasks queries for consistency
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      
+      // Invalidate individual task queries for updated tasks
+      updates.forEach(update => {
+        queryClient.invalidateQueries({ queryKey: ['task', update.id.toString()] });
+      });
     },
   });
 }

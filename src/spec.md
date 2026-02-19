@@ -1,12 +1,13 @@
 # Specification
 
 ## Summary
-**Goal:** Enable users to edit all task fields when performing bulk updates on multiple tasks.
+**Goal:** Optimize bulk task update performance to eliminate lag and provide immediate user feedback during task modifications.
 
 **Planned changes:**
-- Expand the bulk edit dialog to include form fields for all editable task properties (Client Name, Task Category, Sub Category, Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, Payment Status)
-- Update backend bulk update API to accept partial updates for all task fields
-- Ensure each field in the bulk edit form remains optional with an 'Unchanged' default value
-- Wire the expanded form submission to the backend mutation with proper data type handling
+- Implement optimistic UI updates for bulk task edits to show changes instantly before server confirmation
+- Add immediate visual feedback (loading spinner, disabled inputs) in bulk edit dialog during submission
+- Optimize React Query cache invalidation to target only affected queries and reduce network overhead
+- Review and optimize backend bulkUpdateTasks implementation for faster processing
+- Add success toast notification showing number of tasks updated
 
-**User-visible outcome:** Users can now selectively update any combination of task fields across multiple selected tasks in a single bulk edit operation, with unchanged fields preserving their existing values.
+**User-visible outcome:** Users experience instant feedback when bulk editing tasks, with no perceived lag, clear loading states during processing, and confirmation messages upon completion.

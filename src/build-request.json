@@ -1,98 +1,113 @@
 {
   "kind": "build_request",
-  "title": "Enable full field editing in bulk task edit flow",
-  "priority": "normal",
+  "title": "Optimize bulk update performance to reduce lag during task updates",
+  "projectName": "CSWA Group of Companies",
+  "priority": "high",
   "requirements": [
     {
-      "id": "REQ-88",
-      "text": "Update the TaskBulkEditDialog component (frontend/src/components/tasks/TaskBulkEditDialog.tsx) to include form fields for all editable Task components: Client Name, Task Category, Sub Category, Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, and Payment Status. Each field must remain optional with an 'Unchanged' sentinel value so users can selectively update only the fields they specify.",
+      "id": "REQ-92",
+      "text": "Implement optimistic updates in the useBulkUpdateTasks mutation hook (frontend/src/hooks/tasks.ts) so the UI reflects changes immediately before the server responds, reducing perceived lag during bulk task edits.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-last"
         ],
         "quotes": [
-          "in bulk edit ,i need to update all fields when requires"
+          "it is very lag while updation ,make it fast all"
         ]
       },
       "acceptanceCriteria": [
-        "Bulk edit dialog displays form inputs for all Task fields (Client Name, Task Category, Sub Category, Status, Comment, Assigned Name, Due Date, Assignment Date, Completion Date, Bill, Advance Received, Outstanding Amount, Payment Status)",
-        "Each field has a default 'Unchanged' option/value that preserves the existing value when not explicitly set by the user",
-        "Form validation handles all field types appropriately (text, dates, numbers, status enum)",
-        "User can update any combination of fields across selected tasks without overwriting unchanged fields"
+        "Bulk task updates show immediate UI feedback before server confirmation",
+        "Selected tasks reflect updated values instantly in the task table",
+        "Loading indicators show during server processing but don't block UI updates",
+        "Failed updates roll back optimistic changes and show clear error messages"
       ]
     },
     {
-      "id": "REQ-89",
-      "text": "Extend the backend bulkUpdateTasks API (if not already present) or update the existing bulk update logic in backend/main.mo to accept partial updates for all Task fields (clientName, taskCategory, subCategory, status, comment, assignedName, dueDate, assignmentDate, completionDate, bill, advanceReceived, outstandingAmount, paymentStatus). The API must apply only the fields provided in the request payload, leaving omitted fields unchanged in the stored task records.",
+      "id": "REQ-93",
+      "text": "Add immediate visual feedback in TaskBulkEditDialog (frontend/src/components/tasks/TaskBulkEditDialog.tsx) by disabling form controls and showing a spinner on the submit button during mutation submission, preventing multiple clicks and clarifying that the update is processing.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-last"
+        ],
+        "quotes": [
+          "it is very lag while updation"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Submit button shows loading spinner and 'Updating...' text during mutation",
+        "All form inputs are disabled during submission to prevent editing",
+        "Dialog remains open with loading state visible until mutation completes",
+        "Success feedback closes dialog and clears bulk selection smoothly"
+      ]
+    },
+    {
+      "id": "REQ-94",
+      "text": "Optimize the useBulkUpdateTasks mutation's cache invalidation strategy to use precise query keys targeting only the affected task queries, avoiding full task list refetches and reducing network overhead after bulk updates.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-last"
+        ],
+        "quotes": [
+          "make it fast all"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Mutation onSuccess invalidates only ['tasks'] and individual task queries",
+        "No unnecessary refetches of unrelated data (clients, assignees, dashboard)",
+        "Task list updates reflect changes without full page reload",
+        "Network tab shows minimal requests after bulk update completes"
+      ]
+    },
+    {
+      "id": "REQ-95",
+      "text": "Review and optimize the backend bulkUpdateTasks implementation in backend/main.mo to ensure it processes updates efficiently, minimizing computational overhead and response time when updating multiple tasks simultaneously.",
       "target": "backend",
       "source": {
         "messageIds": [
           "msg-last"
         ],
         "quotes": [
-          "in bulk edit ,i need to update all fields when requires"
+          "it is very lag while updation"
         ]
       },
       "acceptanceCriteria": [
-        "Backend bulk update API accepts optional values for all Task fields",
-        "Only explicitly provided fields in the request payload are updated in each task",
-        "Omitted/null fields in the request do not overwrite existing stored values",
-        "Auto-population logic (assignmentDate when assignedName is set, completionDate when status becomes 'Completed') continues to work during bulk updates"
+        "Backend bulk update completes within 2 seconds for up to 50 tasks",
+        "Motoko code avoids unnecessary iterations or redundant state lookups",
+        "Response payload includes only essential data (success status, updated count)",
+        "No performance degradation as task count increases in user's dataset"
       ]
     },
     {
-      "id": "REQ-90",
-      "text": "Update the useBulkUpdateTasks mutation hook in frontend/src/hooks/tasks.ts to send all user-specified field updates from the bulk edit form to the backend bulk update API, properly encoding dates as timestamps and numbers as numeric types. Ensure the mutation triggers appropriate cache invalidation and provides clear loading/success/error feedback.",
+      "id": "REQ-96",
+      "text": "Add a subtle success toast notification when bulk updates complete successfully, providing clear confirmation without requiring users to verify changes manually in the task list.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-last"
-        ],
-        "quotes": [
-          "in bulk edit ,i need to update all fields when requires"
         ]
       },
       "acceptanceCriteria": [
-        "Mutation hook sends only the fields the user explicitly set in the bulk edit form",
-        "Date fields are converted to backend-expected timestamp format (Int nanoseconds)",
-        "Numeric fields (Bill, Advance Received, Outstanding Amount) are sent as numbers",
-        "Cache invalidation updates the Tasks list immediately after successful bulk update",
-        "Loading and error states are properly handled and displayed to the user"
-      ]
-    },
-    {
-      "id": "REQ-91",
-      "text": "Wire the expanded TaskBulkEditDialog form submission to call the updated useBulkUpdateTasks mutation with all user-provided field values, ensuring the bulk edit flow remains consistent with existing UI patterns (dialog closure on success, error display, bulk selection state clearing after successful update).",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-last"
-        ],
-        "quotes": [
-          "in bulk edit ,i need to update all fields when requires"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Submitting the bulk edit form updates only the selected tasks with the specified field changes",
-        "Dialog closes automatically after successful update",
-        "Bulk selection checkboxes are cleared after successful update",
-        "Success/error feedback is displayed to the user in English",
-        "Updated tasks reflect the new values immediately in the Tasks list table"
+        "Toast appears immediately after successful bulk update",
+        "Message clearly states number of tasks updated (e.g., '12 tasks updated successfully')",
+        "Toast auto-dismisses after 3 seconds",
+        "Toast styling matches existing UI theme and patterns"
       ]
     }
   ],
   "constraints": [
-    "Do not modify the backend single-actor architecture",
-    "Do not edit files listed in frontend.immutablePaths (useInternetIdentity.ts, useActor.ts, main.tsx, frontend/src/components/ui/*)",
-    "Preserve backward compatibility with existing stored task data",
-    "Maintain the 'Unchanged' sentinel value pattern for selective field updates"
+    "Must maintain existing bulk edit dialog UI structure and field layout",
+    "Optimistic updates must preserve data integrity and roll back on errors",
+    "Backend optimization must not break existing bulkUpdateTasks API contract",
+    "All user-facing feedback must remain in English"
   ],
   "nonGoals": [
-    "Adding new task fields beyond those already supported",
-    "Changing the bulk selection UI or checkbox behavior",
-    "Modifying single-task edit dialog functionality",
-    "Altering the tasks list table column display"
+    "Refactoring the entire React Query setup beyond bulk update mutations",
+    "Adding new task fields or changing task data model",
+    "Implementing real-time WebSocket updates for collaborative editing",
+    "Changing the bulk edit dialog's field selection mechanism"
   ],
   "imageRequirements": {
     "required": [],

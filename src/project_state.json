@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 53,
+  "projectStateVersion": 55,
   "summary": "Build a stylish Task/Client Management app for a tax consulting firm.",
   "architectural_notes": [
     "Dashboard should support interactive drill-down: clicking an aggregate metric navigates/filters to the corresponding Tasks list view (e.g., by category/status) and shows the matching items.",
@@ -20,8 +20,7 @@
     "Task edit flow is not working (user reports cannot edit tasks).",
     "App stuck on Loading screen/blank UI again due to root route initialization hang caused by getSecretParameter('caffeineAdminToken') running at startup and mutating the URL (history.replaceState), triggering TanStack Router freeze.",
     "Task edit dialog can crash / fail to open when a stored task has status set to an empty string (\"\"), triggering Radix Select error: \"A Select.Item must have a value prop that is not an empty string.\"",
-    "After deploying Version 21, the app is still not loading on the user side (persistent blank/loading screen in production).",
-    "Data updates are slow/delayed after clicking update button (task/client/assignee editing)."
+    "After deploying Version 21, the app is still not loading on the user side (persistent blank/loading screen in production)."
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -608,6 +607,38 @@
         "REQ-91"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-implement-optimistic-updates-in-the-usebulkupdatetasks-mutation-hook-frontend-src-hooks-tasks-ts-so-the-ui-reflects-changes-immediately-before-the-server-responds-reducing-perceived-lag-during-bulk-task-edits",
+      "title": "Implement optimistic updates in the useBulkUpdateTasks mutation hook (frontend/src/hooks/tasks.ts) so the UI reflects changes immediately before the server responds, reducing perceived lag during bulk task edits.",
+      "reqIds": [
+        "REQ-92"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-immediate-visual-feedback-in-taskbulkeditdialog-frontend-src-components-tasks-taskbulkeditdialog-tsx-by-disabling-form-controls-and-showing-a-spinner-on-the-submit-button-during-mutation-submission-preventing-multiple-clicks-and-clarifying-that-the-update-is-processing",
+      "title": "Add immediate visual feedback in TaskBulkEditDialog (frontend/src/components/tasks/TaskBulkEditDialog.tsx) by disabling form controls and showing a spinner on the submit button during mutation submission, preventing multiple clicks and clarifying that the update is processing.",
+      "reqIds": [
+        "REQ-93"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-optimize-the-usebulkupdatetasks-mutation-s-cache-invalidation-strategy-to-use-precise-query-keys-targeting-only-the-affected-task-queries-avoiding-full-task-list-refetches-and-reducing-network-overhead-after-bulk-updates",
+      "title": "Optimize the useBulkUpdateTasks mutation's cache invalidation strategy to use precise query keys targeting only the affected task queries, avoiding full task list refetches and reducing network overhead after bulk updates.",
+      "reqIds": [
+        "REQ-94"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-subtle-success-toast-notification-when-bulk-updates-complete-successfully-providing-clear-confirmation-without-requiring-users-to-verify-changes-manually-in-the-task-list",
+      "title": "Add a subtle success toast notification when bulk updates complete successfully, providing clear confirmation without requiring users to verify changes manually in the task list.",
+      "reqIds": [
+        "REQ-96"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -902,6 +933,14 @@
       "summary": "Extend the backend bulkUpdateTasks API (if not already present) or update the existing bulk update logic in backend/main.mo to accept partial updates for all Task fields (clientName, taskCategory, subCategory, status, comment, assignedName, dueDate, assignmentDate, completionDate, bill, advanceReceived, outstandingAmount, paymentStatus). The API must apply only the fields provided in the request payload, leaving omitted fields unchanged in the stored task records.",
       "reqIds": [
         "REQ-89"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-53",
+      "summary": "Review and optimize the backend bulkUpdateTasks implementation in backend/main.mo to ensure it processes updates efficiently, minimizing computational overhead and response time when updating multiple tasks simultaneously.",
+      "reqIds": [
+        "REQ-95"
       ],
       "status": "pending"
     }
