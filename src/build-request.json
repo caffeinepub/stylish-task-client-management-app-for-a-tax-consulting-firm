@@ -1,68 +1,40 @@
 {
   "kind": "build_request",
-  "title": "Fix JavaScript module loading error preventing app from loading",
-  "priority": "high",
+  "title": "Redesign Dashboard UI with more stylish visual theme",
+  "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-104",
-      "text": "Fix the JavaScript module loading error 'Failed to load module script: Expected a JavaScript or Wasm module script but the server responded with a MIME type of \"text/html\"' that prevents the application from loading in production by ensuring the build output correctly generates ES module scripts and the server serves them with the correct Content-Type header.",
+      "id": "REQ-107",
+      "text": "Update the Dashboard page visual design (frontend/src/pages/DashboardPage.tsx) to apply a more stylish, modern aesthetic appropriate for a tax consulting firm, including enhanced spacing, typography hierarchy, color accents, card shadows/borders, and visual polish while maintaining all existing functional components (metrics cards, revenue aggregations, task breakdowns, drill-down navigation).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-user-final"
+          "msg-latest"
         ],
         "quotes": [
-          "not loading"
+          "change the sstyle of dashboard more stylish"
         ]
       },
       "acceptanceCriteria": [
-        "The application loads successfully in production without JavaScript module errors",
-        "The browser console does not show MIME type errors for module scripts",
-        "All routes (dashboard, tasks, clients, assignees, todos) render correctly after the fix"
-      ]
-    },
-    {
-      "id": "REQ-105",
-      "text": "Verify that the frontend build configuration (vite.config.ts or similar) correctly outputs ES modules and that the index.html script tag includes type=\"module\" attribute for the main entry point.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-user-final"
-        ]
-      },
-      "acceptanceCriteria": [
-        "The main.tsx script is loaded with type=\"module\" attribute",
-        "The build process generates valid ES module output",
-        "The production bundle loads without module format errors"
-      ]
-    },
-    {
-      "id": "REQ-106",
-      "text": "Ensure the production server configuration serves JavaScript files with the correct Content-Type header ('application/javascript' or 'text/javascript') instead of 'text/html' for .js and .jsx files.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-user-final"
-        ]
-      },
-      "acceptanceCriteria": [
-        "JavaScript module files are served with Content-Type: application/javascript",
-        "No HTML content is returned when requesting JavaScript module files",
-        "The browser successfully loads and executes all JavaScript modules"
+        "Dashboard layout uses enhanced spacing and visual hierarchy to create a more polished, professional appearance",
+        "Metrics cards, revenue tables, and task breakdown sections include refined styling with appropriate shadows, borders, or accent colors",
+        "Typography is enhanced with clear size/weight hierarchy for headings, labels, and data values",
+        "The visual theme remains consistent with the existing app color palette (warm neutrals, sage green primary, charcoal tones)",
+        "All existing Dashboard functionality (drill-down navigation, data aggregations, clickable rows) continues to work without regression",
+        "The design maintains responsive behavior on mobile and tablet viewports"
       ]
     }
   ],
   "constraints": [
-    "Do not modify Internet Identity integration hooks (frontend/src/hooks/useInternetIdentity.ts, useInternetIdentity.tsx)",
-    "Do not modify frontend/src/hooks/useActor.ts or frontend/src/main.tsx",
-    "Do not modify Shadcn UI components in frontend/src/components/ui",
-    "Maintain single-actor backend architecture in backend/main.mo"
+    "Do not change the Dashboard's functional behavior (data fetching, aggregations, drill-down navigation)",
+    "Maintain consistency with the existing app-wide visual theme and color palette",
+    "Preserve all existing Dashboard components: metrics summary, revenue by category/subcategory, status breakdown, upcoming/overdue tasks"
   ],
   "nonGoals": [
-    "Changing the application's core functionality or features",
-    "Modifying existing UI components beyond what's needed for the fix",
-    "Changing the authentication flow or access control logic",
-    "Adding new features or capabilities"
+    "Adding new Dashboard features or data aggregations",
+    "Changing the Dashboard layout structure or component organization",
+    "Modifying backend APIs or data models",
+    "Redesigning other pages beyond the Dashboard"
   ],
   "imageRequirements": {
     "required": [],

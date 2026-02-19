@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Users, CheckSquare, AlertCircle, TrendingUp, Calendar, UserCheck } from 'lucide-react';
+import { Users, CheckSquare, AlertCircle, TrendingUp, Calendar, UserCheck, ArrowUpRight } from 'lucide-react';
 import { useGetAllClients } from '../hooks/clients';
 import { useGetAllTasks } from '../hooks/tasks';
 import { useGetAllAssignees } from '../hooks/assignees';
@@ -87,8 +87,11 @@ export default function DashboardPage() {
 
   if (clientsError || tasksError) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
+      <div className="space-y-8">
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-lg text-muted-foreground">Overview of your business operations</p>
+        </div>
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
@@ -102,311 +105,373 @@ export default function DashboardPage() {
   const isLoading = clientsLoading || tasksLoading || assigneesLoading;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Overview of your business operations</p>
+    <div className="space-y-8 pb-8">
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="text-4xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-lg text-muted-foreground">Overview of your business operations</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-border shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative">
+            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Total Clients</CardTitle>
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Users className="h-5 w-5 text-primary" />
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="relative">
             {isLoading ? (
-              <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-10 w-24" />
             ) : (
-              <div className="text-2xl font-bold">{stats.totalClients}</div>
+              <div className="text-4xl font-bold tracking-tight">{stats.totalClients}</div>
             )}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
-            <CheckSquare className="h-4 w-4 text-muted-foreground" />
+        <Card className="border-border shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-chart-2/5 rounded-full -mr-16 -mt-16" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative">
+            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Total Tasks</CardTitle>
+            <div className="h-10 w-10 rounded-lg bg-chart-2/10 flex items-center justify-center">
+              <CheckSquare className="h-5 w-5 text-chart-2" />
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="relative">
             {isLoading ? (
-              <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-10 w-24" />
             ) : (
-              <div className="text-2xl font-bold">{stats.totalTasks}</div>
+              <div className="text-4xl font-bold tracking-tight">{stats.totalTasks}</div>
             )}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed Tasks</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+        <Card className="border-border shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-chart-1/5 rounded-full -mr-16 -mt-16" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative">
+            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Completed</CardTitle>
+            <div className="h-10 w-10 rounded-lg bg-chart-1/10 flex items-center justify-center">
+              <TrendingUp className="h-5 w-5 text-chart-1" />
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="relative">
             {isLoading ? (
-              <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-10 w-24" />
             ) : (
-              <div className="text-2xl font-bold">{stats.completedTasks}</div>
+              <div className="text-4xl font-bold tracking-tight">{stats.completedTasks}</div>
             )}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Team Members</CardTitle>
-            <UserCheck className="h-4 w-4 text-muted-foreground" />
+        <Card className="border-border shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-chart-4/5 rounded-full -mr-16 -mt-16" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative">
+            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Team Members</CardTitle>
+            <div className="h-10 w-10 rounded-lg bg-chart-4/10 flex items-center justify-center">
+              <UserCheck className="h-5 w-5 text-chart-4" />
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="relative">
             {isLoading ? (
-              <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-10 w-24" />
             ) : (
-              <div className="text-2xl font-bold">{stats.totalAssignees}</div>
+              <div className="text-4xl font-bold tracking-tight">{stats.totalAssignees}</div>
             )}
           </CardContent>
         </Card>
       </div>
 
       {/* Revenue by Category */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Revenue by Category</CardTitle>
-          <CardDescription>Total revenue breakdown by task category</CardDescription>
+      <Card className="border-border shadow-sm">
+        <CardHeader className="border-b bg-muted/30 pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-xl font-bold">Revenue by Category</CardTitle>
+              <CardDescription className="mt-1.5">Total revenue breakdown by task category</CardDescription>
+            </div>
+            <TrendingUp className="h-5 w-5 text-primary" />
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {isLoading ? (
             <Skeleton className="h-64 w-full" />
           ) : revenueByCategory.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No data available</p>
+            <p className="text-center text-muted-foreground py-12">No data available</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Category</TableHead>
-                  <TableHead className="text-right">Tasks</TableHead>
-                  <TableHead className="text-right">Revenue</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {revenueByCategory.map((item) => (
-                  <TableRow
-                    key={item.category}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => handleCategoryClick(item.category)}
-                  >
-                    <TableCell className="font-medium">{item.category}</TableCell>
-                    <TableCell className="text-right">{item.count}</TableCell>
-                    <TableCell className="text-right font-semibold">{formatCurrency(item.revenue)}</TableCell>
+            <div className="rounded-lg border border-border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    <TableHead className="font-semibold">Category</TableHead>
+                    <TableHead className="text-right font-semibold">Tasks</TableHead>
+                    <TableHead className="text-right font-semibold">Revenue</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {revenueByCategory.map((item) => (
+                    <TableRow
+                      key={item.category}
+                      className="cursor-pointer hover:bg-accent/50 transition-colors group"
+                      onClick={() => handleCategoryClick(item.category)}
+                    >
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {item.category}
+                          <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground">{item.count}</TableCell>
+                      <TableCell className="text-right font-bold text-primary">{formatCurrency(item.revenue)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
 
       {/* Revenue by Sub Category */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Revenue by Sub Category</CardTitle>
-          <CardDescription>Total revenue breakdown by task sub category</CardDescription>
+      <Card className="border-border shadow-sm">
+        <CardHeader className="border-b bg-muted/30 pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-xl font-bold">Revenue by Sub Category</CardTitle>
+              <CardDescription className="mt-1.5">Total revenue breakdown by task sub category</CardDescription>
+            </div>
+            <TrendingUp className="h-5 w-5 text-primary" />
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {isLoading ? (
             <Skeleton className="h-64 w-full" />
           ) : revenueBySubCategory.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No data available</p>
+            <p className="text-center text-muted-foreground py-12">No data available</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Sub Category</TableHead>
-                  <TableHead className="text-right">Tasks</TableHead>
-                  <TableHead className="text-right">Revenue</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {revenueBySubCategory.map((item) => (
-                  <TableRow
-                    key={item.subCategory}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => handleSubCategoryClick(item.subCategory)}
-                  >
-                    <TableCell className="font-medium">{item.subCategory}</TableCell>
-                    <TableCell className="text-right">{item.count}</TableCell>
-                    <TableCell className="text-right font-semibold">{formatCurrency(item.revenue)}</TableCell>
+            <div className="rounded-lg border border-border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    <TableHead className="font-semibold">Sub Category</TableHead>
+                    <TableHead className="text-right font-semibold">Tasks</TableHead>
+                    <TableHead className="text-right font-semibold">Revenue</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {revenueBySubCategory.map((item) => (
+                    <TableRow
+                      key={item.subCategory}
+                      className="cursor-pointer hover:bg-accent/50 transition-colors group"
+                      onClick={() => handleSubCategoryClick(item.subCategory)}
+                    >
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {item.subCategory}
+                          <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground">{item.count}</TableCell>
+                      <TableCell className="text-right font-bold text-primary">{formatCurrency(item.revenue)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
 
       {/* Category + Sub Category Combined */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Category & Sub Category Analysis</CardTitle>
-          <CardDescription>Detailed breakdown by category and sub category</CardDescription>
+      <Card className="border-border shadow-sm">
+        <CardHeader className="border-b bg-muted/30 pb-4">
+          <div>
+            <CardTitle className="text-xl font-bold">Category & Sub Category Analysis</CardTitle>
+            <CardDescription className="mt-1.5">Detailed breakdown by category and sub category</CardDescription>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {isLoading ? (
             <Skeleton className="h-64 w-full" />
           ) : categorySubCategoryData.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No data available</p>
+            <p className="text-center text-muted-foreground py-12">No data available</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Sub Category</TableHead>
-                  <TableHead className="text-right">Tasks</TableHead>
-                  <TableHead className="text-right">Revenue</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {categorySubCategoryData.map((item, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-medium">{item.taskCategory}</TableCell>
-                    <TableCell>{item.subCategory}</TableCell>
-                    <TableCell className="text-right">{item.count}</TableCell>
-                    <TableCell className="text-right font-semibold">{formatCurrency(item.revenue)}</TableCell>
+            <div className="rounded-lg border border-border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    <TableHead className="font-semibold">Category</TableHead>
+                    <TableHead className="font-semibold">Sub Category</TableHead>
+                    <TableHead className="text-right font-semibold">Tasks</TableHead>
+                    <TableHead className="text-right font-semibold">Revenue</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {categorySubCategoryData.map((item, index) => (
+                    <TableRow key={index} className="hover:bg-accent/50 transition-colors">
+                      <TableCell className="font-medium">{item.taskCategory}</TableCell>
+                      <TableCell className="text-muted-foreground">{item.subCategory}</TableCell>
+                      <TableCell className="text-right text-muted-foreground">{item.count}</TableCell>
+                      <TableCell className="text-right font-bold text-primary">{formatCurrency(item.revenue)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
 
       {/* Status Breakdown */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Tasks by Status</CardTitle>
-          <CardDescription>Current status distribution of all tasks</CardDescription>
+      <Card className="border-border shadow-sm">
+        <CardHeader className="border-b bg-muted/30 pb-4">
+          <div>
+            <CardTitle className="text-xl font-bold">Tasks by Status</CardTitle>
+            <CardDescription className="mt-1.5">Current status distribution of all tasks</CardDescription>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {isLoading ? (
             <Skeleton className="h-64 w-full" />
           ) : statusBreakdown.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No data available</p>
+            <p className="text-center text-muted-foreground py-12">No data available</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Count</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {statusBreakdown.map((item) => (
-                  <TableRow
-                    key={item.status}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => handleStatusClick(item.status)}
-                  >
-                    <TableCell>
-                      <Badge variant="outline">{item.status}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">{item.count}</TableCell>
+            <div className="rounded-lg border border-border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    <TableHead className="font-semibold">Status</TableHead>
+                    <TableHead className="text-right font-semibold">Count</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {statusBreakdown.map((item) => (
+                    <TableRow
+                      key={item.status}
+                      className="cursor-pointer hover:bg-accent/50 transition-colors group"
+                      onClick={() => handleStatusClick(item.status)}
+                    >
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="font-medium">{item.status}</Badge>
+                          <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right font-bold text-lg">{item.count}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
 
       {/* Upcoming Tasks */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Upcoming Tasks</CardTitle>
-          <CardDescription>Next 5 tasks due soon</CardDescription>
+      <Card className="border-border shadow-sm">
+        <CardHeader className="border-b bg-muted/30 pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-xl font-bold">Upcoming Tasks</CardTitle>
+              <CardDescription className="mt-1.5">Next 5 tasks due soon</CardDescription>
+            </div>
+            <Calendar className="h-5 w-5 text-primary" />
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {isLoading ? (
             <Skeleton className="h-64 w-full" />
           ) : upcomingTasks.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No upcoming tasks</p>
+            <p className="text-center text-muted-foreground py-12">No upcoming tasks</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Assigned To</TableHead>
-                  <TableHead>Due Date</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {upcomingTasks.map((taskWithCaptain) => (
-                  <TableRow key={taskWithCaptain.task.id.toString()}>
-                    <TableCell className="font-medium">{taskWithCaptain.task.clientName}</TableCell>
-                    <TableCell>{taskWithCaptain.task.taskCategory}</TableCell>
-                    <TableCell>
-                      {formatAssigneeWithCaptain(taskWithCaptain.task.assignedName, taskWithCaptain.captainName)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        {formatTaskDate(taskWithCaptain.task.dueDate)}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{getStatusDisplayLabel(taskWithCaptain.task.status)}</Badge>
-                    </TableCell>
+            <div className="rounded-lg border border-border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    <TableHead className="font-semibold">Client</TableHead>
+                    <TableHead className="font-semibold">Category</TableHead>
+                    <TableHead className="font-semibold">Assigned To</TableHead>
+                    <TableHead className="font-semibold">Due Date</TableHead>
+                    <TableHead className="font-semibold">Status</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {upcomingTasks.map((taskWithCaptain) => (
+                    <TableRow key={taskWithCaptain.task.id.toString()} className="hover:bg-accent/50 transition-colors">
+                      <TableCell className="font-medium">{taskWithCaptain.task.clientName}</TableCell>
+                      <TableCell className="text-muted-foreground">{taskWithCaptain.task.taskCategory}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {formatAssigneeWithCaptain(taskWithCaptain.task.assignedName, taskWithCaptain.captainName)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Calendar className="h-4 w-4" />
+                          <span className="font-medium">{formatTaskDate(taskWithCaptain.task.dueDate)}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="font-medium">{getStatusDisplayLabel(taskWithCaptain.task.status)}</Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
 
       {/* Overdue Tasks */}
       {overdueTasks.length > 0 && (
-        <Card className="border-destructive">
-          <CardHeader>
-            <CardTitle className="text-destructive">Overdue Tasks</CardTitle>
-            <CardDescription>Tasks that have passed their due date</CardDescription>
+        <Card className="border-destructive shadow-sm bg-destructive/5">
+          <CardHeader className="border-b border-destructive/20 bg-destructive/10 pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl font-bold text-destructive">Overdue Tasks</CardTitle>
+                <CardDescription className="mt-1.5">Tasks that have passed their due date</CardDescription>
+              </div>
+              <AlertCircle className="h-5 w-5 text-destructive" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Assigned To</TableHead>
-                  <TableHead>Due Date</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {overdueTasks.map((taskWithCaptain) => (
-                  <TableRow
-                    key={taskWithCaptain.task.id.toString()}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={handleOverdueClick}
-                  >
-                    <TableCell className="font-medium">{taskWithCaptain.task.clientName}</TableCell>
-                    <TableCell>{taskWithCaptain.task.taskCategory}</TableCell>
-                    <TableCell>
-                      {formatAssigneeWithCaptain(taskWithCaptain.task.assignedName, taskWithCaptain.captainName)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2 text-destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        {formatTaskDate(taskWithCaptain.task.dueDate)}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{getStatusDisplayLabel(taskWithCaptain.task.status)}</Badge>
-                    </TableCell>
+          <CardContent className="pt-6">
+            <div className="rounded-lg border border-destructive/20 overflow-hidden bg-background">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-destructive/5 hover:bg-destructive/5">
+                    <TableHead className="font-semibold">Client</TableHead>
+                    <TableHead className="font-semibold">Category</TableHead>
+                    <TableHead className="font-semibold">Assigned To</TableHead>
+                    <TableHead className="font-semibold">Due Date</TableHead>
+                    <TableHead className="font-semibold">Status</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {overdueTasks.map((taskWithCaptain) => (
+                    <TableRow
+                      key={taskWithCaptain.task.id.toString()}
+                      className="cursor-pointer hover:bg-destructive/10 transition-colors"
+                      onClick={handleOverdueClick}
+                    >
+                      <TableCell className="font-medium">{taskWithCaptain.task.clientName}</TableCell>
+                      <TableCell className="text-muted-foreground">{taskWithCaptain.task.taskCategory}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {formatAssigneeWithCaptain(taskWithCaptain.task.assignedName, taskWithCaptain.captainName)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 text-destructive font-medium">
+                          <AlertCircle className="h-4 w-4" />
+                          {formatTaskDate(taskWithCaptain.task.dueDate)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="font-medium border-destructive/30">{getStatusDisplayLabel(taskWithCaptain.task.status)}</Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       )}

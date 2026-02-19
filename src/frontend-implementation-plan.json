@@ -1,58 +1,29 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix JavaScript module loading error preventing app from loading",
+  "title": "Redesign Dashboard UI with more stylish visual theme",
   "requirements": [
     {
-      "id": "REQ-104",
-      "summary": "Fix JavaScript module loading error by ensuring correct MIME types and ES module configuration",
+      "id": "REQ-107",
+      "summary": "Update Dashboard page visual design to apply a more stylish, modern aesthetic appropriate for a tax consulting firm, including enhanced spacing, typography hierarchy, color accents, card shadows/borders, and visual polish while maintaining all existing functional components",
       "acceptanceCriteria": [
-        "The application loads successfully in production without JavaScript module errors",
-        "The browser console does not show MIME type errors for module scripts",
-        "All routes (dashboard, tasks, clients, assignees, todos) render correctly after the fix"
+        "Dashboard layout uses enhanced spacing and visual hierarchy to create a more polished, professional appearance",
+        "Metrics cards, revenue tables, and task breakdown sections include refined styling with appropriate shadows, borders, or accent colors",
+        "Typography is enhanced with clear size/weight hierarchy for headings, labels, and data values",
+        "The visual theme remains consistent with the existing app color palette (warm neutrals, sage green primary, charcoal tones)",
+        "All existing Dashboard functionality (drill-down navigation, data aggregations, clickable rows) continues to work without regression",
+        "The design maintains responsive behavior on mobile and tablet viewports"
       ],
       "file_operations": [
         {
-          "path": "frontend/index.html",
+          "path": "frontend/src/pages/DashboardPage.tsx",
           "operation": "modify",
-          "description": "Verify and ensure the main script tag includes type=\"module\" attribute for proper ES module loading. Confirm the script src points to the correct entry point (e.g., /src/main.tsx in dev or the built bundle path in production)."
-        }
-      ]
-    },
-    {
-      "id": "REQ-105",
-      "summary": "Verify frontend build configuration outputs valid ES modules",
-      "acceptanceCriteria": [
-        "The main.tsx script is loaded with type=\"module\" attribute",
-        "The build process generates valid ES module output",
-        "The production bundle loads without module format errors"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/vite.config.ts",
-          "operation": "modify",
-          "description": "Review and verify the Vite build configuration ensures proper ES module output format. Check that build.rollupOptions.output.format is set to 'es' or left as default (which is 'es'). Ensure the build.outDir is correctly configured and matches the deployment expectations. Verify that no configuration is inadvertently causing HTML responses for JS module requests."
-        }
-      ]
-    },
-    {
-      "id": "REQ-106",
-      "summary": "Ensure production server serves JavaScript files with correct Content-Type headers",
-      "acceptanceCriteria": [
-        "JavaScript module files are served with Content-Type: application/javascript",
-        "No HTML content is returned when requesting JavaScript module files",
-        "The browser successfully loads and executes all JavaScript modules"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/.ic-assets.json5",
-          "operation": "create",
-          "description": "Create IC asset configuration file to explicitly set Content-Type headers for JavaScript files. Define rules that ensure .js files are served with 'application/javascript' or 'text/javascript' MIME type. Include glob patterns to match all JavaScript module files in the built output and configure appropriate caching headers for production deployment."
+          "description": "Enhance the visual design of DashboardPage with refined styling for a more professional, modern aesthetic. Apply improved spacing with gap utilities and padding adjustments. Enhance metrics cards with subtle shadows (shadow-sm), borders (border border-border), and refined background colors. Add clear typography hierarchy using font-semibold/font-bold for headings, increased text sizes for key metrics (text-3xl/text-4xl), and muted colors for labels. Apply card shadows and borders to revenue aggregation tables and task breakdown sections. Use accent colors from the existing palette (sage green primary, warm neutrals) for visual highlights. Ensure all existing functionality (drill-down navigation via handleNavigation callbacks, data aggregations, clickable table rows) remains intact. Maintain responsive grid layouts and mobile behavior."
         },
         {
-          "path": "dfx.json",
+          "path": "frontend/src/index.css",
           "operation": "modify",
-          "description": "Review and verify the asset canister configuration in dfx.json. Ensure the frontend canister type is correctly set to 'assets' and that the source directory matches the Vite build output directory. Verify no misconfiguration is causing incorrect MIME type serving or fallback HTML responses for JavaScript requests."
+          "description": "Review and potentially refine global CSS custom properties to ensure the warm neutrals, sage green primary, and charcoal tones are consistently applied across light and dark modes. Verify that border, muted, and accent color variables support the enhanced Dashboard styling. Add any missing utility classes for professional spacing or typography hierarchy if needed."
         }
       ]
     }

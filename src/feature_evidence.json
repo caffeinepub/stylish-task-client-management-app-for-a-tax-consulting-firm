@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-ensure-the-production-server-configuration-serves-javascript-files-with-the-correct-content-type-header-application-javascript-or-text-javascript-instead-of-text-html-for-js-and-jsx-files",
-      "featureTitle": "Ensure the production server configuration serves JavaScript files with the correct Content-Type header ('application/javascript' or 'text/javascript') instead of 'text/html' for .js and .jsx files.",
+      "featureId": "feature-update-the-dashboard-page-visual-design-frontend-src-pages-dashboardpage-tsx-to-apply-a-more-stylish-modern-aesthetic-appropriate-for-a-tax-consulting-firm-including-enhanced-spacing-typography-hierarchy-color-accents-card-shadows-borders-and-visual-polish-while-maintaining-all-existing-functional-components-metrics-cards-revenue-aggregations-task-breakdowns-drill-down-navigation",
+      "featureTitle": "Update the Dashboard page visual design (frontend/src/pages/DashboardPage.tsx) to apply a more stylish, modern aesthetic appropriate for a tax consulting firm, including enhanced spacing, typography hierarchy, color accents, card shadows/borders, and visual polish while maintaining all existing functional components (metrics cards, revenue aggregations, task breakdowns, drill-down navigation).",
       "files": [
-        "frontend/.ic-assets.json5"
+        "frontend/src/pages/DashboardPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -16,7 +16,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-106"
+        "REQ-107"
       ],
       "confidence": "high"
     }
