@@ -1,89 +1,10 @@
 {
   "kind": "build_request",
-  "title": "Optimize task loading performance",
-  "projectName": "CSWA Client Management",
-  "priority": "high",
-  "requirements": [
-    {
-      "id": "REQ-1",
-      "text": "Implement pagination or virtual scrolling for the task list to avoid loading all 116 tasks at once",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-latest"
-        ],
-        "quotes": [
-          "it is taking time to load"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Task list loads initial page (e.g., 20-50 tasks) within 2 seconds",
-        "Additional tasks load on scroll or page navigation",
-        "Total task count (116) remains visible to users",
-        "Existing search and filter functionality continues to work with paginated data"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Add loading skeleton or progressive rendering for task list items instead of showing generic loading spinner",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-latest"
-        ],
-        "quotes": [
-          "Loading tasks..."
-        ]
-      },
-      "acceptanceCriteria": [
-        "Skeleton UI displays immediately while tasks are loading",
-        "Individual task items render progressively as data becomes available",
-        "User can see partial results before all data is loaded"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Optimize backend query performance for getAllTasks, particularly when including captain details via getAssigneeByCaptainPrincipal",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-latest"
-        ]
-      },
-      "acceptanceCriteria": [
-        "getAllTasks query completes in under 1 second for 116 tasks",
-        "Captain details lookup is optimized to avoid N+1 query pattern",
-        "Backend response size is minimized by only including necessary fields"
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Implement React Query stale-time configuration for tasks to reduce unnecessary refetches on navigation",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-latest"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Tasks query has appropriate staleTime (e.g., 30 seconds) to avoid immediate refetch",
-        "Cache is reused when navigating back to tasks page",
-        "Manual refresh option remains available for users"
-      ]
-    }
-  ],
-  "constraints": [
-    "Maintain existing filter, search, and sort functionality on the Tasks page",
-    "Preserve the current URL parameter structure for deep linking to filtered views",
-    "Do not modify the single-actor backend architecture",
-    "Keep existing bulk operations and Excel export features functional"
-  ],
-  "nonGoals": [
-    "Changing the data model or backend schema",
-    "Implementing real-time updates or WebSocket connections",
-    "Modifying other pages (Dashboard, Clients, Assignees, Todos)",
-    "Adding caching layers external to React Query"
-  ],
+  "title": "Retry deployment",
+  "priority": "normal",
+  "requirements": [],
+  "constraints": [],
+  "nonGoals": [],
   "imageRequirements": {
     "required": [],
     "edits": []

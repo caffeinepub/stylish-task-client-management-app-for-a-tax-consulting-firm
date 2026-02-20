@@ -1,73 +1,20 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-20T01:06:15.641Z",
+  "generatedAt": "2026-02-20T01:24:31.029Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 3,
-    "items": [
-      {
-        "id": "REQ-1",
-        "summary": "Implement pagination or virtual scrolling for the task list to avoid loading all 116 tasks at once",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/tasks.ts",
-          "frontend/src/pages/TasksPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/hooks/tasks.ts",
-          "frontend/src/pages/TasksPage.tsx"
-        ]
-      },
-      {
-        "id": "REQ-2",
-        "summary": "Add loading skeleton or progressive rendering for task list items instead of showing generic loading spinner",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/tasks/TaskListSkeleton.tsx",
-          "frontend/src/pages/TasksPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/tasks/TaskListSkeleton.tsx",
-          "frontend/src/pages/TasksPage.tsx"
-        ]
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Optimize backend query performance for getAllTasks, particularly when including captain details via getAssigneeByCaptainPrincipal",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Implement React Query stale-time configuration for tasks to reduce unnecessary refetches on navigation",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/tasks.ts",
-          "frontend/src/pages/TasksPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/hooks/tasks.ts",
-          "frontend/src/pages/TasksPage.tsx"
-        ]
-      }
-    ]
+    "total": 0,
+    "implemented": 0,
+    "items": []
   },
   "changedFiles": [
-    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
-    "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/tasks/TaskListSkeleton.tsx",
-    "frontend/src/hooks/tasks.ts",
-    "frontend/src/pages/TasksPage.tsx",
-    "frontend/src/utils/taskSort.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",
