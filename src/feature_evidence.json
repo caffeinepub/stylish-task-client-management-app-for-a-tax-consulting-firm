@@ -2,12 +2,12 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-diagnose-and-resolve-the-production-application-loading-failure-that-causes-the-app-to-remain-stuck-on-a-blank-screen-or-loading-state-after-deploying-version-32-with-repeated-console-warnings-visible-in-browser-developer-tools",
-      "featureTitle": "Diagnose and resolve the production application loading failure that causes the app to remain stuck on a blank screen or 'Loading...' state after deploying Version 32, with repeated console warnings visible in browser developer tools.",
+      "featureId": "feature-investigate-and-fix-the-issue-preventing-tasks-from-loading-when-the-tasks-page-is-clicked-verify-that-the-tasks-query-is-executing-correctly-error-boundaries-are-catching-failures-and-loading-states-are-properly-handled-in-taskspage-tsx",
+      "featureTitle": "Investigate and fix the issue preventing tasks from loading when the Tasks page is clicked. Verify that the tasks query is executing correctly, error boundaries are catching failures, and loading states are properly handled in TasksPage.tsx.",
       "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/components/errors/AppStartupErrorBoundary.tsx",
-        "frontend/src/components/errors/StartupErrorScreen.tsx"
+        "frontend/src/components/layout/AppLayout.tsx",
+        "frontend/src/hooks/tasks.ts",
+        "frontend/src/pages/TasksPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -18,16 +18,15 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-113"
+        "REQ-1"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-enhanced-error-logging-in-the-browser-console-during-application-startup-to-capture-detailed-diagnostic-information-about-router-initialization-actor-creation-authentication-state-and-any-errors-that-occur-before-the-first-paint-ensuring-production-issues-can-be-diagnosed-from-user-reported-console-logs",
-      "featureTitle": "Add enhanced error logging in the browser console during application startup to capture detailed diagnostic information about router initialization, actor creation, authentication state, and any errors that occur before the first paint, ensuring production issues can be diagnosed from user-reported console logs.",
+      "featureId": "feature-add-error-logging-and-diagnostics-to-the-tasks-page-component-to-capture-and-report-any-data-fetching-failures-including-query-status-error-messages-and-network-request-details",
+      "featureTitle": "Add error logging and diagnostics to the Tasks page component to capture and report any data fetching failures, including query status, error messages, and network request details.",
       "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/hooks/useDeferredUrlCleanup.ts"
+        "frontend/src/pages/TasksPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -38,67 +37,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-114"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-verify-that-the-usedeferredurlcleanup-hook-frontend-src-hooks-usedeferredurlcleanup-ts-executes-exactly-once-after-mount-does-not-cause-infinite-loops-or-re-renders-and-does-not-interfere-with-tanstack-router-s-initialization-sequence-or-route-rendering",
-      "featureTitle": "Verify that the useDeferredUrlCleanup hook (frontend/src/hooks/useDeferredUrlCleanup.ts) executes exactly once after mount, does not cause infinite loops or re-renders, and does not interfere with TanStack Router's initialization sequence or route rendering.",
-      "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/hooks/useDeferredUrlCleanup.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-115"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-ensure-the-appstartuperrorboundary-component-frontend-src-components-errors-appstartuperrorboundary-tsx-catches-all-errors-during-application-initialization-and-displays-the-startuperrorscreen-with-actionable-error-information-preventing-the-app-from-remaining-in-a-blank-or-frozen-state-when-unexpected-errors-occur",
-      "featureTitle": "Ensure the AppStartupErrorBoundary component (frontend/src/components/errors/AppStartupErrorBoundary.tsx) catches all errors during application initialization and displays the StartupErrorScreen with actionable error information, preventing the app from remaining in a blank or frozen state when unexpected errors occur.",
-      "files": [
-        "frontend/src/components/errors/AppStartupErrorBoundary.tsx",
-        "frontend/src/components/errors/StartupErrorScreen.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-117"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-test-the-production-build-locally-using-a-production-like-server-configuration-to-reproduce-the-loading-failure-verify-javascript-module-serving-with-correct-mime-types-and-ensure-the-application-initializes-correctly-before-deploying-to-production",
-      "featureTitle": "Test the production build locally using a production-like server configuration to reproduce the loading failure, verify JavaScript module serving with correct MIME types, and ensure the application initializes correctly before deploying to production.",
-      "files": [
-        "frontend/.ic-assets.json5",
-        "frontend/index.html"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-118"
+        "REQ-2"
       ],
       "confidence": "high"
     }

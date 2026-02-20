@@ -1,9 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import type { Client, ClientId, PartialClientInput } from '../backend';
+import type { Client, ClientId, PartialClientInput, backendInterface } from '../backend';
+import { toast } from 'sonner';
+import { AnonymousIdentity } from '@dfinity/agent';
+import { createActorWithConfig } from '../config';
 
-export function useGetAllClients() {
-  const { actor, isFetching: actorFetching } = useActor();
+export function useClients() {
+  const { actor, isFetching } = useActor();
 
   return useQuery<Client[]>({
     queryKey: ['clients'],
@@ -11,22 +14,42 @@ export function useGetAllClients() {
       if (!actor) return [];
       return actor.getAllClients();
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !isFetching,
   });
 }
 
-export function useGetClient(clientId: ClientId) {
-  const { actor, isFetching: actorFetching } = useActor();
+// Alias for backward compatibility
+export const useGetAllClients = useClients;
+
+export function usePublicClients() {
+  return useQuery<Client[]>({
+    queryKey: ['publicClients'],
+    queryFn: async () => {
+      const anonymousActor = await createActorWithConfig({
+        agentOptions: {
+          identity: new AnonymousIdentity(),
+        },
+      }) as backendInterface;
+      return anonymousActor.getPublicAllClients();
+    },
+  });
+}
+
+export function useClient(clientId: ClientId | null) {
+  const { actor, isFetching } = useActor();
 
   return useQuery<Client | null>({
-    queryKey: ['client', clientId.toString()],
+    queryKey: ['client', clientId?.toString()],
     queryFn: async () => {
-      if (!actor) return null;
+      if (!actor || clientId === null) return null;
       return actor.getClient(clientId);
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !isFetching && clientId !== null,
   });
 }
+
+// Alias for backward compatibility
+export const useGetClient = useClient;
 
 export function useCreateClient() {
   const { actor } = useActor();
@@ -39,6 +62,10 @@ export function useCreateClient() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
+      toast.success('Client created successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to create client: ${error.message}`);
     },
   });
 }
@@ -48,56 +75,59 @@ export function useUpdateClient() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { clientId: ClientId; client: PartialClientInput }) => {
+    mutationFn: async ({ clientId, client }: { clientId: ClientId; client: PartialClientInput }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.updateClient(data.clientId, data.client);
+      return actor.updateClient(clientId, client);
     },
-    onMutate: async (data) => {
+    onMutate: async ({ clientId, client }) => {
       await queryClient.cancelQueries({ queryKey: ['clients'] });
-      await queryClient.cancelQueries({ queryKey: ['client', data.clientId.toString()] });
+      await queryClient.cancelQueries({ queryKey: ['client', clientId.toString()] });
 
       const previousClients = queryClient.getQueryData<Client[]>(['clients']);
-      const previousClient = queryClient.getQueryData<Client | null>(['client', data.clientId.toString()]);
+      const previousClient = queryClient.getQueryData<Client | null>(['client', clientId.toString()]);
 
       if (previousClients) {
-        queryClient.setQueryData<Client[]>(['clients'], (old) =>
-          old?.map((client) =>
-            client.id === data.clientId
+        queryClient.setQueryData<Client[]>(
+          ['clients'],
+          previousClients.map((c) =>
+            c.id === clientId
               ? {
-                  ...client,
-                  name: data.client.name,
-                  gstin: data.client.gstin ?? undefined,
-                  pan: data.client.pan ?? undefined,
-                  notes: data.client.notes ?? undefined,
+                  ...c,
+                  name: client.name,
+                  gstin: client.gstin,
+                  pan: client.pan,
+                  notes: client.notes,
                 }
-              : client
-          ) || []
+              : c
+          )
         );
       }
 
       if (previousClient) {
-        queryClient.setQueryData<Client | null>(['client', data.clientId.toString()], {
+        queryClient.setQueryData<Client>(['client', clientId.toString()], {
           ...previousClient,
-          name: data.client.name,
-          gstin: data.client.gstin ?? undefined,
-          pan: data.client.pan ?? undefined,
-          notes: data.client.notes ?? undefined,
+          name: client.name,
+          gstin: client.gstin,
+          pan: client.pan,
+          notes: client.notes,
         });
       }
 
       return { previousClients, previousClient };
     },
-    onError: (err, data, context) => {
+    onError: (error: Error, _variables, context) => {
       if (context?.previousClients) {
         queryClient.setQueryData(['clients'], context.previousClients);
       }
       if (context?.previousClient) {
-        queryClient.setQueryData(['client', data.clientId.toString()], context.previousClient);
+        queryClient.setQueryData(['client', _variables.clientId.toString()], context.previousClient);
       }
+      toast.error(`Failed to update client: ${error.message}`);
     },
-    onSettled: (_, __, variables) => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
       queryClient.invalidateQueries({ queryKey: ['client', variables.clientId.toString()] });
+      toast.success('Client updated successfully');
     },
   });
 }
@@ -113,22 +143,10 @@ export function useDeleteClient() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
+      toast.success('Client deleted successfully');
     },
-  });
-}
-
-export function useBulkCreateClients() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (clients: PartialClientInput[]) => {
-      if (!actor) throw new Error('Actor not available');
-      const promises = clients.map(client => actor.createClient(client));
-      return Promise.all(promises);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clients'] });
+    onError: (error: Error) => {
+      toast.error(`Failed to delete client: ${error.message}`);
     },
   });
 }
@@ -140,11 +158,34 @@ export function useBulkDeleteClients() {
   return useMutation({
     mutationFn: async (clientIds: ClientId[]) => {
       if (!actor) throw new Error('Actor not available');
-      const promises = clientIds.map(id => actor.deleteClient(id));
-      return Promise.all(promises);
+      await Promise.all(clientIds.map((id) => actor.deleteClient(id)));
     },
-    onSuccess: () => {
+    onSuccess: (_data, clientIds) => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
+      toast.success(`${clientIds.length} client(s) deleted successfully`);
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to delete clients: ${error.message}`);
+    },
+  });
+}
+
+export function useBulkCreateClients() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (clients: PartialClientInput[]) => {
+      if (!actor) throw new Error('Actor not available');
+      const results = await Promise.all(clients.map((client) => actor.createClient(client)));
+      return results;
+    },
+    onSuccess: (_data, clients) => {
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      toast.success(`${clients.length} client(s) created successfully`);
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to create clients: ${error.message}`);
     },
   });
 }

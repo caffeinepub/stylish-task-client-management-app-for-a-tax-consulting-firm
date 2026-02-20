@@ -1,119 +1,67 @@
 {
   "kind": "build_request",
-  "title": "Fix production application loading failure",
-  "projectName": "CSWA Group of Companies",
+  "title": "Fix Tasks Page Loading Issue",
   "priority": "high",
   "requirements": [
     {
-      "id": "REQ-113",
-      "text": "Diagnose and resolve the production application loading failure that causes the app to remain stuck on a blank screen or 'Loading...' state after deploying Version 32, with repeated console warnings visible in browser developer tools.",
+      "id": "REQ-1",
+      "text": "Investigate and fix the issue preventing tasks from loading when the Tasks page is clicked. Verify that the tasks query is executing correctly, error boundaries are catching failures, and loading states are properly handled in TasksPage.tsx.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-latest"
+          "msg-last"
         ],
         "quotes": [
-          "not loading"
+          "while click tasks ,it is not loading"
         ]
       },
       "acceptanceCriteria": [
-        "The production application loads successfully and renders the root route UI",
-        "Users can navigate to all routes (/dashboard, /tasks, /clients, etc.) without encountering blank screens",
-        "No console errors or warnings related to router initialization, actor creation, or URL parameter handling appear during startup",
-        "The Loading screen transitions to the signed-in or signed-out UI within a reasonable time frame"
+        "Tasks page loads successfully when navigated to from the navigation menu",
+        "Task list displays data or shows appropriate loading/error states",
+        "No JavaScript errors in console when accessing Tasks page",
+        "Page responds within 3 seconds of click"
       ]
     },
     {
-      "id": "REQ-114",
-      "text": "Add enhanced error logging in the browser console during application startup to capture detailed diagnostic information about router initialization, actor creation, authentication state, and any errors that occur before the first paint, ensuring production issues can be diagnosed from user-reported console logs.",
+      "id": "REQ-2",
+      "text": "Add error logging and diagnostics to the Tasks page component to capture and report any data fetching failures, including query status, error messages, and network request details.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-latest"
+          "msg-last"
         ]
       },
       "acceptanceCriteria": [
-        "Console logs clearly indicate each stage of application initialization (router created, actor initialized, authentication checked, etc.)",
-        "Any errors during startup are logged with full stack traces and context",
-        "Production builds include sufficient logging to diagnose loading failures without requiring source maps"
+        "Console logs show clear error messages if tasks query fails",
+        "Loading states are visible to user during data fetch",
+        "Error boundary catches and displays any runtime errors"
       ]
     },
     {
-      "id": "REQ-115",
-      "text": "Verify that the useDeferredUrlCleanup hook (frontend/src/hooks/useDeferredUrlCleanup.ts) executes exactly once after mount, does not cause infinite loops or re-renders, and does not interfere with TanStack Router's initialization sequence or route rendering.",
-      "target": "frontend",
+      "id": "REQ-3",
+      "text": "Verify that the public tasks query endpoint (publicGetTasks) is accessible and functioning correctly, ensuring the backend canister is responding to requests.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-latest"
+          "msg-last"
         ]
       },
       "acceptanceCriteria": [
-        "The useDeferredUrlCleanup hook runs only once after the initial component mount",
-        "No infinite loops or repeated executions of the URL cleanup logic occur",
-        "The hook does not prevent TanStack Router from rendering the root route",
-        "Admin token extraction and URL cleanup complete without causing navigation errors"
-      ]
-    },
-    {
-      "id": "REQ-116",
-      "text": "Review and harden the actor creation logic in frontend/src/hooks/useActor.ts to ensure it does not cause startup failures, does not pass conflicting parameters to createActor (eliminating 'agent and agentOptions both passed' warnings), and gracefully handles missing or invalid admin tokens without blocking application initialization.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-latest"
-        ]
-      },
-      "acceptanceCriteria": [
-        "No console warnings about 'agent and agentOptions both passed to createActor' appear",
-        "Actor creation completes successfully even when admin token is missing or invalid",
-        "Actor initialization errors do not prevent the root route from rendering",
-        "The application can render the signed-out screen when actor/authentication is not ready"
-      ]
-    },
-    {
-      "id": "REQ-117",
-      "text": "Ensure the AppStartupErrorBoundary component (frontend/src/components/errors/AppStartupErrorBoundary.tsx) catches all errors during application initialization and displays the StartupErrorScreen with actionable error information, preventing the app from remaining in a blank or frozen state when unexpected errors occur.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-latest"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Any errors during startup are caught by the error boundary and displayed to users",
-        "The StartupErrorScreen shows clear English error messages without exposing sensitive details",
-        "Users can reload the application from the error screen",
-        "The error boundary does not itself crash or fail to render"
-      ]
-    },
-    {
-      "id": "REQ-118",
-      "text": "Test the production build locally using a production-like server configuration to reproduce the loading failure, verify JavaScript module serving with correct MIME types, and ensure the application initializes correctly before deploying to production.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-latest"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Production build can be tested locally with a static server that mimics IC canister serving behavior",
-        "JavaScript files are served with correct Content-Type headers (application/javascript)",
-        "The application loads successfully in the local production test environment",
-        "All routes render correctly in production mode"
+        "publicGetTasks endpoint returns task data without errors",
+        "Backend canister responds to health check queries",
+        "No 503 or 500 errors when calling backend methods"
       ]
     }
   ],
   "constraints": [
-    "Do not modify immutable frontend paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui",
-    "Maintain single-actor Motoko architecture; do not create multiple backend actors",
-    "Keep all user-facing text in English",
-    "Do not introduce new external dependencies or third-party services"
+    "Do not modify useInternetIdentity.ts or useActor.ts hooks",
+    "Preserve existing public API access patterns for unauthenticated users",
+    "Maintain compatibility with current task data structure and types"
   ],
   "nonGoals": [
-    "Adding new features or functionality beyond fixing the loading failure",
-    "Redesigning the application architecture",
-    "Implementing additional error recovery mechanisms beyond what is needed for startup",
-    "Optimizing performance unrelated to the loading issue"
+    "Redesigning the Tasks page UI",
+    "Adding new task filtering features",
+    "Modifying task data schema"
   ],
   "imageRequirements": {
     "required": [],

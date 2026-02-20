@@ -87,3 +87,21 @@ export function formatAssigneeWithCaptain(
 
   return assignedName;
 }
+
+/**
+ * Format assignee name - simple version for display
+ */
+export function formatAssigneeName(
+  assignedName: string | undefined | null,
+  captainName: string | undefined | null
+): string {
+  if (!assignedName || assignedName.trim() === '') {
+    return PLACEHOLDER;
+  }
+
+  if (captainName && captainName.trim() !== '') {
+    return `${assignedName} (${captainName})`;
+  }
+
+  return assignedName;
+}

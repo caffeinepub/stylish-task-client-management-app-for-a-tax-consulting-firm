@@ -1,49 +1,207 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
+import type { Task, TaskId, TaskWithCaptain, PartialTaskUpdate, backendInterface } from '../backend';
 import { toast } from 'sonner';
-import type { Task, TaskId, TaskWithCaptain, PartialTaskUpdate } from '../backend';
+import { AnonymousIdentity } from '@dfinity/agent';
+import { createActorWithConfig } from '../config';
 
 export function useGetAllTasks() {
-  const { actor, isFetching: actorFetching } = useActor();
+  const { actor, isFetching } = useActor();
 
   return useQuery<TaskWithCaptain[]>({
     queryKey: ['tasks'],
     queryFn: async () => {
-      if (!actor) return [];
-      return actor.getAllTasksWithCaptain();
+      console.log('[useGetAllTasks] Query initiated', {
+        timestamp: new Date().toISOString(),
+        actorAvailable: !!actor,
+        actorFetching: isFetching,
+      });
+      
+      if (!actor) {
+        console.warn('[useGetAllTasks] Actor not available, returning empty array');
+        return [];
+      }
+      
+      const startTime = performance.now();
+      const result = await actor.getAllTasksWithCaptain();
+      const endTime = performance.now();
+      
+      console.log('[useGetAllTasks] Query completed', {
+        timestamp: new Date().toISOString(),
+        duration: `${(endTime - startTime).toFixed(2)}ms`,
+        resultCount: result.length,
+      });
+      
+      return result;
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !isFetching,
   });
 }
 
-export function useGetTask(taskId: TaskId) {
-  const { actor, isFetching: actorFetching } = useActor();
+export function useTasksWithCaptain() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<TaskWithCaptain[]>({
+    queryKey: ['tasksWithCaptain'],
+    queryFn: async () => {
+      console.log('[useTasksWithCaptain] Query initiated', {
+        timestamp: new Date().toISOString(),
+        actorAvailable: !!actor,
+        actorFetching: isFetching,
+      });
+      
+      if (!actor) {
+        console.warn('[useTasksWithCaptain] Actor not available, returning empty array');
+        return [];
+      }
+      
+      const startTime = performance.now();
+      try {
+        const result = await actor.getAllTasksWithCaptain();
+        const endTime = performance.now();
+        
+        console.log('[useTasksWithCaptain] Query completed successfully', {
+          timestamp: new Date().toISOString(),
+          duration: `${(endTime - startTime).toFixed(2)}ms`,
+          resultCount: result.length,
+        });
+        
+        return result;
+      } catch (error) {
+        const endTime = performance.now();
+        console.error('[useTasksWithCaptain] Query failed', {
+          timestamp: new Date().toISOString(),
+          duration: `${(endTime - startTime).toFixed(2)}ms`,
+          error: error instanceof Error ? error.message : String(error),
+          errorStack: error instanceof Error ? error.stack : undefined,
+        });
+        throw error;
+      }
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function usePublicTasks() {
+  return useQuery<Task[]>({
+    queryKey: ['publicTasks'],
+    queryFn: async () => {
+      console.log('[usePublicTasks] Query initiated', {
+        timestamp: new Date().toISOString(),
+      });
+      
+      const startTime = performance.now();
+      try {
+        const anonymousActor = await createActorWithConfig({
+          agentOptions: {
+            identity: new AnonymousIdentity(),
+          },
+        }) as backendInterface;
+        
+        const result = await anonymousActor.getPublicAllTasks();
+        const endTime = performance.now();
+        
+        console.log('[usePublicTasks] Query completed successfully', {
+          timestamp: new Date().toISOString(),
+          duration: `${(endTime - startTime).toFixed(2)}ms`,
+          resultCount: result.length,
+        });
+        
+        return result;
+      } catch (error) {
+        const endTime = performance.now();
+        console.error('[usePublicTasks] Query failed', {
+          timestamp: new Date().toISOString(),
+          duration: `${(endTime - startTime).toFixed(2)}ms`,
+          error: error instanceof Error ? error.message : String(error),
+          errorStack: error instanceof Error ? error.stack : undefined,
+        });
+        throw error;
+      }
+    },
+  });
+}
+
+export function usePublicTasksWithCaptain() {
+  return useQuery<TaskWithCaptain[]>({
+    queryKey: ['publicTasksWithCaptain'],
+    queryFn: async () => {
+      console.log('[usePublicTasksWithCaptain] Query initiated', {
+        timestamp: new Date().toISOString(),
+      });
+      
+      const startTime = performance.now();
+      try {
+        const anonymousActor = await createActorWithConfig({
+          agentOptions: {
+            identity: new AnonymousIdentity(),
+          },
+        }) as backendInterface;
+        
+        const result = await anonymousActor.getPublicTasksWithCaptain();
+        const endTime = performance.now();
+        
+        console.log('[usePublicTasksWithCaptain] Query completed successfully', {
+          timestamp: new Date().toISOString(),
+          duration: `${(endTime - startTime).toFixed(2)}ms`,
+          resultCount: result.length,
+        });
+        
+        return result;
+      } catch (error) {
+        const endTime = performance.now();
+        console.error('[usePublicTasksWithCaptain] Query failed', {
+          timestamp: new Date().toISOString(),
+          duration: `${(endTime - startTime).toFixed(2)}ms`,
+          error: error instanceof Error ? error.message : String(error),
+          errorStack: error instanceof Error ? error.stack : undefined,
+        });
+        throw error;
+      }
+    },
+  });
+}
+
+export function useTask(taskId: TaskId | null) {
+  const { actor, isFetching } = useActor();
 
   return useQuery<Task | null>({
-    queryKey: ['task', taskId.toString()],
+    queryKey: ['task', taskId?.toString()],
     queryFn: async () => {
-      if (!actor) return null;
+      if (!actor || taskId === null) return null;
       return actor.getTask(taskId);
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !isFetching && taskId !== null,
   });
 }
+
+// Alias for backward compatibility
+export const useGetTask = useTask;
 
 export function useCreateTask() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { 
-      clientName: string; 
-      taskCategory: string; 
+    mutationFn: async ({
+      clientName,
+      taskCategory,
+      subCategory,
+    }: {
+      clientName: string;
+      taskCategory: string;
       subCategory: string;
     }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.createTask(data.clientName, data.taskCategory, data.subCategory);
+      return actor.createTask(clientName, taskCategory, subCategory);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['tasksWithCaptain'] });
+      toast.success('Task created successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to create task: ${error.message}`);
     },
   });
 }
@@ -53,8 +211,23 @@ export function useUpdateTask() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { 
-      taskId: TaskId; 
+    mutationFn: async ({
+      taskId,
+      clientName,
+      taskCategory,
+      subCategory,
+      status,
+      comment,
+      assignedName,
+      dueDate,
+      assignmentDate,
+      completionDate,
+      bill,
+      advanceReceived,
+      outstandingAmount,
+      paymentStatus,
+    }: {
+      taskId: TaskId;
       clientName: string;
       taskCategory: string;
       subCategory: string;
@@ -71,217 +244,30 @@ export function useUpdateTask() {
     }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.updateTask(
-        data.taskId,
-        data.clientName,
-        data.taskCategory,
-        data.subCategory,
-        data.status,
-        data.comment,
-        data.assignedName,
-        data.dueDate,
-        data.assignmentDate,
-        data.completionDate,
-        data.bill,
-        data.advanceReceived,
-        data.outstandingAmount,
-        data.paymentStatus
+        taskId,
+        clientName,
+        taskCategory,
+        subCategory,
+        status,
+        comment,
+        assignedName,
+        dueDate,
+        assignmentDate,
+        completionDate,
+        bill,
+        advanceReceived,
+        outstandingAmount,
+        paymentStatus
       );
     },
-    onMutate: async (newTask) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ['tasks'] });
-      await queryClient.cancelQueries({ queryKey: ['task', newTask.taskId.toString()] });
-
-      // Snapshot previous values
-      const previousTasks = queryClient.getQueryData<TaskWithCaptain[]>(['tasks']);
-      const previousTask = queryClient.getQueryData<Task | null>(['task', newTask.taskId.toString()]);
-
-      // Optimistically update tasks list
-      if (previousTasks) {
-        queryClient.setQueryData<TaskWithCaptain[]>(['tasks'], (old) =>
-          old?.map((taskWithCaptain) =>
-            taskWithCaptain.task.id === newTask.taskId
-              ? {
-                  ...taskWithCaptain,
-                  task: {
-                    ...taskWithCaptain.task,
-                    clientName: newTask.clientName,
-                    taskCategory: newTask.taskCategory,
-                    subCategory: newTask.subCategory,
-                    status: newTask.status ?? undefined,
-                    comment: newTask.comment ?? undefined,
-                    assignedName: newTask.assignedName ?? undefined,
-                    dueDate: newTask.dueDate ?? undefined,
-                    assignmentDate: newTask.assignmentDate ?? undefined,
-                    completionDate: newTask.completionDate ?? undefined,
-                    bill: newTask.bill ?? undefined,
-                    advanceReceived: newTask.advanceReceived ?? undefined,
-                    outstandingAmount: newTask.outstandingAmount ?? undefined,
-                    paymentStatus: newTask.paymentStatus ?? undefined,
-                  },
-                }
-              : taskWithCaptain
-          ) || []
-        );
-      }
-
-      // Optimistically update single task
-      if (previousTask) {
-        queryClient.setQueryData<Task | null>(['task', newTask.taskId.toString()], {
-          ...previousTask,
-          clientName: newTask.clientName,
-          taskCategory: newTask.taskCategory,
-          subCategory: newTask.subCategory,
-          status: newTask.status ?? undefined,
-          comment: newTask.comment ?? undefined,
-          assignedName: newTask.assignedName ?? undefined,
-          dueDate: newTask.dueDate ?? undefined,
-          assignmentDate: newTask.assignmentDate ?? undefined,
-          completionDate: newTask.completionDate ?? undefined,
-          bill: newTask.bill ?? undefined,
-          advanceReceived: newTask.advanceReceived ?? undefined,
-          outstandingAmount: newTask.outstandingAmount ?? undefined,
-          paymentStatus: newTask.paymentStatus ?? undefined,
-        });
-      }
-
-      return { previousTasks, previousTask };
-    },
-    onError: (err, newTask, context) => {
-      // Rollback on error
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks'], context.previousTasks);
-      }
-      if (context?.previousTask) {
-        queryClient.setQueryData(['task', newTask.taskId.toString()], context.previousTask);
-      }
-    },
-    onSettled: (_, __, variables) => {
-      // Refetch to ensure consistency
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['tasksWithCaptain'] });
       queryClient.invalidateQueries({ queryKey: ['task', variables.taskId.toString()] });
+      toast.success('Task updated successfully');
     },
-  });
-}
-
-export function useDeleteTask() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (taskId: TaskId) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.deleteTask(taskId);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-    },
-  });
-}
-
-export function useBulkCreateTasks() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (tasks: Array<{ clientName: string; taskCategory: string; subCategory: string }>) => {
-      if (!actor) throw new Error('Actor not available');
-      const promises = tasks.map(task => actor.createTask(task.clientName, task.taskCategory, task.subCategory));
-      return Promise.all(promises);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-    },
-  });
-}
-
-export function useBulkDeleteTasks() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (taskIds: TaskId[]) => {
-      if (!actor) throw new Error('Actor not available');
-      const promises = taskIds.map(id => actor.deleteTask(id));
-      return Promise.all(promises);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-    },
-  });
-}
-
-export function useBulkUpdateTasks() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (updates: Array<PartialTaskUpdate>) => {
-      if (!actor) throw new Error('Actor not available');
-      // Use the backend's bulkUpdateTasks method
-      return actor.bulkUpdateTasks(updates);
-    },
-    onMutate: async (updates) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ['tasks'] });
-
-      // Snapshot previous value
-      const previousTasks = queryClient.getQueryData<TaskWithCaptain[]>(['tasks']);
-
-      // Optimistically update the cache
-      if (previousTasks) {
-        queryClient.setQueryData<TaskWithCaptain[]>(['tasks'], (old) => {
-          if (!old) return [];
-          
-          return old.map((taskWithCaptain) => {
-            // Find if this task has an update
-            const update = updates.find(u => u.id === taskWithCaptain.task.id);
-            if (!update) return taskWithCaptain;
-
-            // Merge the update with existing task data
-            return {
-              ...taskWithCaptain,
-              task: {
-                ...taskWithCaptain.task,
-                ...(update.clientName !== undefined && { clientName: update.clientName }),
-                ...(update.taskCategory !== undefined && { taskCategory: update.taskCategory }),
-                ...(update.subCategory !== undefined && { subCategory: update.subCategory }),
-                ...(update.status !== undefined && { status: update.status }),
-                ...(update.comment !== undefined && { comment: update.comment }),
-                ...(update.assignedName !== undefined && { assignedName: update.assignedName }),
-                ...(update.dueDate !== undefined && { dueDate: update.dueDate }),
-                ...(update.assignmentDate !== undefined && { assignmentDate: update.assignmentDate }),
-                ...(update.completionDate !== undefined && { completionDate: update.completionDate }),
-                ...(update.bill !== undefined && { bill: update.bill }),
-                ...(update.advanceReceived !== undefined && { advanceReceived: update.advanceReceived }),
-                ...(update.outstandingAmount !== undefined && { outstandingAmount: update.outstandingAmount }),
-                ...(update.paymentStatus !== undefined && { paymentStatus: update.paymentStatus }),
-              },
-            };
-          });
-        });
-      }
-
-      return { previousTasks };
-    },
-    onError: (err, updates, context) => {
-      // Rollback on error
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks'], context.previousTasks);
-      }
-      toast.error(`Failed to update tasks: ${err instanceof Error ? err.message : 'Unknown error'}`);
-    },
-    onSuccess: (_, updates) => {
-      // Show success toast
-      toast.success(`${updates.length} task${updates.length === 1 ? '' : 's'} updated successfully`);
-      
-      // Invalidate only tasks queries for consistency
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      
-      // Invalidate individual task queries for updated tasks
-      updates.forEach(update => {
-        queryClient.invalidateQueries({ queryKey: ['task', update.id.toString()] });
-      });
+    onError: (error: Error) => {
+      toast.error(`Failed to update task: ${error.message}`);
     },
   });
 }
@@ -315,13 +301,10 @@ export function useUpdateTaskComment() {
       );
     },
     onMutate: async (data) => {
-      // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['tasks'] });
 
-      // Snapshot previous value
       const previousTasks = queryClient.getQueryData<TaskWithCaptain[]>(['tasks']);
 
-      // Optimistically update
       if (previousTasks) {
         queryClient.setQueryData<TaskWithCaptain[]>(['tasks'], (old) =>
           old?.map((taskWithCaptain) =>
@@ -335,13 +318,131 @@ export function useUpdateTaskComment() {
       return { previousTasks };
     },
     onError: (err, data, context) => {
-      // Rollback on error
       if (context?.previousTasks) {
         queryClient.setQueryData(['tasks'], context.previousTasks);
       }
     },
     onSettled: () => {
-      // Refetch to ensure consistency
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
+  });
+}
+
+export function useBulkUpdateTasks() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (updates: PartialTaskUpdate[]) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.bulkUpdateTasks(updates);
+    },
+    onMutate: async (updates) => {
+      await queryClient.cancelQueries({ queryKey: ['tasks'] });
+      await queryClient.cancelQueries({ queryKey: ['tasksWithCaptain'] });
+
+      const previousTasks = queryClient.getQueryData<TaskWithCaptain[]>(['tasks']);
+      const previousTasksWithCaptain = queryClient.getQueryData<TaskWithCaptain[]>(['tasksWithCaptain']);
+
+      if (previousTasks) {
+        const updatedTasks = previousTasks.map((taskWithCaptain) => {
+          const update = updates.find((u) => u.id === taskWithCaptain.task.id);
+          if (!update) return taskWithCaptain;
+
+          return {
+            ...taskWithCaptain,
+            task: {
+              ...taskWithCaptain.task,
+              clientName: update.clientName ?? taskWithCaptain.task.clientName,
+              taskCategory: update.taskCategory ?? taskWithCaptain.task.taskCategory,
+              subCategory: update.subCategory ?? taskWithCaptain.task.subCategory,
+              status: update.status !== undefined ? update.status : taskWithCaptain.task.status,
+              comment: update.comment !== undefined ? update.comment : taskWithCaptain.task.comment,
+              assignedName: update.assignedName !== undefined ? update.assignedName : taskWithCaptain.task.assignedName,
+              dueDate: update.dueDate !== undefined ? update.dueDate : taskWithCaptain.task.dueDate,
+              assignmentDate: update.assignmentDate !== undefined ? update.assignmentDate : taskWithCaptain.task.assignmentDate,
+              completionDate: update.completionDate !== undefined ? update.completionDate : taskWithCaptain.task.completionDate,
+              bill: update.bill !== undefined ? update.bill : taskWithCaptain.task.bill,
+              advanceReceived: update.advanceReceived !== undefined ? update.advanceReceived : taskWithCaptain.task.advanceReceived,
+              outstandingAmount:
+                update.outstandingAmount !== undefined ? update.outstandingAmount : taskWithCaptain.task.outstandingAmount,
+              paymentStatus: update.paymentStatus !== undefined ? update.paymentStatus : taskWithCaptain.task.paymentStatus,
+            },
+          };
+        });
+        queryClient.setQueryData(['tasks'], updatedTasks);
+      }
+
+      return { previousTasks, previousTasksWithCaptain };
+    },
+    onError: (error: Error, _variables, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(['tasks'], context.previousTasks);
+      }
+      if (context?.previousTasksWithCaptain) {
+        queryClient.setQueryData(['tasksWithCaptain'], context.previousTasksWithCaptain);
+      }
+      toast.error(`Failed to update tasks: ${error.message}`);
+    },
+    onSuccess: (_data, updates) => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['tasksWithCaptain'] });
+      toast.success(`${updates.length} task(s) updated successfully`);
+    },
+  });
+}
+
+export function useDeleteTask() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (taskId: TaskId) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.deleteTask(taskId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['tasksWithCaptain'] });
+      toast.success('Task deleted successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to delete task: ${error.message}`);
+    },
+  });
+}
+
+export function useBulkDeleteTasks() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (taskIds: TaskId[]) => {
+      if (!actor) throw new Error('Actor not available');
+      await Promise.all(taskIds.map((id) => actor.deleteTask(id)));
+    },
+    onSuccess: (_data, taskIds) => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['tasksWithCaptain'] });
+      toast.success(`${taskIds.length} task(s) deleted successfully`);
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to delete tasks: ${error.message}`);
+    },
+  });
+}
+
+export function useBulkCreateTasks() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (tasks: Array<{ clientName: string; taskCategory: string; subCategory: string }>) => {
+      if (!actor) throw new Error('Actor not available');
+      const promises = tasks.map(task => actor.createTask(task.clientName, task.taskCategory, task.subCategory));
+      return Promise.all(promises);
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
   });

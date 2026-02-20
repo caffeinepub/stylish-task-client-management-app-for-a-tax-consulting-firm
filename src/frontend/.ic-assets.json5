@@ -7,7 +7,8 @@
     },
     "cache": {
       "max_age": 31536000
-    }
+    },
+    "allow_raw_access": true
   },
   {
     "match": "**/*.mjs",
@@ -17,7 +18,8 @@
     },
     "cache": {
       "max_age": 31536000
-    }
+    },
+    "allow_raw_access": true
   },
   {
     "match": "**/*.css",
@@ -27,14 +29,6 @@
     },
     "cache": {
       "max_age": 31536000
-    }
-  },
-  {
-    "match": "**/*.html",
-    "headers": {
-      "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": "no-cache, no-store, must-revalidate",
-      "X-Content-Type-Options": "nosniff"
     }
   },
   {
@@ -89,6 +83,22 @@
     },
     "cache": {
       "max_age": 31536000
+    }
+  },
+  {
+    "match": "index.html",
+    "headers": {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      "X-Content-Type-Options": "nosniff"
+    }
+  },
+  {
+    "match": "**/*.html",
+    "headers": {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      "X-Content-Type-Options": "nosniff"
     }
   },
   {

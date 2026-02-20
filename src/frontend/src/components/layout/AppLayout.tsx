@@ -36,6 +36,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return currentPath.startsWith(path);
   };
 
+  const handleNavClick = (path: string, label: string) => {
+    console.log('[AppLayout] Navigation clicked', {
+      timestamp: new Date().toISOString(),
+      targetPath: path,
+      targetLabel: label,
+      currentPath,
+    });
+  };
+
   const NavLinks = ({ mobile = false }: { mobile?: boolean }) => (
     <>
       {navItems.map((item) => {
@@ -50,7 +59,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 ? 'bg-[oklch(0.50_0.08_130)] text-white dark:bg-[oklch(0.65_0.08_130)] dark:text-[oklch(0.15_0_0)]'
                 : 'text-[oklch(0.35_0_0)] hover:bg-[oklch(0.95_0_0)] dark:text-[oklch(0.85_0_0)] dark:hover:bg-[oklch(0.25_0_0)]'
             }`}
-            onClick={() => mobile && setMobileMenuOpen(false)}
+            onClick={() => {
+              handleNavClick(item.path, item.label);
+              if (mobile) setMobileMenuOpen(false);
+            }}
           >
             <Icon className="h-5 w-5" />
             <span className="font-medium">{item.label}</span>

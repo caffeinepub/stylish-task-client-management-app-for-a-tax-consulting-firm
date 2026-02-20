@@ -1,153 +1,239 @@
-import { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTasksWithCaptain, usePublicTasksWithCaptain, useBulkDeleteTasks } from '../hooks/tasks';
+import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, Search, AlertCircle, CheckSquare, Upload, Edit, Trash2, X, Download, ArrowUpDown, Check, ChevronsUpDown } from 'lucide-react';
-import { useGetAllTasks, useBulkDeleteTasks } from '../hooks/tasks';
-import { useGetAllClients } from '../hooks/clients';
-import { useGetAllAssignees } from '../hooks/assignees';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import TaskFormDialog from '../components/tasks/TaskFormDialog';
-import TaskQuickStatus from '../components/tasks/TaskQuickStatus';
 import TaskBulkUploadDialog from '../components/tasks/TaskBulkUploadDialog';
 import TaskBulkEditDialog from '../components/tasks/TaskBulkEditDialog';
+import TaskQuickStatus from '../components/tasks/TaskQuickStatus';
 import InlineCommentEditor from '../components/tasks/InlineCommentEditor';
-import { ALLOWED_TASK_STATUSES, isCompletedStatus, getStatusDisplayLabel } from '../constants/taskStatus';
+import { Search, Plus, Upload, Trash2, Edit, Download, ArrowUpDown, Loader2 } from 'lucide-react';
+import type { TaskId, TaskWithCaptain, Task } from '../backend';
 import { exportTasksToExcel } from '../utils/taskExcel';
-import { SortField, SortDirection, sortTasks } from '../utils/taskSort';
-import { formatTaskDate, formatCurrency, formatOptionalText, formatAssigneeWithCaptain } from '../utils/taskDisplay';
-import { cn } from '@/lib/utils';
-import type { Task, TaskWithCaptain } from '../backend';
+import { toast } from 'sonner';
+import { formatTaskDate, formatAssigneeName } from '../utils/taskDisplay';
+import { sortTasks, type SortField, type SortDirection } from '../utils/taskSort';
 
 export default function TasksPage() {
   const navigate = useNavigate();
-  const searchParams = useSearch({ from: '/tasks' }) as { overdue?: string; status?: string; taskCategory?: string; subCategory?: string };
-  
-  const { data: tasksWithCaptain, isLoading: tasksLoading, error: tasksError, refetch: refetchTasks } = useGetAllTasks();
-  const { data: clients } = useGetAllClients();
-  const { data: assignees } = useGetAllAssignees();
-  
+  const { identity } = useInternetIdentity();
+  const isAuthenticated = !!identity;
+
+  const searchParams = useSearch({ strict: false }) as Record<string, string | undefined>;
+  const urlClientName = searchParams.clientName;
+  const urlTaskCategory = searchParams.taskCategory;
+  const urlSubCategory = searchParams.subCategory;
+  const urlStatus = searchParams.status;
+
+  // Enhanced logging for task queries
+  const authenticatedTasksQuery = useTasksWithCaptain();
+  const publicTasksQuery = usePublicTasksWithCaptain();
+
+  // Log query states on mount and changes
+  useEffect(() => {
+    console.log('[TasksPage] Component mounted', {
+      timestamp: new Date().toISOString(),
+      isAuthenticated,
+      authenticatedQuery: {
+        isLoading: authenticatedTasksQuery.isLoading,
+        isFetching: authenticatedTasksQuery.isFetching,
+        isError: authenticatedTasksQuery.isError,
+        error: authenticatedTasksQuery.error,
+        dataLength: authenticatedTasksQuery.data?.length,
+      },
+      publicQuery: {
+        isLoading: publicTasksQuery.isLoading,
+        isFetching: publicTasksQuery.isFetching,
+        isError: publicTasksQuery.isError,
+        error: publicTasksQuery.error,
+        dataLength: publicTasksQuery.data?.length,
+      },
+    });
+  }, []);
+
+  useEffect(() => {
+    console.log('[TasksPage] Query state changed', {
+      timestamp: new Date().toISOString(),
+      isAuthenticated,
+      activeQuery: isAuthenticated ? 'authenticated' : 'public',
+      authenticatedQuery: {
+        isLoading: authenticatedTasksQuery.isLoading,
+        isFetching: authenticatedTasksQuery.isFetching,
+        isError: authenticatedTasksQuery.isError,
+        error: authenticatedTasksQuery.error?.message,
+        dataLength: authenticatedTasksQuery.data?.length,
+        status: authenticatedTasksQuery.status,
+        fetchStatus: authenticatedTasksQuery.fetchStatus,
+      },
+      publicQuery: {
+        isLoading: publicTasksQuery.isLoading,
+        isFetching: publicTasksQuery.isFetching,
+        isError: publicTasksQuery.isError,
+        error: publicTasksQuery.error?.message,
+        dataLength: publicTasksQuery.data?.length,
+        status: publicTasksQuery.status,
+        fetchStatus: publicTasksQuery.fetchStatus,
+      },
+    });
+  }, [
+    isAuthenticated,
+    authenticatedTasksQuery.isLoading,
+    authenticatedTasksQuery.isFetching,
+    authenticatedTasksQuery.isError,
+    authenticatedTasksQuery.data,
+    publicTasksQuery.isLoading,
+    publicTasksQuery.isFetching,
+    publicTasksQuery.isError,
+    publicTasksQuery.data,
+  ]);
+
+  const tasksWithCaptain = isAuthenticated ? (authenticatedTasksQuery.data || []) : (publicTasksQuery.data || []);
+  const isLoading = isAuthenticated ? authenticatedTasksQuery.isLoading : publicTasksQuery.isLoading;
+  const isFetching = isAuthenticated ? authenticatedTasksQuery.isFetching : publicTasksQuery.isFetching;
+  const isError = isAuthenticated ? authenticatedTasksQuery.isError : publicTasksQuery.isError;
+  const error = isAuthenticated ? authenticatedTasksQuery.error : publicTasksQuery.error;
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [subCategoryFilter, setSubCategoryFilter] = useState<string>('all');
-  const [clientFilter, setClientFilter] = useState<string>('all');
-  const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
-  const [overdueFilter, setOverdueFilter] = useState<boolean>(false);
-  const [sortField, setSortField] = useState<SortField>('dueDate');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [filterClientName, setFilterClientName] = useState(urlClientName || '');
+  const [filterTaskCategory, setFilterTaskCategory] = useState(urlTaskCategory || '');
+  const [filterSubCategory, setFilterSubCategory] = useState(urlSubCategory || '');
+  const [filterAssignedName, setFilterAssignedName] = useState('');
+  const [filterStatus, setFilterStatus] = useState(urlStatus || '');
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<TaskId>>(new Set());
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [isBulkEditDialogOpen, setIsBulkEditDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
-  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
-  const [bulkEditOpen, setBulkEditOpen] = useState(false);
-  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
+  const [sortField, setSortField] = useState<SortField>('createdAt');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
-  // Combobox open states
-  const [clientFilterOpen, setClientFilterOpen] = useState(false);
-  const [categoryFilterOpen, setCategoryFilterOpen] = useState(false);
-  const [subCategoryFilterOpen, setSubCategoryFilterOpen] = useState(false);
-  const [statusFilterOpen, setStatusFilterOpen] = useState(false);
-  const [assigneeFilterOpen, setAssigneeFilterOpen] = useState(false);
+  const bulkDeleteMutation = useBulkDeleteTasks();
 
-  const { mutate: bulkDeleteTasks, isPending: isDeleting } = useBulkDeleteTasks();
+  // Initialize filters from URL
+  useEffect(() => {
+    if (urlClientName) setFilterClientName(urlClientName);
+    if (urlTaskCategory) setFilterTaskCategory(urlTaskCategory);
+    if (urlSubCategory) setFilterSubCategory(urlSubCategory);
+    if (urlStatus) setFilterStatus(urlStatus);
+  }, [urlClientName, urlTaskCategory, urlSubCategory, urlStatus]);
 
-  // Extract tasks from TaskWithCaptain for filtering and sorting
-  const tasks = useMemo(() => {
-    return tasksWithCaptain?.map(twc => twc.task) || [];
+  const uniqueClientNames = useMemo(() => {
+    const names = new Set(tasksWithCaptain.map((t) => t.task.clientName));
+    return Array.from(names).sort();
   }, [tasksWithCaptain]);
 
-  // Initialize filters from URL search params
-  useEffect(() => {
-    if (searchParams.overdue === 'true') {
-      setOverdueFilter(true);
-    }
-    if (searchParams.status) {
-      setStatusFilter(searchParams.status);
-    }
-    if (searchParams.taskCategory) {
-      setCategoryFilter(searchParams.taskCategory);
-    }
-    if (searchParams.subCategory) {
-      setSubCategoryFilter(searchParams.subCategory);
-    }
-  }, [searchParams]);
-
-  // Get unique categories, sub categories, clients, and assignees for filter dropdowns
-  const uniqueCategories = useMemo(() => {
-    if (!tasks) return [];
-    const categories = new Set(tasks.map(t => t.taskCategory));
+  const uniqueTaskCategories = useMemo(() => {
+    const categories = new Set(tasksWithCaptain.map((t) => t.task.taskCategory));
     return Array.from(categories).sort();
-  }, [tasks]);
+  }, [tasksWithCaptain]);
 
   const uniqueSubCategories = useMemo(() => {
-    if (!tasks) return [];
-    const subCategories = new Set(tasks.map(t => t.subCategory));
+    const subCategories = new Set(tasksWithCaptain.map((t) => t.task.subCategory));
     return Array.from(subCategories).sort();
-  }, [tasks]);
+  }, [tasksWithCaptain]);
 
-  const uniqueClients = useMemo(() => {
-    if (!clients) return [];
-    return clients.map(c => c.name).sort();
-  }, [clients]);
+  const uniqueAssignedNames = useMemo(() => {
+    const names = new Set(
+      tasksWithCaptain.map((t) => t.task.assignedName).filter((name): name is string => !!name)
+    );
+    return Array.from(names).sort();
+  }, [tasksWithCaptain]);
 
-  const uniqueAssignees = useMemo(() => {
-    if (!assignees) return [];
-    return assignees.map(a => a.name).sort();
-  }, [assignees]);
+  const uniqueStatuses = useMemo(() => {
+    const statuses = new Set(
+      tasksWithCaptain.map((t) => t.task.status).filter((status): status is string => !!status)
+    );
+    return Array.from(statuses).sort();
+  }, [tasksWithCaptain]);
 
   const filteredTasks = useMemo(() => {
-    if (!tasks) return [];
-    
-    const now = Date.now();
-    
-    return tasks.filter((task) => {
-      const matchesSearch = 
-        task.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.taskCategory.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.subCategory.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (task.comment && task.comment.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (task.assignedName && task.assignedName.toLowerCase().includes(searchQuery.toLowerCase()));
+    let result = tasksWithCaptain;
 
-      const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
-      const matchesCategory = categoryFilter === 'all' || task.taskCategory === categoryFilter;
-      const matchesSubCategory = subCategoryFilter === 'all' || task.subCategory === subCategoryFilter;
-      const matchesClient = clientFilter === 'all' || task.clientName === clientFilter;
-      const matchesAssignee = assigneeFilter === 'all' || task.assignedName === assigneeFilter;
-      
-      const isOverdue = task.dueDate && !isCompletedStatus(task.status) && Number(task.dueDate) / 1_000_000 < now;
-      const matchesOverdue = !overdueFilter || isOverdue;
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (t) =>
+          t.task.clientName.toLowerCase().includes(query) ||
+          t.task.taskCategory.toLowerCase().includes(query) ||
+          t.task.subCategory.toLowerCase().includes(query) ||
+          t.task.comment?.toLowerCase().includes(query)
+      );
+    }
 
-      return matchesSearch && matchesStatus && matchesCategory && matchesSubCategory && matchesClient && matchesAssignee && matchesOverdue;
+    if (filterClientName) {
+      result = result.filter((t) => t.task.clientName === filterClientName);
+    }
+
+    if (filterTaskCategory) {
+      result = result.filter((t) => t.task.taskCategory === filterTaskCategory);
+    }
+
+    if (filterSubCategory) {
+      result = result.filter((t) => t.task.subCategory === filterSubCategory);
+    }
+
+    if (filterAssignedName) {
+      result = result.filter((t) => t.task.assignedName === filterAssignedName);
+    }
+
+    if (filterStatus) {
+      result = result.filter((t) => t.task.status === filterStatus);
+    }
+
+    const tasks = result.map((t) => t.task);
+    const sortedTasks = sortTasks(tasks, sortField, sortDirection);
+    
+    return sortedTasks.map((task) => {
+      const original = tasksWithCaptain.find((t) => t.task.id === task.id);
+      return original || { task, captainName: undefined };
     });
-  }, [tasks, searchQuery, statusFilter, categoryFilter, subCategoryFilter, clientFilter, assigneeFilter, overdueFilter]);
+  }, [
+    tasksWithCaptain,
+    searchQuery,
+    filterClientName,
+    filterTaskCategory,
+    filterSubCategory,
+    filterAssignedName,
+    filterStatus,
+    sortField,
+    sortDirection,
+  ]);
 
-  const sortedTasks = useMemo(() => {
-    return sortTasks(filteredTasks, sortField, sortDirection);
-  }, [filteredTasks, sortField, sortDirection]);
-
+  // Get selected tasks as Task objects
   const selectedTasks = useMemo(() => {
-    return sortedTasks.filter(task => selectedTaskIds.has(task.id.toString()));
-  }, [sortedTasks, selectedTaskIds]);
+    return tasksWithCaptain
+      .filter((twc) => selectedTaskIds.has(twc.task.id))
+      .map((twc) => twc.task);
+  }, [tasksWithCaptain, selectedTaskIds]);
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedTaskIds(new Set(sortedTasks.map(t => t.id.toString())));
+      setSelectedTaskIds(new Set(filteredTasks.map((t) => t.task.id)));
     } else {
       setSelectedTaskIds(new Set());
     }
   };
 
-  const handleSelectTask = (taskId: string, checked: boolean) => {
+  const handleSelectTask = (taskId: TaskId, checked: boolean) => {
     const newSelected = new Set(selectedTaskIds);
     if (checked) {
       newSelected.add(taskId);
@@ -157,22 +243,20 @@ export default function TasksPage() {
     setSelectedTaskIds(newSelected);
   };
 
-  const handleBulkDelete = () => {
-    const taskIds = Array.from(selectedTaskIds).map(id => BigInt(id));
-    bulkDeleteTasks(taskIds, {
-      onSuccess: () => {
-        setSelectedTaskIds(new Set());
-        setDeleteDialogOpen(false);
-      },
-    });
+  const handleBulkDelete = async () => {
+    if (selectedTaskIds.size === 0) return;
+    if (!confirm(`Delete ${selectedTaskIds.size} task(s)?`)) return;
+
+    await bulkDeleteMutation.mutateAsync(Array.from(selectedTaskIds));
+    setSelectedTaskIds(new Set());
   };
 
   const handleExport = async () => {
-    setIsExporting(true);
     try {
-      await exportTasksToExcel(sortedTasks);
-    } finally {
-      setIsExporting(false);
+      await exportTasksToExcel(filteredTasks);
+      toast.success('Tasks exported successfully');
+    } catch (error) {
+      toast.error('Failed to export tasks');
     }
   };
 
@@ -185,433 +269,273 @@ export default function TasksPage() {
     }
   };
 
-  const clearFilters = () => {
-    setStatusFilter('all');
-    setCategoryFilter('all');
-    setSubCategoryFilter('all');
-    setClientFilter('all');
-    setAssigneeFilter('all');
-    setOverdueFilter(false);
-    setSearchQuery('');
-  };
+  const allSelected = filteredTasks.length > 0 && selectedTaskIds.size === filteredTasks.length;
+  const someSelected = selectedTaskIds.size > 0 && selectedTaskIds.size < filteredTasks.length;
 
-  const hasActiveFilters = statusFilter !== 'all' || categoryFilter !== 'all' || subCategoryFilter !== 'all' || clientFilter !== 'all' || assigneeFilter !== 'all' || overdueFilter || searchQuery !== '';
-
-  if (tasksError) {
+  // Show error state
+  if (isError) {
+    console.error('[TasksPage] Error loading tasks:', error);
     return (
-      <div className="container mx-auto p-6">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            {tasksError instanceof Error ? tasksError.message : 'Failed to load tasks'}
-          </AlertDescription>
-        </Alert>
+      <div className="container mx-auto py-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Tasks</h1>
+        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center py-8">
+              <p className="text-destructive font-semibold mb-2">Error loading tasks</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                {error instanceof Error ? error.message : 'An unknown error occurred'}
+              </p>
+              <Button onClick={() => window.location.reload()}>Reload Page</Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto py-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Tasks</h1>
+        {isAuthenticated && (
+          <div className="flex gap-2">
+            <Button onClick={() => setIsCreateDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Task
+            </Button>
+          </div>
+        )}
+      </div>
+
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <CardTitle>Tasks</CardTitle>
-              <CardDescription>Manage and track all your tasks</CardDescription>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={() => { setEditingTask(undefined); setDialogOpen(true); }}>
-                <Plus className="mr-2 h-4 w-4" />
-                New Task
-              </Button>
-              <Button variant="outline" onClick={() => setBulkUploadOpen(true)}>
-                <Upload className="mr-2 h-4 w-4" />
-                Bulk Upload
-              </Button>
-            </div>
-          </div>
+          <CardTitle>Search & Filter</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Search and Filters */}
-          <div className="flex flex-col gap-4">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search tasks..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <Button variant="outline" onClick={handleExport} disabled={isExporting || sortedTasks.length === 0}>
-                <Download className="mr-2 h-4 w-4" />
-                {isExporting ? 'Exporting...' : 'Export'}
-              </Button>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search tasks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <Select value={filterClientName} onValueChange={setFilterClientName}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Client Name" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Clients</SelectItem>
+                  {uniqueClientNames.map((name) => (
+                    <SelectItem key={name} value={name}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            <div className="flex flex-wrap gap-2">
-              {/* Client Filter - Searchable */}
-              <Popover open={clientFilterOpen} onOpenChange={setClientFilterOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" role="combobox" aria-expanded={clientFilterOpen} className="justify-between min-w-[150px]">
-                    {clientFilter === 'all' ? 'All Clients' : clientFilter}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[200px] p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder="Search client..." />
-                    <CommandList>
-                      <CommandEmpty>No client found.</CommandEmpty>
-                      <CommandGroup>
-                        <CommandItem
-                          value="all"
-                          onSelect={() => {
-                            setClientFilter('all');
-                            setClientFilterOpen(false);
-                          }}
-                        >
-                          <Check className={cn("mr-2 h-4 w-4", clientFilter === 'all' ? "opacity-100" : "opacity-0")} />
-                          All Clients
-                        </CommandItem>
-                        {uniqueClients.map((client) => (
-                          <CommandItem
-                            key={client}
-                            value={client}
-                            onSelect={(currentValue) => {
-                              setClientFilter(currentValue);
-                              setClientFilterOpen(false);
-                            }}
-                          >
-                            <Check className={cn("mr-2 h-4 w-4", clientFilter === client ? "opacity-100" : "opacity-0")} />
-                            {client}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+              <Select value={filterTaskCategory} onValueChange={setFilterTaskCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Task Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Categories</SelectItem>
+                  {uniqueTaskCategories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-              {/* Category Filter - Searchable */}
-              <Popover open={categoryFilterOpen} onOpenChange={setCategoryFilterOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" role="combobox" aria-expanded={categoryFilterOpen} className="justify-between min-w-[150px]">
-                    {categoryFilter === 'all' ? 'All Categories' : categoryFilter}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[200px] p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder="Search category..." />
-                    <CommandList>
-                      <CommandEmpty>No category found.</CommandEmpty>
-                      <CommandGroup>
-                        <CommandItem
-                          value="all"
-                          onSelect={() => {
-                            setCategoryFilter('all');
-                            setCategoryFilterOpen(false);
-                          }}
-                        >
-                          <Check className={cn("mr-2 h-4 w-4", categoryFilter === 'all' ? "opacity-100" : "opacity-0")} />
-                          All Categories
-                        </CommandItem>
-                        {uniqueCategories.map((cat) => (
-                          <CommandItem
-                            key={cat}
-                            value={cat}
-                            onSelect={(currentValue) => {
-                              setCategoryFilter(currentValue);
-                              setCategoryFilterOpen(false);
-                            }}
-                          >
-                            <Check className={cn("mr-2 h-4 w-4", categoryFilter === cat ? "opacity-100" : "opacity-0")} />
-                            {cat}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+              <Select value={filterSubCategory} onValueChange={setFilterSubCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sub Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Sub-Categories</SelectItem>
+                  {uniqueSubCategories.map((subCategory) => (
+                    <SelectItem key={subCategory} value={subCategory}>
+                      {subCategory}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-              {/* Sub Category Filter - Searchable */}
-              <Popover open={subCategoryFilterOpen} onOpenChange={setSubCategoryFilterOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" role="combobox" aria-expanded={subCategoryFilterOpen} className="justify-between min-w-[150px]">
-                    {subCategoryFilter === 'all' ? 'All Sub Categories' : subCategoryFilter}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[200px] p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder="Search sub category..." />
-                    <CommandList>
-                      <CommandEmpty>No sub category found.</CommandEmpty>
-                      <CommandGroup>
-                        <CommandItem
-                          value="all"
-                          onSelect={() => {
-                            setSubCategoryFilter('all');
-                            setSubCategoryFilterOpen(false);
-                          }}
-                        >
-                          <Check className={cn("mr-2 h-4 w-4", subCategoryFilter === 'all' ? "opacity-100" : "opacity-0")} />
-                          All Sub Categories
-                        </CommandItem>
-                        {uniqueSubCategories.map((subCat) => (
-                          <CommandItem
-                            key={subCat}
-                            value={subCat}
-                            onSelect={(currentValue) => {
-                              setSubCategoryFilter(currentValue);
-                              setSubCategoryFilterOpen(false);
-                            }}
-                          >
-                            <Check className={cn("mr-2 h-4 w-4", subCategoryFilter === subCat ? "opacity-100" : "opacity-0")} />
-                            {subCat}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+              <Select value={filterAssignedName} onValueChange={setFilterAssignedName}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Assigned Name" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Assignees</SelectItem>
+                  {uniqueAssignedNames.map((name) => (
+                    <SelectItem key={name} value={name}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-              {/* Assignee Filter - Searchable */}
-              <Popover open={assigneeFilterOpen} onOpenChange={setAssigneeFilterOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" role="combobox" aria-expanded={assigneeFilterOpen} className="justify-between min-w-[150px]">
-                    {assigneeFilter === 'all' ? 'All Assignees' : assigneeFilter}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[200px] p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder="Search assignee..." />
-                    <CommandList>
-                      <CommandEmpty>No assignee found.</CommandEmpty>
-                      <CommandGroup>
-                        <CommandItem
-                          value="all"
-                          onSelect={() => {
-                            setAssigneeFilter('all');
-                            setAssigneeFilterOpen(false);
-                          }}
-                        >
-                          <Check className={cn("mr-2 h-4 w-4", assigneeFilter === 'all' ? "opacity-100" : "opacity-0")} />
-                          All Assignees
-                        </CommandItem>
-                        {uniqueAssignees.map((assignee) => (
-                          <CommandItem
-                            key={assignee}
-                            value={assignee}
-                            onSelect={(currentValue) => {
-                              setAssigneeFilter(currentValue);
-                              setAssigneeFilterOpen(false);
-                            }}
-                          >
-                            <Check className={cn("mr-2 h-4 w-4", assigneeFilter === assignee ? "opacity-100" : "opacity-0")} />
-                            {assignee}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-
-              {/* Status Filter - Searchable */}
-              <Popover open={statusFilterOpen} onOpenChange={setStatusFilterOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" role="combobox" aria-expanded={statusFilterOpen} className="justify-between min-w-[150px]">
-                    {statusFilter === 'all' ? 'All Statuses' : getStatusDisplayLabel(statusFilter)}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[200px] p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder="Search status..." />
-                    <CommandList>
-                      <CommandEmpty>No status found.</CommandEmpty>
-                      <CommandGroup>
-                        <CommandItem
-                          value="all"
-                          onSelect={() => {
-                            setStatusFilter('all');
-                            setStatusFilterOpen(false);
-                          }}
-                        >
-                          <Check className={cn("mr-2 h-4 w-4", statusFilter === 'all' ? "opacity-100" : "opacity-0")} />
-                          All Statuses
-                        </CommandItem>
-                        {ALLOWED_TASK_STATUSES.map((status) => (
-                          <CommandItem
-                            key={status}
-                            value={status}
-                            onSelect={(currentValue) => {
-                              setStatusFilter(currentValue);
-                              setStatusFilterOpen(false);
-                            }}
-                          >
-                            <Check className={cn("mr-2 h-4 w-4", statusFilter === status ? "opacity-100" : "opacity-0")} />
-                            {getStatusDisplayLabel(status)}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-
-              <Button
-                variant={overdueFilter ? 'default' : 'outline'}
-                onClick={() => setOverdueFilter(!overdueFilter)}
-              >
-                Overdue Only
-              </Button>
-
-              {hasActiveFilters && (
-                <Button variant="ghost" onClick={clearFilters}>
-                  <X className="mr-2 h-4 w-4" />
-                  Clear Filters
-                </Button>
-              )}
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Statuses</SelectItem>
+                  {uniqueStatuses.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
+        </CardContent>
+      </Card>
 
-          {/* Bulk Actions */}
-          {selectedTaskIds.size > 0 && (
-            <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-              <CheckSquare className="h-4 w-4" />
-              <span className="text-sm font-medium">{selectedTaskIds.size} task(s) selected</span>
-              <div className="flex gap-2 ml-auto">
-                <Button size="sm" variant="outline" onClick={() => setBulkEditOpen(true)}>
-                  <Edit className="mr-2 h-4 w-4" />
+      {isAuthenticated && selectedTaskIds.size > 0 && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-muted-foreground">
+                {selectedTaskIds.size} task(s) selected
+              </span>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => setIsUploadDialogOpen(true)}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Bulk Upload
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setIsBulkEditDialogOpen(true)}>
+                  <Edit className="h-4 w-4 mr-2" />
                   Bulk Edit
                 </Button>
-                <Button size="sm" variant="destructive" onClick={() => setDeleteDialogOpen(true)}>
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleBulkDelete}
+                  disabled={bulkDeleteMutation.isPending}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Selected
                 </Button>
               </div>
             </div>
-          )}
+          </CardContent>
+        </Card>
+      )}
 
-          {/* Tasks Table */}
-          {tasksLoading ? (
-            <div className="space-y-2">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Task List ({filteredTasks.length})</CardTitle>
+          <Button variant="outline" size="sm" onClick={handleExport}>
+            <Download className="h-4 w-4 mr-2" />
+            Export to Excel
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {isLoading || isFetching ? (
+            <div className="text-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+              <p className="text-muted-foreground">Loading tasks...</p>
+              <p className="text-xs text-muted-foreground mt-2">
+                {isAuthenticated ? 'Fetching authenticated tasks' : 'Fetching public tasks'}
+              </p>
             </div>
-          ) : sortedTasks.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              {hasActiveFilters ? 'No tasks match your filters' : 'No tasks yet. Create your first task!'}
+          ) : filteredTasks.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              {searchQuery || filterClientName || filterTaskCategory || filterSubCategory || filterAssignedName || filterStatus
+                ? 'No tasks found matching your filters.'
+                : 'No tasks yet.'}
             </div>
           ) : (
-            <div className="border rounded-lg overflow-x-auto">
+            <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-12">
-                      <Checkbox
-                        checked={selectedTaskIds.size === sortedTasks.length && sortedTasks.length > 0}
-                        onCheckedChange={handleSelectAll}
-                      />
+                    {isAuthenticated && (
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={allSelected}
+                          onCheckedChange={handleSelectAll}
+                          aria-label="Select all"
+                          className={someSelected ? 'data-[state=checked]:bg-primary/50' : ''}
+                        />
+                      </TableHead>
+                    )}
+                    <TableHead>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleSort('clientName')}
+                        className="h-8 px-2"
+                      >
+                        Client Name
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                      </Button>
                     </TableHead>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort('clientName')}>
-                      <div className="flex items-center gap-1">
-                        Client {sortField === 'clientName' && <ArrowUpDown className="h-3 w-3" />}
-                      </div>
-                    </TableHead>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort('taskCategory')}>
-                      <div className="flex items-center gap-1">
-                        Category {sortField === 'taskCategory' && <ArrowUpDown className="h-3 w-3" />}
-                      </div>
-                    </TableHead>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort('subCategory')}>
-                      <div className="flex items-center gap-1">
-                        Sub Category {sortField === 'subCategory' && <ArrowUpDown className="h-3 w-3" />}
-                      </div>
-                    </TableHead>
+                    <TableHead>Task Category</TableHead>
+                    <TableHead>Sub Category</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Comment</TableHead>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort('assignedName')}>
-                      <div className="flex items-center gap-1">
-                        Assigned {sortField === 'assignedName' && <ArrowUpDown className="h-3 w-3" />}
-                      </div>
-                    </TableHead>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort('dueDate')}>
-                      <div className="flex items-center gap-1">
-                        Due Date {sortField === 'dueDate' && <ArrowUpDown className="h-3 w-3" />}
-                      </div>
-                    </TableHead>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort('assignmentDate')}>
-                      <div className="flex items-center gap-1">
-                        Assignment {sortField === 'assignmentDate' && <ArrowUpDown className="h-3 w-3" />}
-                      </div>
-                    </TableHead>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort('completionDate')}>
-                      <div className="flex items-center gap-1">
-                        Completion {sortField === 'completionDate' && <ArrowUpDown className="h-3 w-3" />}
-                      </div>
-                    </TableHead>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort('bill')}>
-                      <div className="flex items-center gap-1">
-                        Bill {sortField === 'bill' && <ArrowUpDown className="h-3 w-3" />}
-                      </div>
-                    </TableHead>
-                    <TableHead>Advance</TableHead>
-                    <TableHead>Outstanding</TableHead>
-                    <TableHead>Payment Status</TableHead>
-                    <TableHead className="w-12">Actions</TableHead>
+                    <TableHead>Assignee</TableHead>
+                    <TableHead>Due Date</TableHead>
+                    {isAuthenticated && <TableHead className="text-right">Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sortedTasks.map((task) => {
-                    const taskWithCaptain = tasksWithCaptain?.find(twc => twc.task.id === task.id);
-                    const captainName = taskWithCaptain?.captainName;
-                    
+                  {filteredTasks.map((taskWithCaptain) => {
+                    const task = taskWithCaptain.task;
                     return (
                       <TableRow key={task.id.toString()}>
-                        <TableCell>
-                          <Checkbox
-                            checked={selectedTaskIds.has(task.id.toString())}
-                            onCheckedChange={(checked) => handleSelectTask(task.id.toString(), checked as boolean)}
-                          />
-                        </TableCell>
+                        {isAuthenticated && (
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedTaskIds.has(task.id)}
+                              onCheckedChange={(checked) =>
+                                handleSelectTask(task.id, checked as boolean)
+                              }
+                              aria-label={`Select task ${task.id}`}
+                            />
+                          </TableCell>
+                        )}
                         <TableCell className="font-medium">{task.clientName}</TableCell>
                         <TableCell>{task.taskCategory}</TableCell>
                         <TableCell>{task.subCategory}</TableCell>
                         <TableCell>
-                          <TaskQuickStatus task={task} />
+                          {isAuthenticated ? (
+                            <TaskQuickStatus task={task} />
+                          ) : (
+                            task.status || '-'
+                          )}
                         </TableCell>
-                        <TableCell className="max-w-[200px]">
-                          <InlineCommentEditor task={task} />
+                        <TableCell className="max-w-xs">
+                          {isAuthenticated ? (
+                            <InlineCommentEditor task={task} />
+                          ) : (
+                            <span className="truncate block">{task.comment || '-'}</span>
+                          )}
                         </TableCell>
-                        <TableCell>{formatAssigneeWithCaptain(task.assignedName, captainName)}</TableCell>
-                        <TableCell>{formatTaskDate(task.dueDate)}</TableCell>
-                        <TableCell>{formatTaskDate(task.assignmentDate)}</TableCell>
-                        <TableCell>{formatTaskDate(task.completionDate)}</TableCell>
-                        <TableCell>{formatCurrency(task.bill)}</TableCell>
-                        <TableCell>{formatCurrency(task.advanceReceived)}</TableCell>
-                        <TableCell>{formatCurrency(task.outstandingAmount)}</TableCell>
-                        <TableCell>{formatOptionalText(task.paymentStatus)}</TableCell>
                         <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setEditingTask(task);
-                              setDialogOpen(true);
-                            }}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                          {formatAssigneeName(task.assignedName, taskWithCaptain.captainName)}
                         </TableCell>
+                        <TableCell>{formatTaskDate(task.dueDate)}</TableCell>
+                        {isAuthenticated && (
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditingTask(task)}
+                            >
+                              Edit
+                            </Button>
+                          </TableCell>
+                        )}
                       </TableRow>
                     );
                   })}
@@ -622,40 +546,33 @@ export default function TasksPage() {
         </CardContent>
       </Card>
 
-      <TaskFormDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        task={editingTask}
-      />
+      {isAuthenticated && (
+        <>
+          <TaskFormDialog
+            open={isCreateDialogOpen || !!editingTask}
+            onOpenChange={(open) => {
+              setIsCreateDialogOpen(open);
+              if (!open) setEditingTask(undefined);
+            }}
+            task={editingTask}
+          />
 
-      <TaskBulkUploadDialog
-        open={bulkUploadOpen}
-        onOpenChange={setBulkUploadOpen}
-      />
+          <TaskBulkUploadDialog
+            open={isUploadDialogOpen}
+            onOpenChange={setIsUploadDialogOpen}
+          />
 
-      <TaskBulkEditDialog
-        open={bulkEditOpen}
-        onOpenChange={setBulkEditOpen}
-        selectedTasks={selectedTasks}
-        onSuccess={() => setSelectedTaskIds(new Set())}
-      />
-
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Tasks</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete {selectedTaskIds.size} task(s)? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleBulkDelete} disabled={isDeleting}>
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          <TaskBulkEditDialog
+            open={isBulkEditDialogOpen}
+            onOpenChange={(open) => {
+              setIsBulkEditDialogOpen(open);
+              if (!open) setSelectedTaskIds(new Set());
+            }}
+            selectedTasks={selectedTasks}
+            onSuccess={() => setSelectedTaskIds(new Set())}
+          />
+        </>
+      )}
     </div>
   );
 }

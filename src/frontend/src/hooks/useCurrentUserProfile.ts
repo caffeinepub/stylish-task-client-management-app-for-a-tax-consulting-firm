@@ -5,28 +5,44 @@ import type { UserProfile } from '../backend';
 
 export function useGetCallerUserProfile() {
   const { actor, isFetching: actorFetching } = useActor();
-  const { identity } = useInternetIdentity();
-  const isAuthenticated = !!identity;
+  const { identity, isInitializing: authInitializing } = useInternetIdentity();
 
   const query = useQuery<UserProfile | null>({
     queryKey: ['currentUserProfile'],
     queryFn: async () => {
-      if (!actor) throw new Error('Actor not available');
+      console.log('👤 [useGetCallerUserProfile] Fetching profile...', {
+        hasActor: !!actor,
+        hasIdentity: !!identity,
+      });
+
+      if (!actor) {
+        console.log('👤 [useGetCallerUserProfile] No actor available');
+        throw new Error('Actor not available');
+      }
+
       try {
-        return await actor.getCallerUserProfile();
+        const profile = await actor.getCallerUserProfile();
+        console.log('👤 [useGetCallerUserProfile] Profile fetched:', {
+          hasProfile: !!profile,
+          profileName: profile?.name,
+        });
+        return profile;
       } catch (error) {
-        console.error('[useGetCallerUserProfile] Query error:', error);
+        console.error('👤 [useGetCallerUserProfile] Error fetching profile:', error);
+        // Return null instead of throwing to allow profile setup modal to show
         return null;
       }
     },
-    enabled: isAuthenticated && !!actor && !actorFetching,
+    enabled: !!actor && !actorFetching && !!identity && !authInitializing,
     retry: false,
+    staleTime: Infinity,
   });
 
+  // Return custom state that properly reflects all dependencies
   return {
     ...query,
-    isLoading: actorFetching || query.isLoading,
-    isFetched: isAuthenticated && !!actor && query.isFetched,
+    isLoading: authInitializing || actorFetching || query.isLoading,
+    isFetched: !!actor && !!identity && !authInitializing && !actorFetching && query.isFetched,
   };
 }
 

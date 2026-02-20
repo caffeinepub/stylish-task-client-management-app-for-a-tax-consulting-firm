@@ -1,160 +1,144 @@
-import { useState, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useMemo } from 'react';
+import { useAssignees, usePublicAssignees, useBulkDeleteAssignees } from '../hooks/assignees';
+import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, Search, AlertCircle, UserCheck, Upload, Trash2, Edit } from 'lucide-react';
-import { useGetAllAssignees, useBulkDeleteAssignees } from '../hooks/assignees';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AssigneeFormDialog from '../components/assignees/AssigneeFormDialog';
 import AssigneeBulkUploadDialog from '../components/assignees/AssigneeBulkUploadDialog';
-import type { Assignee } from '../backend';
+import { Search, Plus, Upload, Trash2, Download } from 'lucide-react';
+import type { Assignee, AssigneeId } from '../backend';
+import { exportAssigneesToExcel } from '../utils/assigneeExcel';
+import { toast } from 'sonner';
 
 export default function AssigneesPage() {
-  const { data: assignees, isLoading, error, refetch } = useGetAllAssignees();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
-  const [selectedAssigneeIds, setSelectedAssigneeIds] = useState<Set<string>>(new Set());
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [editingAssignee, setEditingAssignee] = useState<Assignee | undefined>(undefined);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const { identity } = useInternetIdentity();
+  const isAuthenticated = !!identity;
 
-  const { mutate: bulkDeleteAssignees, isPending: isDeleting } = useBulkDeleteAssignees();
+  const { data: authenticatedAssignees = [], isLoading: authLoading } = useAssignees();
+  const { data: publicAssignees = [], isLoading: publicLoading } = usePublicAssignees();
+
+  const assignees = isAuthenticated ? authenticatedAssignees : publicAssignees;
+  const isLoading = isAuthenticated ? authLoading : publicLoading;
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedAssignees, setSelectedAssignees] = useState<Set<AssigneeId>>(new Set());
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [editingAssignee, setEditingAssignee] = useState<Assignee | undefined>(undefined);
+
+  const bulkDeleteMutation = useBulkDeleteAssignees();
 
   const filteredAssignees = useMemo(() => {
-    if (!assignees) return [];
-    
-    return assignees.filter((assignee) => {
-      const matchesSearch = 
-        assignee.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (assignee.captain && assignee.captain.toLowerCase().includes(searchQuery.toLowerCase()));
-      
-      return matchesSearch;
-    });
+    if (!searchQuery.trim()) return assignees;
+
+    const query = searchQuery.toLowerCase();
+    return assignees.filter(
+      (assignee) =>
+        assignee.name.toLowerCase().includes(query) ||
+        assignee.captain?.toLowerCase().includes(query)
+    );
   }, [assignees, searchQuery]);
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      const allIds = new Set(filteredAssignees.map(assignee => assignee.id.toString()));
-      setSelectedAssigneeIds(allIds);
+      setSelectedAssignees(new Set(filteredAssignees.map((a) => a.id)));
     } else {
-      setSelectedAssigneeIds(new Set());
+      setSelectedAssignees(new Set());
     }
   };
 
-  const handleSelectAssignee = (assigneeId: string, checked: boolean) => {
-    const newSelection = new Set(selectedAssigneeIds);
+  const handleSelectAssignee = (assigneeId: AssigneeId, checked: boolean) => {
+    const newSelected = new Set(selectedAssignees);
     if (checked) {
-      newSelection.add(assigneeId);
+      newSelected.add(assigneeId);
     } else {
-      newSelection.delete(assigneeId);
+      newSelected.delete(assigneeId);
     }
-    setSelectedAssigneeIds(newSelection);
+    setSelectedAssignees(newSelected);
   };
 
-  const handleBulkDelete = () => {
-    const assigneeIds = Array.from(selectedAssigneeIds).map(id => BigInt(id));
-    bulkDeleteAssignees(assigneeIds, {
-      onSuccess: () => {
-        setSelectedAssigneeIds(new Set());
-        setDeleteDialogOpen(false);
-      },
-    });
+  const handleBulkDelete = async () => {
+    if (selectedAssignees.size === 0) return;
+    if (!confirm(`Delete ${selectedAssignees.size} assignee(s)?`)) return;
+
+    await bulkDeleteMutation.mutateAsync(Array.from(selectedAssignees));
+    setSelectedAssignees(new Set());
   };
 
-  const handleEdit = (assignee: Assignee) => {
-    setEditingAssignee(assignee);
-    setEditDialogOpen(true);
+  const handleExport = async () => {
+    try {
+      await exportAssigneesToExcel(filteredAssignees);
+      toast.success('Assignees exported successfully');
+    } catch (error) {
+      toast.error('Failed to export assignees');
+    }
   };
 
-  if (error) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Assignees</h1>
-          <p className="text-muted-foreground">Manage your teams and captains</p>
-        </div>
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Failed to load assignees. {error.message}
-          </AlertDescription>
-        </Alert>
-        <Button onClick={() => refetch()}>Retry</Button>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <Skeleton className="h-10 w-48 mb-2" />
-          <Skeleton className="h-5 w-96" />
-        </div>
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-32" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const allSelected = filteredAssignees.length > 0 && selectedAssignees.size === filteredAssignees.length;
+  const someSelected = selectedAssignees.size > 0 && selectedAssignees.size < filteredAssignees.length;
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Assignees</h1>
-          <p className="text-muted-foreground">Manage your teams and captains</p>
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            onClick={() => setBulkUploadOpen(true)}
-            variant="outline"
-          >
-            <Upload className="mr-2 h-4 w-4" />
-            Bulk Upload
-          </Button>
-          <Button onClick={() => setDialogOpen(true)} className="bg-[oklch(0.50_0.08_130)] hover:bg-[oklch(0.45_0.08_130)] dark:bg-[oklch(0.65_0.08_130)] dark:hover:bg-[oklch(0.70_0.08_130)]">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Assignee
-          </Button>
-        </div>
+        <h1 className="text-3xl font-bold">Assignees</h1>
+        {isAuthenticated && (
+          <div className="flex gap-2">
+            <Button onClick={() => setIsCreateDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Assignee
+            </Button>
+          </div>
+        )}
       </div>
 
-      {selectedAssigneeIds.size > 0 && (
-        <Card className="border-[oklch(0.50_0.08_130)] bg-[oklch(0.50_0.08_130)]/5 dark:bg-[oklch(0.65_0.08_130)]/10">
+      <Card>
+        <CardHeader>
+          <CardTitle>Search & Filter</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by team name or captain..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {isAuthenticated && selectedAssignees.size > 0 && (
+        <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={selectedAssigneeIds.size === filteredAssignees.length}
-                  onCheckedChange={handleSelectAll}
-                />
-                <span className="font-medium">
-                  {selectedAssigneeIds.size} assignee{selectedAssigneeIds.size !== 1 ? 's' : ''} selected
-                </span>
-              </div>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-muted-foreground">
+                {selectedAssignees.size} assignee(s) selected
+              </span>
               <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => setIsUploadDialogOpen(true)}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Bulk Upload
+                </Button>
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={() => setDeleteDialogOpen(true)}
-                  disabled={isDeleting}
+                  onClick={handleBulkDelete}
+                  disabled={bulkDeleteMutation.isPending}
                 >
-                  <Trash2 className="mr-2 h-4 w-4" />
+                  <Trash2 className="h-4 w-4 mr-2" />
                   Delete Selected
                 </Button>
               </div>
@@ -163,84 +147,68 @@ export default function AssigneesPage() {
         </Card>
       )}
 
-      <Card className="border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)]">
-        <CardHeader>
-          <CardTitle>All Assignees</CardTitle>
-          <CardDescription>
-            {filteredAssignees.length} {filteredAssignees.length === 1 ? 'assignee' : 'assignees'}
-          </CardDescription>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Assignee List ({filteredAssignees.length})</CardTitle>
+          <Button variant="outline" size="sm" onClick={handleExport}>
+            <Download className="h-4 w-4 mr-2" />
+            Export to Excel
+          </Button>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by team name or captain..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-          </div>
-
-          {filteredAssignees.length === 0 ? (
-            <div className="text-center py-12">
-              <UserCheck className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">
-                {assignees?.length === 0 ? 'No assignees yet' : 'No assignees found'}
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                {assignees?.length === 0
-                  ? 'Get started by adding your first assignee'
-                  : 'Try adjusting your search'}
-              </p>
-              {assignees?.length === 0 && (
-                <Button onClick={() => setDialogOpen(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Your First Assignee
-                </Button>
-              )}
+          {isLoading ? (
+            <div className="text-center py-8 text-muted-foreground">Loading assignees...</div>
+          ) : filteredAssignees.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              {searchQuery ? 'No assignees found matching your search.' : 'No assignees yet.'}
             </div>
           ) : (
-            <div className="rounded-md border border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)]">
+            <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-12">
-                      <Checkbox
-                        checked={selectedAssigneeIds.size === filteredAssignees.length && filteredAssignees.length > 0}
-                        onCheckedChange={handleSelectAll}
-                      />
-                    </TableHead>
+                    {isAuthenticated && (
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={allSelected}
+                          onCheckedChange={handleSelectAll}
+                          aria-label="Select all"
+                          className={someSelected ? 'data-[state=checked]:bg-primary/50' : ''}
+                        />
+                      </TableHead>
+                    )}
                     <TableHead>Team Name</TableHead>
                     <TableHead>Captain</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    {isAuthenticated && <TableHead className="text-right">Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredAssignees.map((assignee) => (
-                    <TableRow 
-                      key={assignee.id.toString()}
-                      className="hover:bg-muted/50"
-                    >
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <Checkbox
-                          checked={selectedAssigneeIds.has(assignee.id.toString())}
-                          onCheckedChange={(checked) => handleSelectAssignee(assignee.id.toString(), checked as boolean)}
-                        />
-                      </TableCell>
+                    <TableRow key={assignee.id.toString()}>
+                      {isAuthenticated && (
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedAssignees.has(assignee.id)}
+                            onCheckedChange={(checked) =>
+                              handleSelectAssignee(assignee.id, checked as boolean)
+                            }
+                            aria-label={`Select ${assignee.name}`}
+                          />
+                        </TableCell>
+                      )}
                       <TableCell className="font-medium">{assignee.name}</TableCell>
                       <TableCell>{assignee.captain || '-'}</TableCell>
-                      <TableCell className="text-right">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleEdit(assignee)}
-                        >
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </Button>
-                      </TableCell>
+                      {isAuthenticated && (
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditingAssignee(assignee)}
+                          >
+                            Edit
+                          </Button>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>
@@ -250,37 +218,25 @@ export default function AssigneesPage() {
         </CardContent>
       </Card>
 
-      <AssigneeFormDialog open={dialogOpen} onOpenChange={setDialogOpen} />
-      <AssigneeFormDialog 
-        open={editDialogOpen} 
-        onOpenChange={(open) => {
-          setEditDialogOpen(open);
-          if (!open) setEditingAssignee(undefined);
-        }} 
-        assignee={editingAssignee}
-      />
-      <AssigneeBulkUploadDialog open={bulkUploadOpen} onOpenChange={setBulkUploadOpen} />
+      {isAuthenticated && (
+        <>
+          <AssigneeFormDialog
+            open={isCreateDialogOpen || !!editingAssignee}
+            onOpenChange={(open) => {
+              if (!open) {
+                setIsCreateDialogOpen(false);
+                setEditingAssignee(undefined);
+              }
+            }}
+            assignee={editingAssignee}
+          />
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Assignees</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete {selectedAssigneeIds.size} assignee{selectedAssigneeIds.size !== 1 ? 's' : ''}? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleBulkDelete} 
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          <AssigneeBulkUploadDialog
+            open={isUploadDialogOpen}
+            onOpenChange={setIsUploadDialogOpen}
+          />
+        </>
+      )}
     </div>
   );
 }

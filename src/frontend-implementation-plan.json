@@ -1,146 +1,58 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix production application loading failure",
+  "title": "Fix Tasks Page Loading Issue",
   "requirements": [
     {
-      "id": "REQ-113",
-      "summary": "Diagnose and resolve production application loading failure causing blank screen",
+      "id": "REQ-1",
+      "summary": "Investigate and fix the issue preventing tasks from loading when the Tasks page is clicked, ensuring proper query execution, error boundary handling, and loading states in TasksPage.tsx",
       "acceptanceCriteria": [
-        "The production application loads successfully and renders the root route UI",
-        "Users can navigate to all routes (/dashboard, /tasks, /clients, etc.) without encountering blank screens",
-        "No console errors or warnings related to router initialization, actor creation, or URL parameter handling appear during startup",
-        "The Loading screen transitions to the signed-in or signed-out UI within a reasonable time frame"
+        "Tasks page loads successfully when navigated to from the navigation menu",
+        "Task list displays data or shows appropriate loading/error states",
+        "No JavaScript errors in console when accessing Tasks page",
+        "Page responds within 3 seconds of click"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/pages/TasksPage.tsx",
           "operation": "modify",
-          "description": "Add defensive null checks around router initialization and ensure the Loading component has a timeout fallback that displays an error after 10 seconds. Add console logging at critical startup checkpoints (before router creation, after profile check, before first render) to track initialization progress. Ensure the AppStartupErrorBoundary properly wraps all router and authentication logic."
+          "description": "Add comprehensive error logging and diagnostics to the TasksPage component. Log the query status, error messages, and data state at key points (mount, query status changes, error states). Ensure the loading state is properly displayed while data is being fetched. Add console logging for the tasks query execution including timing information, query key, and response data structure. Verify that both authenticated (useAllTasksWithCaptain) and public (usePublicTasksWithCaptain) query hooks are being called correctly based on authentication state and that error boundaries are catching any runtime failures."
         },
         {
-          "path": "frontend/src/components/errors/AppStartupErrorBoundary.tsx",
+          "path": "frontend/src/hooks/tasks.ts",
           "operation": "modify",
-          "description": "Enhance error boundary to catch both synchronous and asynchronous errors during startup. Add componentDidCatch lifecycle method to log errors with full context including component stack. Ensure getDerivedStateFromError returns a valid error state even for edge cases."
+          "description": "Add detailed error logging to the useAllTasksWithCaptain and usePublicTasksWithCaptain hooks. Log when queries are initiated, when the actor becomes available, and when queries complete (success or error). Include query status (isLoading, isFetching, isError), error details if present, and timing information. Add console warnings if the actor is undefined or if the query is disabled due to missing dependencies. Ensure proper error propagation to the UI layer."
         },
         {
-          "path": "frontend/src/components/errors/StartupErrorScreen.tsx",
+          "path": "frontend/src/components/layout/AppLayout.tsx",
           "operation": "modify",
-          "description": "Add more detailed error information display including timestamp, browser info, and console log history. Make reload button more prominent and add a secondary action to copy all diagnostic information to clipboard for support reporting."
+          "description": "Add navigation click event logging for the Tasks menu item. Log when the Tasks navigation link is clicked, including timestamp and current route. This will help diagnose if navigation itself is failing or if the issue occurs after navigation completes."
         }
       ]
     },
     {
-      "id": "REQ-114",
-      "summary": "Add enhanced error logging during application startup for production diagnostics",
+      "id": "REQ-2",
+      "summary": "Add error logging and diagnostics to the Tasks page component to capture and report any data fetching failures, including query status, error messages, and network request details",
       "acceptanceCriteria": [
-        "Console logs clearly indicate each stage of application initialization (router created, actor initialized, authentication checked, etc.)",
-        "Any errors during startup are logged with full stack traces and context",
-        "Production builds include sufficient logging to diagnose loading failures without requiring source maps"
+        "Console logs show clear error messages if tasks query fails",
+        "Loading states are visible to user during data fetch",
+        "Error boundary catches and displays any runtime errors"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/pages/TasksPage.tsx",
           "operation": "modify",
-          "description": "Add comprehensive console logging throughout the component lifecycle: log when App component mounts, when router is initialized, when authentication state changes, when profile is checked, and before each major render path (Loading, ProfileSetupModal, RouterProvider). Include timestamp and relevant state values in each log entry."
+          "description": "Enhance the TasksPage component with comprehensive error and loading state UI. Display a clear loading spinner or skeleton UI when isLoading is true. Show detailed error messages to users when queries fail, including retry functionality. Add console logging that captures the complete query state (data, error, isLoading, isFetching, isError, failureCount) and logs it whenever the state changes. Include timestamp and user authentication status in all log entries for better debugging."
         },
         {
           "path": "frontend/src/hooks/useActor.ts",
           "operation": "modify",
-          "description": "Add detailed logging for actor creation lifecycle: log when useActor hook is called, when admin token is found/missing, before createActor is invoked, when actor is successfully created, and when any errors occur. Log the actor initialization state transitions and any authentication-related events."
+          "description": "Add detailed logging to the useActor hook to diagnose actor initialization issues. Log when the actor is being created, when it becomes available, and if there are any errors during creation. Include the authentication state (identity present/absent) and actor ready state in console logs. This will help identify if the Tasks page loading issue is related to actor availability."
         },
         {
-          "path": "frontend/src/hooks/useDeferredUrlCleanup.ts",
+          "path": "frontend/src/utils/assetLoadingDiagnostics.ts",
           "operation": "modify",
-          "description": "Add logging at each stage of URL cleanup: when hook mounts, when admin token is extracted, when token is stored in sessionStorage, before URL cleanup delay, and after URL is cleaned. Log the exact URL before and after cleanup to verify the operation completes correctly."
-        },
-        {
-          "path": "frontend/src/hooks/useInternetIdentity.ts",
-          "operation": "modify",
-          "description": "Add logging for Internet Identity lifecycle events: when provider initializes, when login is called, when identity is retrieved, when authentication state changes, and when logout/clear is invoked. Log any errors during AuthClient operations with full context."
-        }
-      ]
-    },
-    {
-      "id": "REQ-115",
-      "summary": "Verify useDeferredUrlCleanup hook executes once and does not interfere with router",
-      "acceptanceCriteria": [
-        "The useDeferredUrlCleanup hook runs only once after the initial component mount",
-        "No infinite loops or repeated executions of the URL cleanup logic occur",
-        "The hook does not prevent TanStack Router from rendering the root route",
-        "Admin token extraction and URL cleanup complete without causing navigation errors"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useDeferredUrlCleanup.ts",
-          "operation": "modify",
-          "description": "Ensure useEffect has an empty dependency array to run only once on mount. Add a ref to track execution and prevent duplicate runs. Verify the cleanup delay (currently setTimeout) completes before router navigation occurs. Add safeguards to ensure URL cleanup does not trigger router re-initialization or cause navigation to fail. Consider increasing the delay or using a more robust timing mechanism if the cleanup interferes with router setup."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Verify that useDeferredUrlCleanup is called at the appropriate point in the component lifecycle (after router is ready but before first navigation). Ensure the hook's URL manipulation does not conflict with TanStack Router's internal state. Add a flag to track when URL cleanup is complete before proceeding with router rendering."
-        }
-      ]
-    },
-    {
-      "id": "REQ-116",
-      "summary": "Review and harden actor creation logic to prevent startup failures",
-      "acceptanceCriteria": [
-        "No console warnings about 'agent and agentOptions both passed to createActor' appear",
-        "Actor creation completes successfully even when admin token is missing or invalid",
-        "Actor initialization errors do not prevent the root route from rendering",
-        "The application can render the signed-out screen when actor/authentication is not ready"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useActor.ts",
-          "operation": "modify",
-          "description": "Review the createActor invocation to ensure only one of 'agent' or 'agentOptions' is passed, never both. If identity is present, pass the agent; otherwise, pass agentOptions. Add error handling around actor creation that catches and logs errors without throwing. Ensure actor creation failures set isFetching to false and return a null actor, allowing the app to render the signed-out screen. Add validation for admin token format before attempting to use it. Wrap access control initialization in try-catch to prevent exceptions from blocking app startup."
-        }
-      ]
-    },
-    {
-      "id": "REQ-117",
-      "summary": "Ensure AppStartupErrorBoundary catches all initialization errors and displays actionable feedback",
-      "acceptanceCriteria": [
-        "Any errors during startup are caught by the error boundary and displayed to users",
-        "The StartupErrorScreen shows clear English error messages without exposing sensitive details",
-        "Users can reload the application from the error screen",
-        "The error boundary does not itself crash or fail to render"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/errors/AppStartupErrorBoundary.tsx",
-          "operation": "modify",
-          "description": "Ensure the error boundary implements both componentDidCatch and getDerivedStateFromError to handle all error scenarios. Add fallback rendering if StartupErrorScreen itself fails. Wrap the error boundary's own render logic in a try-catch to prevent cascading failures. Test that the boundary catches errors from async operations during component initialization."
-        },
-        {
-          "path": "frontend/src/components/errors/StartupErrorScreen.tsx",
-          "operation": "modify",
-          "description": "Sanitize error messages to avoid exposing internal paths, tokens, or sensitive configuration. Provide user-friendly error categories (Network Error, Configuration Error, Authentication Error, etc.) and actionable next steps. Add a reload button that clears all local storage and session storage before reloading to ensure a clean state. Include a copy-to-clipboard button for diagnostic information that users can share with support."
-        }
-      ]
-    },
-    {
-      "id": "REQ-118",
-      "summary": "Test production build locally to reproduce and verify fixes before deployment",
-      "acceptanceCriteria": [
-        "Production build can be tested locally with a static server that mimics IC canister serving behavior",
-        "JavaScript files are served with correct Content-Type headers (application/javascript)",
-        "The application loads successfully in the local production test environment",
-        "All routes render correctly in production mode"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/.ic-assets.json5",
-          "operation": "modify",
-          "description": "Review asset configuration to ensure JavaScript files (.js, .mjs) are served with correct MIME type 'application/javascript' or 'text/javascript'. Verify that the configuration includes proper headers for module scripts and that CSP headers do not block script execution. Check that cache policies do not cause stale builds to be served."
-        },
-        {
-          "path": "frontend/index.html",
-          "operation": "modify",
-          "description": "Ensure the script tag for main.tsx uses type='module' attribute. Verify that the base href is correctly set for production environment. Add a noscript fallback message for users with JavaScript disabled. Check that no inline scripts or styles violate CSP policies."
+          "description": "Extend the existing diagnostics utility to capture and log network requests related to backend canister calls. Add interception for fetch requests to the backend canister endpoints, logging request timing, response status, and any 503 or connection errors. Include detection for backend canister health and availability issues that might prevent tasks from loading."
         }
       ]
     }

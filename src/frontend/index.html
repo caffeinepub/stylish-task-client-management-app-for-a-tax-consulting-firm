@@ -6,14 +6,334 @@
         <meta name='viewport' content='width=device-width, initial-scale=1.0' />
         <title>CSWA Group of Companies - Client & Task Management</title>
         <script>
-            // Early error detection
-            console.log('[index.html] Page loading started');
+            // ============================================================================
+            // ENHANCED HTTP 503 DIAGNOSTIC LOGGING
+            // ============================================================================
+            console.log('[index.html] 🚀 Page loading started at', new Date().toISOString());
+            console.log('[index.html] 📍 Location:', window.location.href);
+            console.log('[index.html] 🌐 User Agent:', navigator.userAgent);
+            console.log('[index.html] 📶 Online:', navigator.onLine);
+            console.log('[index.html] 🔧 Connection:', navigator.connection ? {
+                effectiveType: navigator.connection.effectiveType,
+                downlink: navigator.connection.downlink,
+                rtt: navigator.connection.rtt,
+                saveData: navigator.connection.saveData
+            } : 'Not available');
+
+            // Extract canister information
+            const canisterMatch = window.location.hostname.match(/^([a-z0-9-]+)\.(ic0\.app|icp0\.io|localhost)/);
+            if (canisterMatch) {
+                console.log('[index.html] 🏷️ Canister ID:', canisterMatch[1]);
+                console.log('[index.html] 🌍 Domain:', canisterMatch[2]);
+            }
+
+            // Track all asset loading attempts and failures
+            const assetLoadingLog = {
+                attempts: [],
+                errors: [],
+                http503Errors: [],
+                startTime: Date.now()
+            };
+
+            // Enhanced module script error detection with HTTP 503 focus
             window.addEventListener('error', function(e) {
-                console.error('[index.html] Global error:', e.error);
-            });
+                const timestamp = new Date().toISOString();
+                const elapsed = Date.now() - assetLoadingLog.startTime;
+                
+                if (e.target instanceof HTMLScriptElement) {
+                    const script = e.target;
+                    const errorInfo = {
+                        type: 'script_load_error',
+                        src: script.src,
+                        timestamp,
+                        elapsed: elapsed + 'ms',
+                        message: e.message || 'Script failed to load'
+                    };
+                    
+                    assetLoadingLog.errors.push(errorInfo);
+                    
+                    console.group('❌ [index.html] Script Load Error #' + assetLoadingLog.errors.length);
+                    console.error('Script URL:', script.src);
+                    console.error('Script Type:', script.type);
+                    console.error('Timestamp:', timestamp);
+                    console.error('Elapsed:', elapsed + 'ms');
+                    console.error('Error:', e.error || e.message);
+                    console.groupEnd();
+
+                    // Immediately diagnose the failure with detailed HTTP inspection
+                    if (script.src) {
+                        console.log('[index.html] 🔍 Fetching failed script for HTTP 503 diagnostic...');
+                        
+                        fetch(script.src, { 
+                            method: 'GET',
+                            cache: 'no-cache' // Force fresh request to see current server state
+                        })
+                            .then(response => {
+                                const contentType = response.headers.get('Content-Type');
+                                const contentLength = response.headers.get('Content-Length');
+                                const cacheControl = response.headers.get('Cache-Control');
+                                const server = response.headers.get('Server');
+                                const xIcCanisterId = response.headers.get('X-Ic-Canister-Id');
+                                const xIcSubnetId = response.headers.get('X-Ic-Subnet-Id');
+                                
+                                console.group('🔍 [index.html] HTTP 503 Diagnostic Report');
+                                console.log('URL:', script.src);
+                                console.log('Status:', response.status, response.statusText);
+                                console.log('Content-Type:', contentType);
+                                console.log('Content-Length:', contentLength);
+                                console.log('Cache-Control:', cacheControl);
+                                console.log('Server:', server);
+                                console.log('X-Ic-Canister-Id:', xIcCanisterId);
+                                console.log('X-Ic-Subnet-Id:', xIcSubnetId);
+                                
+                                // Log all response headers
+                                const allHeaders = {};
+                                response.headers.forEach((value, key) => {
+                                    allHeaders[key] = value;
+                                });
+                                console.log('All Response Headers:', allHeaders);
+                                
+                                if (response.status === 503) {
+                                    console.error('⚠️ HTTP 503 SERVICE UNAVAILABLE DETECTED!');
+                                    console.error('This indicates the asset canister is unable to serve the request.');
+                                    console.error('Possible causes:');
+                                    console.error('  1. Asset canister is out of cycles');
+                                    console.error('  2. Asset canister is overloaded or under heavy load');
+                                    console.error('  3. Asset canister is being upgraded or restarted');
+                                    console.error('  4. Asset file was not properly uploaded during deployment');
+                                    console.error('  5. Asset canister configuration (.ic-assets.json5) is incorrect');
+                                    
+                                    assetLoadingLog.http503Errors.push({
+                                        url: script.src,
+                                        timestamp,
+                                        elapsed: elapsed + 'ms',
+                                        headers: allHeaders
+                                    });
+                                }
+                                
+                                if (contentType && contentType.includes('text/html')) {
+                                    console.error('⚠️ CRITICAL: Server returned HTML instead of JavaScript!');
+                                    console.error('This indicates the asset canister is serving index.html for .js requests');
+                                    console.error('Check .ic-assets.json5 configuration for allow_raw_access settings');
+                                    
+                                    // Read response body to see what was returned
+                                    return response.text().then(text => {
+                                        console.error('Response body preview (first 1000 chars):');
+                                        console.error(text.substring(0, 1000));
+                                    });
+                                } else if (response.status !== 200) {
+                                    // Try to read error response body
+                                    return response.text().then(text => {
+                                        console.error('Error response body:', text.substring(0, 500));
+                                    }).catch(() => {
+                                        console.error('Could not read error response body');
+                                    });
+                                }
+                                
+                                console.groupEnd();
+                            })
+                            .catch(err => {
+                                console.group('❌ [index.html] Diagnostic Fetch Failed');
+                                console.error('URL:', script.src);
+                                console.error('Error:', err);
+                                console.error('Error Type:', err.name);
+                                console.error('Error Message:', err.message);
+                                console.groupEnd();
+                            });
+                    }
+                } else {
+                    console.group('❌ [index.html] Global Error');
+                    console.error('Error:', e.error);
+                    console.error('Message:', e.message);
+                    console.error('Filename:', e.filename);
+                    console.error('Line:', e.lineno, 'Column:', e.colno);
+                    console.error('Timestamp:', timestamp);
+                    console.groupEnd();
+                }
+            }, true);
+
             window.addEventListener('unhandledrejection', function(e) {
-                console.error('[index.html] Unhandled promise rejection:', e.reason);
+                const timestamp = new Date().toISOString();
+                console.group('❌ [index.html] Unhandled Promise Rejection');
+                console.error('Reason:', e.reason);
+                console.error('Promise:', e.promise);
+                console.error('Timestamp:', timestamp);
+                console.groupEnd();
             });
+
+            // Enhanced fetch monitoring with detailed HTTP 503 tracking
+            const originalFetch = window.fetch;
+            window.fetch = async function(...args) {
+                const url = typeof args[0] === 'string' ? args[0] : (args[0] instanceof URL ? args[0].href : args[0].url);
+                const startTime = performance.now();
+                
+                // Log fetch attempt for assets
+                if (url.includes('.js') || url.includes('.css') || url.includes('.mjs')) {
+                    assetLoadingLog.attempts.push({
+                        url,
+                        timestamp: new Date().toISOString(),
+                        startTime
+                    });
+                }
+                
+                try {
+                    const response = await originalFetch.apply(this, args);
+                    const duration = performance.now() - startTime;
+                    const contentType = response.headers.get('Content-Type');
+                    
+                    // Detailed logging for HTTP 503 errors
+                    if (response.status === 503) {
+                        const headers = {};
+                        response.headers.forEach((value, key) => {
+                            headers[key] = value;
+                        });
+                        
+                        console.group('🚨 [index.html] HTTP 503 SERVICE UNAVAILABLE');
+                        console.error('URL:', url);
+                        console.error('Status:', response.status, response.statusText);
+                        console.error('Content-Type:', contentType);
+                        console.error('Duration:', duration.toFixed(2) + 'ms');
+                        console.error('All Headers:', headers);
+                        console.error('Timestamp:', new Date().toISOString());
+                        console.error('Elapsed since page load:', (Date.now() - assetLoadingLog.startTime) + 'ms');
+                        
+                        // Try to read response body for additional error details
+                        const clonedResponse = response.clone();
+                        clonedResponse.text().then(body => {
+                            if (body) {
+                                console.error('Response Body:', body.substring(0, 500));
+                            }
+                        }).catch(() => {
+                            console.error('Could not read response body');
+                        });
+                        
+                        console.groupEnd();
+                        
+                        assetLoadingLog.http503Errors.push({
+                            url,
+                            timestamp: new Date().toISOString(),
+                            duration: duration.toFixed(2) + 'ms',
+                            headers
+                        });
+                    }
+                    
+                    // Check for MIME type mismatches
+                    if (url.endsWith('.js') || url.endsWith('.mjs')) {
+                        if (contentType && !contentType.includes('javascript')) {
+                            console.group('⚠️ [index.html] MIME Type Mismatch');
+                            console.error('URL:', url);
+                            console.error('Expected:', 'application/javascript or text/javascript');
+                            console.error('Received:', contentType);
+                            console.error('Status:', response.status);
+                            console.error('Duration:', duration.toFixed(2) + 'ms');
+                            console.groupEnd();
+                        }
+                    }
+                    
+                    if (!response.ok) {
+                        console.group('⚠️ [index.html] Fetch Error');
+                        console.error('URL:', url);
+                        console.error('Status:', response.status, response.statusText);
+                        console.error('Content-Type:', contentType);
+                        console.error('Duration:', duration.toFixed(2) + 'ms');
+                        
+                        const headers = {};
+                        response.headers.forEach((value, key) => {
+                            headers[key] = value;
+                        });
+                        console.error('Headers:', headers);
+                        console.groupEnd();
+                    } else if (url.includes('.js') || url.includes('.css')) {
+                        console.log('[index.html] ✅ Asset loaded:', url, `(${duration.toFixed(2)}ms)`, 'Type:', contentType);
+                    }
+                    
+                    return response;
+                } catch (error) {
+                    const duration = performance.now() - startTime;
+                    console.group('❌ [index.html] Fetch Exception');
+                    console.error('URL:', url);
+                    console.error('Error:', error);
+                    console.error('Error Type:', error.name);
+                    console.error('Error Message:', error.message);
+                    console.error('Duration:', duration.toFixed(2) + 'ms');
+                    console.groupEnd();
+                    throw error;
+                }
+            };
+
+            // Log when DOM is ready
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('[index.html] ✅ DOM Content Loaded');
+                
+                if (assetLoadingLog.errors.length > 0) {
+                    console.group('⚠️ [index.html] Asset Loading Errors Summary');
+                    console.error('Total errors:', assetLoadingLog.errors.length);
+                    console.table(assetLoadingLog.errors);
+                    console.groupEnd();
+                }
+                
+                if (assetLoadingLog.http503Errors.length > 0) {
+                    console.group('🚨 [index.html] HTTP 503 ERRORS SUMMARY');
+                    console.error('Total HTTP 503 errors:', assetLoadingLog.http503Errors.length);
+                    console.error('This indicates the asset canister is unable to serve requests.');
+                    console.error('Immediate actions:');
+                    console.error('  1. Check canister cycles: dfx canister status <canister-id>');
+                    console.error('  2. Verify deployment: dfx canister info <canister-id>');
+                    console.error('  3. Check asset canister logs for errors');
+                    console.error('  4. Review .ic-assets.json5 configuration');
+                    console.error('  5. Verify all build artifacts were uploaded');
+                    console.table(assetLoadingLog.http503Errors);
+                    console.groupEnd();
+                }
+            });
+
+            // Log when page is fully loaded
+            window.addEventListener('load', function() {
+                const totalTime = Date.now() - assetLoadingLog.startTime;
+                console.log('[index.html] ✅ Page Fully Loaded in', totalTime + 'ms');
+                
+                // Final diagnostic summary
+                console.group('📊 [index.html] Final Asset Loading Report');
+                console.log('Total asset attempts:', assetLoadingLog.attempts.length);
+                console.log('Total errors:', assetLoadingLog.errors.length);
+                console.log('HTTP 503 errors:', assetLoadingLog.http503Errors.length);
+                console.log('Total load time:', totalTime + 'ms');
+                
+                if (assetLoadingLog.http503Errors.length > 0) {
+                    console.error('⚠️ HTTP 503 errors detected - asset canister is experiencing issues');
+                    console.error('Failed URLs:', assetLoadingLog.http503Errors.map(e => e.url));
+                }
+                
+                console.groupEnd();
+                
+                // Make diagnostic data available globally
+                window.__assetLoadingDiagnostics = assetLoadingLog;
+                console.log('[index.html] 💾 Diagnostic data saved to window.__assetLoadingDiagnostics');
+            });
+
+            // Periodic health check for ongoing 503 issues
+            setTimeout(function() {
+                if (assetLoadingLog.http503Errors.length > 0) {
+                    console.group('🔄 [index.html] Periodic Health Check (5s)');
+                    console.warn('HTTP 503 errors persist. Checking canister health...');
+                    
+                    // Try to fetch a known asset to test canister responsiveness
+                    fetch('/index.html', { cache: 'no-cache' })
+                        .then(response => {
+                            console.log('Canister health check:', response.status, response.statusText);
+                            if (response.status === 503) {
+                                console.error('⚠️ Canister still returning 503 - service is unavailable');
+                            } else if (response.ok) {
+                                console.log('✅ Canister is responding to requests');
+                            }
+                        })
+                        .catch(err => {
+                            console.error('❌ Canister health check failed:', err);
+                        });
+                    
+                    console.groupEnd();
+                }
+            }, 5000);
         </script>
     </head>
     <body>

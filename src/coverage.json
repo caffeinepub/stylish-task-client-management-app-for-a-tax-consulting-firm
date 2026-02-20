@@ -1,107 +1,61 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-19T02:08:21.517Z",
+  "generatedAt": "2026-02-20T00:18:25.022Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 6,
-    "implemented": 5,
+    "total": 3,
+    "implemented": 2,
     "items": [
       {
-        "id": "REQ-113",
-        "summary": "Diagnose and resolve the production application loading failure that causes the app to remain stuck on a blank screen or 'Loading...' state after deploying Version 32, with repeated console warnings visible in browser developer tools.",
+        "id": "REQ-1",
+        "summary": "Investigate and fix the issue preventing tasks from loading when the Tasks page is clicked. Verify that the tasks query is executing correctly, error boundaries are catching failures, and loading states are properly handled in TasksPage.tsx.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/components/errors/AppStartupErrorBoundary.tsx",
-          "frontend/src/components/errors/StartupErrorScreen.tsx"
+          "frontend/src/pages/TasksPage.tsx",
+          "frontend/src/hooks/tasks.ts",
+          "frontend/src/components/layout/AppLayout.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/components/errors/AppStartupErrorBoundary.tsx",
-          "frontend/src/components/errors/StartupErrorScreen.tsx"
+          "frontend/src/pages/TasksPage.tsx",
+          "frontend/src/hooks/tasks.ts",
+          "frontend/src/components/layout/AppLayout.tsx"
         ]
       },
       {
-        "id": "REQ-114",
-        "summary": "Add enhanced error logging in the browser console during application startup to capture detailed diagnostic information about router initialization, actor creation, authentication state, and any errors that occur before the first paint, ensuring production issues can be diagnosed from user-reported console logs.",
+        "id": "REQ-2",
+        "summary": "Add error logging and diagnostics to the Tasks page component to capture and report any data fetching failures, including query status, error messages, and network request details.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/App.tsx",
+          "frontend/src/pages/TasksPage.tsx",
           "frontend/src/hooks/useActor.ts",
-          "frontend/src/hooks/useDeferredUrlCleanup.ts",
-          "frontend/src/hooks/useInternetIdentity.ts"
+          "frontend/src/utils/assetLoadingDiagnostics.ts"
         ],
         "matchedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/hooks/useDeferredUrlCleanup.ts"
+          "frontend/src/pages/TasksPage.tsx"
         ]
       },
       {
-        "id": "REQ-115",
-        "summary": "Verify that the useDeferredUrlCleanup hook (frontend/src/hooks/useDeferredUrlCleanup.ts) executes exactly once after mount, does not cause infinite loops or re-renders, and does not interfere with TanStack Router's initialization sequence or route rendering.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/useDeferredUrlCleanup.ts",
-          "frontend/src/App.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/hooks/useDeferredUrlCleanup.ts",
-          "frontend/src/App.tsx"
-        ]
-      },
-      {
-        "id": "REQ-116",
-        "summary": "Review and harden the actor creation logic in frontend/src/hooks/useActor.ts to ensure it does not cause startup failures, does not pass conflicting parameters to createActor (eliminating 'agent and agentOptions both passed' warnings), and gracefully handles missing or invalid admin tokens without blocking application initialization.",
-        "status": "missing",
-        "plannedFiles": [
-          "frontend/src/hooks/useActor.ts"
-        ],
+        "id": "REQ-3",
+        "summary": "Verify that the public tasks query endpoint (publicGetTasks) is accessible and functioning correctly, ensuring the backend canister is responding to requests.",
+        "status": "unknown",
+        "plannedFiles": [],
         "matchedFiles": []
-      },
-      {
-        "id": "REQ-117",
-        "summary": "Ensure the AppStartupErrorBoundary component (frontend/src/components/errors/AppStartupErrorBoundary.tsx) catches all errors during application initialization and displays the StartupErrorScreen with actionable error information, preventing the app from remaining in a blank or frozen state when unexpected errors occur.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/errors/AppStartupErrorBoundary.tsx",
-          "frontend/src/components/errors/StartupErrorScreen.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/errors/AppStartupErrorBoundary.tsx",
-          "frontend/src/components/errors/StartupErrorScreen.tsx"
-        ]
-      },
-      {
-        "id": "REQ-118",
-        "summary": "Test the production build locally using a production-like server configuration to reproduce the loading failure, verify JavaScript module serving with correct MIME types, and ensure the application initializes correctly before deploying to production.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/.ic-assets.json5",
-          "frontend/index.html"
-        ],
-        "matchedFiles": [
-          "frontend/.ic-assets.json5",
-          "frontend/index.html"
-        ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/.ic-assets.json5",
-    "frontend/index.html",
-    "frontend/src/App.tsx",
-    "frontend/src/components/errors/AppStartupErrorBoundary.tsx",
-    "frontend/src/components/errors/StartupErrorScreen.tsx",
-    "frontend/src/hooks/useDeferredUrlCleanup.ts",
-    "frontend/src/utils/urlParams.ts",
+    "frontend/src/components/layout/AppLayout.tsx",
+    "frontend/src/hooks/tasks.ts",
+    "frontend/src/pages/TasksPage.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

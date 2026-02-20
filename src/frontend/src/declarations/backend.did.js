@@ -121,6 +121,14 @@ export const idlService = IDL.Service({
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getClient' : IDL.Func([ClientId], [IDL.Opt(Client)], ['query']),
+  'getPublicAllAssignees' : IDL.Func([], [IDL.Vec(Assignee)], ['query']),
+  'getPublicAllClients' : IDL.Func([], [IDL.Vec(Client)], ['query']),
+  'getPublicAllTasks' : IDL.Func([], [IDL.Vec(Task)], ['query']),
+  'getPublicTasksWithCaptain' : IDL.Func(
+      [],
+      [IDL.Vec(TaskWithCaptain)],
+      ['query'],
+    ),
   'getTask' : IDL.Func([TaskId], [IDL.Opt(Task)], ['query']),
   'getTodo' : IDL.Func([TodoId], [IDL.Opt(Todo)], ['query']),
   'getUserProfile' : IDL.Func(
@@ -271,6 +279,14 @@ export const idlFactory = ({ IDL }) => {
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getClient' : IDL.Func([ClientId], [IDL.Opt(Client)], ['query']),
+    'getPublicAllAssignees' : IDL.Func([], [IDL.Vec(Assignee)], ['query']),
+    'getPublicAllClients' : IDL.Func([], [IDL.Vec(Client)], ['query']),
+    'getPublicAllTasks' : IDL.Func([], [IDL.Vec(Task)], ['query']),
+    'getPublicTasksWithCaptain' : IDL.Func(
+        [],
+        [IDL.Vec(TaskWithCaptain)],
+        ['query'],
+      ),
     'getTask' : IDL.Func([TaskId], [IDL.Opt(Task)], ['query']),
     'getTodo' : IDL.Func([TodoId], [IDL.Opt(Todo)], ['query']),
     'getUserProfile' : IDL.Func(

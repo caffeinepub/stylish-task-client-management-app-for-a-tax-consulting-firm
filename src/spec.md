@@ -1,14 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Fix production application loading failure that causes blank screen after deployment.
+**Goal:** Fix the Tasks page loading issue to ensure tasks load properly when the page is accessed.
 
 **Planned changes:**
-- Diagnose and resolve production loading failure causing app to remain stuck on blank screen or 'Loading...' state
-- Add enhanced error logging during application startup to capture router initialization, actor creation, and authentication state
-- Verify useDeferredUrlCleanup hook executes once without causing infinite loops or interfering with router initialization
-- Harden actor creation logic to eliminate 'agent and agentOptions both passed' warnings and handle missing/invalid admin tokens gracefully
-- Ensure AppStartupErrorBoundary catches all initialization errors and displays StartupErrorScreen
-- Test production build locally with production-like server configuration before deployment
+- Investigate and resolve the issue preventing tasks from loading on the Tasks page
+- Add error logging and diagnostics to capture data fetching failures
+- Verify the publicGetTasks backend endpoint is accessible and functioning correctly
+- Ensure proper error boundaries and loading states are implemented
 
-**User-visible outcome:** Production application loads successfully, renders all routes without blank screens, and displays clear error messages if startup issues occur.
+**User-visible outcome:** Users can successfully navigate to the Tasks page and view their tasks without loading failures or errors.
