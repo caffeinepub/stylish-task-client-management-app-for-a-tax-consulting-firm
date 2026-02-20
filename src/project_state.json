@@ -1,47 +1,22 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Task management application with task list functionality experiencing loading issues",
-  "architectural_notes": [
-    "Application deployed on Internet Computer with asset canister",
-    "Frontend uses React with React Query for data fetching",
-    "Task list feature implemented but experiencing loading issues on click"
-  ],
-  "known_issues": [
-    "Tasks not loading when clicked - requires investigation of task detail view or data fetching",
-    "Recent deployments experienced HTTP 503 errors and asset serving issues",
-    "Application showing 'Something went wrong!' error on initial load in some cases"
-  ],
-  "isFixRequest": true,
-  "existing_features": [
-    {
-      "id": "feature-investigate-and-fix-the-issue-preventing-tasks-from-loading-when-the-tasks-page-is-clicked-verify-that-the-tasks-query-is-executing-correctly-error-boundaries-are-catching-failures-and-loading-states-are-properly-handled-in-taskspage-tsx",
-      "title": "Investigate and fix the issue preventing tasks from loading when the Tasks page is clicked. Verify that the tasks query is executing correctly, error boundaries are catching failures, and loading states are properly handled in TasksPage.tsx.",
-      "reqIds": [
-        "REQ-1"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-error-logging-and-diagnostics-to-the-tasks-page-component-to-capture-and-report-any-data-fetching-failures-including-query-status-error-messages-and-network-request-details",
-      "title": "Add error logging and diagnostics to the Tasks page component to capture and report any data fetching failures, including query status, error messages, and network request details.",
-      "reqIds": [
-        "REQ-2"
-      ],
-      "version": 1
-    }
-  ],
+  "summary": "New project",
+  "architectural_notes": [],
+  "known_issues": [],
+  "isFixRequest": false,
+  "existing_features": [],
   "new_feature_requests": [
     {
-      "id": "AR-3",
-      "summary": "Verify that the public tasks query endpoint (publicGetTasks) is accessible and functioning correctly, ensuring the backend canister is responding to requests.",
+      "id": "AR-1",
+      "summary": "Retry the deployment of Version 42 to production network after resolving the previous deployment error",
       "reqIds": [
-        "REQ-3"
+        "REQ-1"
       ],
       "status": "pending"
     }
   ],
-  "projectName": "Fix Tasks Page Loading Issue",
+  "projectName": "Retry deployment to production",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

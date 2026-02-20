@@ -1,45 +1,4 @@
 {
   "kind": "feature_evidence_report",
-  "features": [
-    {
-      "featureId": "feature-investigate-and-fix-the-issue-preventing-tasks-from-loading-when-the-tasks-page-is-clicked-verify-that-the-tasks-query-is-executing-correctly-error-boundaries-are-catching-failures-and-loading-states-are-properly-handled-in-taskspage-tsx",
-      "featureTitle": "Investigate and fix the issue preventing tasks from loading when the Tasks page is clicked. Verify that the tasks query is executing correctly, error boundaries are catching failures, and loading states are properly handled in TasksPage.tsx.",
-      "files": [
-        "frontend/src/components/layout/AppLayout.tsx",
-        "frontend/src/hooks/tasks.ts",
-        "frontend/src/pages/TasksPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-error-logging-and-diagnostics-to-the-tasks-page-component-to-capture-and-report-any-data-fetching-failures-including-query-status-error-messages-and-network-request-details",
-      "featureTitle": "Add error logging and diagnostics to the Tasks page component to capture and report any data fetching failures, including query status, error messages, and network request details.",
-      "files": [
-        "frontend/src/pages/TasksPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-2"
-      ],
-      "confidence": "high"
-    }
-  ]
+  "features": []
 }

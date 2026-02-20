@@ -592,85 +592,6 @@ actor {
     resultList.toArray();
   };
 
-  // ===== UNAUTHENTICATED QUERIES =====
-  // These endpoints allow public access to all data across all users.
-  // No authorization checks are required as per the implementation plan.
-
-  public query func getPublicAllClients() : async [Client] {
-    // No authorization check - accessible to all including anonymous users
-    let allClientsList = List.empty<Client>();
-
-    for ((_, clientMap) in clients.entries()) {
-      let clientValues = clientMap.values().toArray();
-      allClientsList.addAll(clientValues.values());
-    };
-    allClientsList.toArray();
-  };
-
-  public query func getPublicAllTasks() : async [Task] {
-    // No authorization check - accessible to all including anonymous users
-    let allTasksList = List.empty<Task>();
-
-    for ((_, taskMap) in tasks.entries()) {
-      let taskValues = taskMap.values().toArray();
-      allTasksList.addAll(taskValues.values());
-    };
-    allTasksList.toArray();
-  };
-
-  public query func getPublicAllAssignees() : async [Assignee] {
-    // No authorization check - accessible to all including anonymous users
-    let allAssigneesList = List.empty<Assignee>();
-
-    for ((_, assigneeMap) in assignees.entries()) {
-      let assigneeValues = assigneeMap.values().toArray();
-      allAssigneesList.addAll(assigneeValues.values());
-    };
-    allAssigneesList.toArray();
-  };
-
-  public query func getPublicTasksWithCaptain() : async [TaskWithCaptain] {
-    // No authorization check - accessible to all including anonymous users
-    let allTaskWithCaptainList = List.empty<TaskWithCaptain>();
-
-    switch (tasks.isEmpty()) {
-      case (true) { return [] };
-      case (false) {};
-    };
-
-    for ((owner, taskMap) in tasks.entries()) {
-      let assigneeMap = switch (assignees.get(owner)) {
-        case (?assigneesMap) { assigneesMap };
-        case (null) { Map.empty<AssigneeId, Assignee>() };
-      };
-
-      for (task in taskMap.values()) {
-        let captainName = switch (task.assignedName) {
-          case (null) { null };
-          case (?assignedName) {
-            let filteredAssignees = assigneeMap.filter(
-              func(_id, assignee) { assignee.name == assignedName }
-            );
-            if (filteredAssignees.size() > 0) {
-              switch (filteredAssignees.values().toArray()[0].captain) {
-                case (null) { null };
-                case (?name) { ?name };
-              };
-            } else {
-              null;
-            };
-          };
-        };
-
-        allTaskWithCaptainList.add({
-          task;
-          captainName;
-        });
-      };
-    };
-    allTaskWithCaptainList.toArray();
-  };
-
   // Todos
   public shared ({ caller }) func createTodo(todo : PartialTodoInput) : async TodoId {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
@@ -748,4 +669,3 @@ actor {
     todoStorage.values().toArray();
   };
 };
-

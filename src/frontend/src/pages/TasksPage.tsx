@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useTasksWithCaptain, usePublicTasksWithCaptain, useBulkDeleteTasks } from '../hooks/tasks';
+import { useTasksWithCaptain, useBulkDeleteTasks } from '../hooks/tasks';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +33,8 @@ import { toast } from 'sonner';
 import { formatTaskDate, formatAssigneeName } from '../utils/taskDisplay';
 import { sortTasks, type SortField, type SortDirection } from '../utils/taskSort';
 
+const FILTER_ALL_SENTINEL = 'all';
+
 export default function TasksPage() {
   const navigate = useNavigate();
   const { identity } = useInternetIdentity();
@@ -45,27 +47,19 @@ export default function TasksPage() {
   const urlStatus = searchParams.status;
 
   // Enhanced logging for task queries
-  const authenticatedTasksQuery = useTasksWithCaptain();
-  const publicTasksQuery = usePublicTasksWithCaptain();
+  const tasksQuery = useTasksWithCaptain();
 
   // Log query states on mount and changes
   useEffect(() => {
     console.log('[TasksPage] Component mounted', {
       timestamp: new Date().toISOString(),
       isAuthenticated,
-      authenticatedQuery: {
-        isLoading: authenticatedTasksQuery.isLoading,
-        isFetching: authenticatedTasksQuery.isFetching,
-        isError: authenticatedTasksQuery.isError,
-        error: authenticatedTasksQuery.error,
-        dataLength: authenticatedTasksQuery.data?.length,
-      },
-      publicQuery: {
-        isLoading: publicTasksQuery.isLoading,
-        isFetching: publicTasksQuery.isFetching,
-        isError: publicTasksQuery.isError,
-        error: publicTasksQuery.error,
-        dataLength: publicTasksQuery.data?.length,
+      query: {
+        isLoading: tasksQuery.isLoading,
+        isFetching: tasksQuery.isFetching,
+        isError: tasksQuery.isError,
+        error: tasksQuery.error,
+        dataLength: tasksQuery.data?.length,
       },
     });
   }, []);
@@ -74,50 +68,36 @@ export default function TasksPage() {
     console.log('[TasksPage] Query state changed', {
       timestamp: new Date().toISOString(),
       isAuthenticated,
-      activeQuery: isAuthenticated ? 'authenticated' : 'public',
-      authenticatedQuery: {
-        isLoading: authenticatedTasksQuery.isLoading,
-        isFetching: authenticatedTasksQuery.isFetching,
-        isError: authenticatedTasksQuery.isError,
-        error: authenticatedTasksQuery.error?.message,
-        dataLength: authenticatedTasksQuery.data?.length,
-        status: authenticatedTasksQuery.status,
-        fetchStatus: authenticatedTasksQuery.fetchStatus,
-      },
-      publicQuery: {
-        isLoading: publicTasksQuery.isLoading,
-        isFetching: publicTasksQuery.isFetching,
-        isError: publicTasksQuery.isError,
-        error: publicTasksQuery.error?.message,
-        dataLength: publicTasksQuery.data?.length,
-        status: publicTasksQuery.status,
-        fetchStatus: publicTasksQuery.fetchStatus,
+      query: {
+        isLoading: tasksQuery.isLoading,
+        isFetching: tasksQuery.isFetching,
+        isError: tasksQuery.isError,
+        error: tasksQuery.error?.message,
+        dataLength: tasksQuery.data?.length,
+        status: tasksQuery.status,
+        fetchStatus: tasksQuery.fetchStatus,
       },
     });
   }, [
     isAuthenticated,
-    authenticatedTasksQuery.isLoading,
-    authenticatedTasksQuery.isFetching,
-    authenticatedTasksQuery.isError,
-    authenticatedTasksQuery.data,
-    publicTasksQuery.isLoading,
-    publicTasksQuery.isFetching,
-    publicTasksQuery.isError,
-    publicTasksQuery.data,
+    tasksQuery.isLoading,
+    tasksQuery.isFetching,
+    tasksQuery.isError,
+    tasksQuery.data,
   ]);
 
-  const tasksWithCaptain = isAuthenticated ? (authenticatedTasksQuery.data || []) : (publicTasksQuery.data || []);
-  const isLoading = isAuthenticated ? authenticatedTasksQuery.isLoading : publicTasksQuery.isLoading;
-  const isFetching = isAuthenticated ? authenticatedTasksQuery.isFetching : publicTasksQuery.isFetching;
-  const isError = isAuthenticated ? authenticatedTasksQuery.isError : publicTasksQuery.isError;
-  const error = isAuthenticated ? authenticatedTasksQuery.error : publicTasksQuery.error;
+  const tasksWithCaptain = tasksQuery.data || [];
+  const isLoading = tasksQuery.isLoading;
+  const isFetching = tasksQuery.isFetching;
+  const isError = tasksQuery.isError;
+  const error = tasksQuery.error;
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterClientName, setFilterClientName] = useState(urlClientName || '');
-  const [filterTaskCategory, setFilterTaskCategory] = useState(urlTaskCategory || '');
-  const [filterSubCategory, setFilterSubCategory] = useState(urlSubCategory || '');
-  const [filterAssignedName, setFilterAssignedName] = useState('');
-  const [filterStatus, setFilterStatus] = useState(urlStatus || '');
+  const [filterClientName, setFilterClientName] = useState(urlClientName || FILTER_ALL_SENTINEL);
+  const [filterTaskCategory, setFilterTaskCategory] = useState(urlTaskCategory || FILTER_ALL_SENTINEL);
+  const [filterSubCategory, setFilterSubCategory] = useState(urlSubCategory || FILTER_ALL_SENTINEL);
+  const [filterAssignedName, setFilterAssignedName] = useState(FILTER_ALL_SENTINEL);
+  const [filterStatus, setFilterStatus] = useState(urlStatus || FILTER_ALL_SENTINEL);
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<TaskId>>(new Set());
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
@@ -179,23 +159,23 @@ export default function TasksPage() {
       );
     }
 
-    if (filterClientName) {
+    if (filterClientName && filterClientName !== FILTER_ALL_SENTINEL) {
       result = result.filter((t) => t.task.clientName === filterClientName);
     }
 
-    if (filterTaskCategory) {
+    if (filterTaskCategory && filterTaskCategory !== FILTER_ALL_SENTINEL) {
       result = result.filter((t) => t.task.taskCategory === filterTaskCategory);
     }
 
-    if (filterSubCategory) {
+    if (filterSubCategory && filterSubCategory !== FILTER_ALL_SENTINEL) {
       result = result.filter((t) => t.task.subCategory === filterSubCategory);
     }
 
-    if (filterAssignedName) {
+    if (filterAssignedName && filterAssignedName !== FILTER_ALL_SENTINEL) {
       result = result.filter((t) => t.task.assignedName === filterAssignedName);
     }
 
-    if (filterStatus) {
+    if (filterStatus && filterStatus !== FILTER_ALL_SENTINEL) {
       result = result.filter((t) => t.task.status === filterStatus);
     }
 
@@ -330,10 +310,10 @@ export default function TasksPage() {
                   <SelectValue placeholder="Client Name" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Clients</SelectItem>
+                  <SelectItem value={FILTER_ALL_SENTINEL}>All Clients</SelectItem>
                   {uniqueClientNames.map((name) => (
-                    <SelectItem key={name} value={name}>
-                      {name}
+                    <SelectItem key={name as string} value={name as string}>
+                      {name as string}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -344,10 +324,10 @@ export default function TasksPage() {
                   <SelectValue placeholder="Task Category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
+                  <SelectItem value={FILTER_ALL_SENTINEL}>All Categories</SelectItem>
                   {uniqueTaskCategories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
+                    <SelectItem key={category as string} value={category as string}>
+                      {category as string}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -358,10 +338,10 @@ export default function TasksPage() {
                   <SelectValue placeholder="Sub Category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Sub-Categories</SelectItem>
+                  <SelectItem value={FILTER_ALL_SENTINEL}>All Sub-Categories</SelectItem>
                   {uniqueSubCategories.map((subCategory) => (
-                    <SelectItem key={subCategory} value={subCategory}>
-                      {subCategory}
+                    <SelectItem key={subCategory as string} value={subCategory as string}>
+                      {subCategory as string}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -372,10 +352,10 @@ export default function TasksPage() {
                   <SelectValue placeholder="Assigned Name" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Assignees</SelectItem>
+                  <SelectItem value={FILTER_ALL_SENTINEL}>All Assignees</SelectItem>
                   {uniqueAssignedNames.map((name) => (
-                    <SelectItem key={name} value={name}>
-                      {name}
+                    <SelectItem key={name as string} value={name as string}>
+                      {name as string}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -386,10 +366,10 @@ export default function TasksPage() {
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Statuses</SelectItem>
+                  <SelectItem value={FILTER_ALL_SENTINEL}>All Statuses</SelectItem>
                   {uniqueStatuses.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status}
+                    <SelectItem key={status as string} value={status as string}>
+                      {status as string}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -443,13 +423,15 @@ export default function TasksPage() {
             <div className="text-center py-12">
               <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
               <p className="text-muted-foreground">Loading tasks...</p>
-              <p className="text-xs text-muted-foreground mt-2">
-                {isAuthenticated ? 'Fetching authenticated tasks' : 'Fetching public tasks'}
-              </p>
             </div>
           ) : filteredTasks.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {searchQuery || filterClientName || filterTaskCategory || filterSubCategory || filterAssignedName || filterStatus
+              {searchQuery || 
+               (filterClientName !== FILTER_ALL_SENTINEL) || 
+               (filterTaskCategory !== FILTER_ALL_SENTINEL) || 
+               (filterSubCategory !== FILTER_ALL_SENTINEL) || 
+               (filterAssignedName !== FILTER_ALL_SENTINEL) || 
+               (filterStatus !== FILTER_ALL_SENTINEL)
                 ? 'No tasks found matching your filters.'
                 : 'No tasks yet.'}
             </div>
@@ -469,22 +451,37 @@ export default function TasksPage() {
                       </TableHead>
                     )}
                     <TableHead>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleSort('clientName')}
-                        className="h-8 px-2"
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => handleSort('clientName')}>
                         Client Name
                         <ArrowUpDown className="ml-2 h-4 w-4" />
                       </Button>
                     </TableHead>
-                    <TableHead>Task Category</TableHead>
-                    <TableHead>Sub Category</TableHead>
+                    <TableHead>
+                      <Button variant="ghost" size="sm" onClick={() => handleSort('taskCategory')}>
+                        Category
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button variant="ghost" size="sm" onClick={() => handleSort('subCategory')}>
+                        Sub-Category
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Comment</TableHead>
-                    <TableHead>Assignee</TableHead>
-                    <TableHead>Due Date</TableHead>
+                    <TableHead className="min-w-[200px]">Comment</TableHead>
+                    <TableHead>
+                      <Button variant="ghost" size="sm" onClick={() => handleSort('assignedName')}>
+                        Assigned
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </TableHead>
+                    <TableHead>
+                      <Button variant="ghost" size="sm" onClick={() => handleSort('dueDate')}>
+                        Due Date
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </TableHead>
                     {isAuthenticated && <TableHead className="text-right">Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
@@ -511,14 +508,14 @@ export default function TasksPage() {
                           {isAuthenticated ? (
                             <TaskQuickStatus task={task} />
                           ) : (
-                            task.status || '-'
+                            <span className="text-sm">{task.status || '—'}</span>
                           )}
                         </TableCell>
-                        <TableCell className="max-w-xs">
+                        <TableCell>
                           {isAuthenticated ? (
                             <InlineCommentEditor task={task} />
                           ) : (
-                            <span className="truncate block">{task.comment || '-'}</span>
+                            <span className="text-sm truncate">{task.comment || '—'}</span>
                           )}
                         </TableCell>
                         <TableCell>
@@ -551,8 +548,10 @@ export default function TasksPage() {
           <TaskFormDialog
             open={isCreateDialogOpen || !!editingTask}
             onOpenChange={(open) => {
-              setIsCreateDialogOpen(open);
-              if (!open) setEditingTask(undefined);
+              if (!open) {
+                setIsCreateDialogOpen(false);
+                setEditingTask(undefined);
+              }
             }}
             task={editingTask}
           />
@@ -564,12 +563,12 @@ export default function TasksPage() {
 
           <TaskBulkEditDialog
             open={isBulkEditDialogOpen}
-            onOpenChange={(open) => {
-              setIsBulkEditDialogOpen(open);
-              if (!open) setSelectedTaskIds(new Set());
-            }}
+            onOpenChange={setIsBulkEditDialogOpen}
             selectedTasks={selectedTasks}
-            onSuccess={() => setSelectedTaskIds(new Set())}
+            onSuccess={() => {
+              setSelectedTaskIds(new Set());
+              setIsBulkEditDialogOpen(false);
+            }}
           />
         </>
       )}

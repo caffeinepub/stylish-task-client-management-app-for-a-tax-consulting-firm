@@ -1,9 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import type { Assignee, AssigneeId, PartialAssigneeInput, backendInterface } from '../backend';
+import type { Assignee, AssigneeId, PartialAssigneeInput } from '../backend';
 import { toast } from 'sonner';
-import { AnonymousIdentity } from '@dfinity/agent';
-import { createActorWithConfig } from '../config';
 
 export function useAssignees() {
   const { actor, isFetching } = useActor();
@@ -21,19 +19,7 @@ export function useAssignees() {
 // Alias for backward compatibility
 export const useGetAllAssignees = useAssignees;
 
-export function usePublicAssignees() {
-  return useQuery<Assignee[]>({
-    queryKey: ['publicAssignees'],
-    queryFn: async () => {
-      const anonymousActor = await createActorWithConfig({
-        agentOptions: {
-          identity: new AnonymousIdentity(),
-        },
-      }) as backendInterface;
-      return anonymousActor.getPublicAllAssignees();
-    },
-  });
-}
+// Removed usePublicAssignees - backend requires authentication for all data access
 
 export function useAssignee(assigneeId: AssigneeId | null) {
   const { actor, isFetching } = useActor();

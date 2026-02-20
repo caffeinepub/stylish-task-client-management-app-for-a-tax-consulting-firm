@@ -1,67 +1,35 @@
 {
   "kind": "build_request",
-  "title": "Fix Tasks Page Loading Issue",
+  "title": "Retry deployment to production",
   "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Investigate and fix the issue preventing tasks from loading when the Tasks page is clicked. Verify that the tasks query is executing correctly, error boundaries are catching failures, and loading states are properly handled in TasksPage.tsx.",
-      "target": "frontend",
+      "text": "Retry the deployment of Version 42 to production network after resolving the previous deployment error",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-last"
+          "msg-latest"
         ],
         "quotes": [
-          "while click tasks ,it is not loading"
+          "try"
         ]
       },
       "acceptanceCriteria": [
-        "Tasks page loads successfully when navigated to from the navigation menu",
-        "Task list displays data or shows appropriate loading/error states",
-        "No JavaScript errors in console when accessing Tasks page",
-        "Page responds within 3 seconds of click"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Add error logging and diagnostics to the Tasks page component to capture and report any data fetching failures, including query status, error messages, and network request details.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-last"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Console logs show clear error messages if tasks query fails",
-        "Loading states are visible to user during data fetch",
-        "Error boundary catches and displays any runtime errors"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Verify that the public tasks query endpoint (publicGetTasks) is accessible and functioning correctly, ensuring the backend canister is responding to requests.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-last"
-        ]
-      },
-      "acceptanceCriteria": [
-        "publicGetTasks endpoint returns task data without errors",
-        "Backend canister responds to health check queries",
-        "No 503 or 500 errors when calling backend methods"
+        "Version 42 successfully deploys to production without errors",
+        "Application is accessible on the production URL",
+        "All existing functionality (clients, tasks, assignees, todos) works correctly after deployment"
       ]
     }
   ],
   "constraints": [
-    "Do not modify useInternetIdentity.ts or useActor.ts hooks",
-    "Preserve existing public API access patterns for unauthenticated users",
-    "Maintain compatibility with current task data structure and types"
+    "Do not modify any existing code or functionality",
+    "Preserve all existing data and state during redeployment"
   ],
   "nonGoals": [
-    "Redesigning the Tasks page UI",
-    "Adding new task filtering features",
-    "Modifying task data schema"
+    "Adding new features",
+    "Modifying existing UI or backend logic",
+    "Changing deployment configuration"
   ],
   "imageRequirements": {
     "required": [],

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useAssignees, usePublicAssignees, useBulkDeleteAssignees } from '../hooks/assignees';
+import { useAssignees, useBulkDeleteAssignees } from '../hooks/assignees';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,11 +24,7 @@ export default function AssigneesPage() {
   const { identity } = useInternetIdentity();
   const isAuthenticated = !!identity;
 
-  const { data: authenticatedAssignees = [], isLoading: authLoading } = useAssignees();
-  const { data: publicAssignees = [], isLoading: publicLoading } = usePublicAssignees();
-
-  const assignees = isAuthenticated ? authenticatedAssignees : publicAssignees;
-  const isLoading = isAuthenticated ? authLoading : publicLoading;
+  const { data: assignees = [], isLoading } = useAssignees();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAssignees, setSelectedAssignees] = useState<Set<AssigneeId>>(new Set());

@@ -1,9 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import type { Client, ClientId, PartialClientInput, backendInterface } from '../backend';
+import type { Client, ClientId, PartialClientInput } from '../backend';
 import { toast } from 'sonner';
-import { AnonymousIdentity } from '@dfinity/agent';
-import { createActorWithConfig } from '../config';
 
 export function useClients() {
   const { actor, isFetching } = useActor();
@@ -21,19 +19,7 @@ export function useClients() {
 // Alias for backward compatibility
 export const useGetAllClients = useClients;
 
-export function usePublicClients() {
-  return useQuery<Client[]>({
-    queryKey: ['publicClients'],
-    queryFn: async () => {
-      const anonymousActor = await createActorWithConfig({
-        agentOptions: {
-          identity: new AnonymousIdentity(),
-        },
-      }) as backendInterface;
-      return anonymousActor.getPublicAllClients();
-    },
-  });
-}
+// Removed usePublicClients - backend requires authentication for all data access
 
 export function useClient(clientId: ClientId | null) {
   const { actor, isFetching } = useActor();

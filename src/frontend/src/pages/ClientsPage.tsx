@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useClients, usePublicClients, useBulkDeleteClients } from '../hooks/clients';
+import { useClients, useBulkDeleteClients } from '../hooks/clients';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,11 +24,7 @@ export default function ClientsPage() {
   const { identity } = useInternetIdentity();
   const isAuthenticated = !!identity;
 
-  const { data: authenticatedClients = [], isLoading: authLoading } = useClients();
-  const { data: publicClients = [], isLoading: publicLoading } = usePublicClients();
-
-  const clients = isAuthenticated ? authenticatedClients : publicClients;
-  const isLoading = isAuthenticated ? authLoading : publicLoading;
+  const { data: clients = [], isLoading } = useClients();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClients, setSelectedClients] = useState<Set<ClientId>>(new Set());
@@ -179,9 +175,8 @@ export default function ClientsPage() {
                       </TableHead>
                     )}
                     <TableHead>Client Name</TableHead>
-                    <TableHead>GSTIN</TableHead>
-                    <TableHead>PAN</TableHead>
-                    <TableHead>Notes</TableHead>
+                    <TableHead className="hidden md:table-cell">GSTIN</TableHead>
+                    <TableHead className="hidden lg:table-cell">PAN</TableHead>
                     {isAuthenticated && <TableHead className="text-right">Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
@@ -200,9 +195,8 @@ export default function ClientsPage() {
                         </TableCell>
                       )}
                       <TableCell className="font-medium">{client.name}</TableCell>
-                      <TableCell>{client.gstin || '-'}</TableCell>
-                      <TableCell>{client.pan || '-'}</TableCell>
-                      <TableCell className="max-w-xs truncate">{client.notes || '-'}</TableCell>
+                      <TableCell className="hidden md:table-cell">{client.gstin || '-'}</TableCell>
+                      <TableCell className="hidden lg:table-cell">{client.pan || '-'}</TableCell>
                       {isAuthenticated && (
                         <TableCell className="text-right">
                           <Button

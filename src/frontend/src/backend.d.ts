@@ -116,10 +116,6 @@ export interface backendInterface {
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getClient(clientId: ClientId): Promise<Client | null>;
-    getPublicAllAssignees(): Promise<Array<Assignee>>;
-    getPublicAllClients(): Promise<Array<Client>>;
-    getPublicAllTasks(): Promise<Array<Task>>;
-    getPublicTasksWithCaptain(): Promise<Array<TaskWithCaptain>>;
     getTask(taskId: TaskId): Promise<Task | null>;
     getTodo(todoId: TodoId): Promise<Todo | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;

@@ -199,10 +199,6 @@ export interface backendInterface {
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getClient(clientId: ClientId): Promise<Client | null>;
-    getPublicAllAssignees(): Promise<Array<Assignee>>;
-    getPublicAllClients(): Promise<Array<Client>>;
-    getPublicAllTasks(): Promise<Array<Task>>;
-    getPublicTasksWithCaptain(): Promise<Array<TaskWithCaptain>>;
     getTask(taskId: TaskId): Promise<Task | null>;
     getTodo(todoId: TodoId): Promise<Todo | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
@@ -494,62 +490,6 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getClient(arg0);
             return from_candid_opt_n35(this._uploadFile, this._downloadFile, result);
-        }
-    }
-    async getPublicAllAssignees(): Promise<Array<Assignee>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getPublicAllAssignees();
-                return from_candid_vec_n12(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getPublicAllAssignees();
-            return from_candid_vec_n12(this._uploadFile, this._downloadFile, result);
-        }
-    }
-    async getPublicAllClients(): Promise<Array<Client>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getPublicAllClients();
-                return from_candid_vec_n16(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getPublicAllClients();
-            return from_candid_vec_n16(this._uploadFile, this._downloadFile, result);
-        }
-    }
-    async getPublicAllTasks(): Promise<Array<Task>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getPublicAllTasks();
-                return from_candid_vec_n19(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getPublicAllTasks();
-            return from_candid_vec_n19(this._uploadFile, this._downloadFile, result);
-        }
-    }
-    async getPublicTasksWithCaptain(): Promise<Array<TaskWithCaptain>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getPublicTasksWithCaptain();
-                return from_candid_vec_n24(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getPublicTasksWithCaptain();
-            return from_candid_vec_n24(this._uploadFile, this._downloadFile, result);
         }
     }
     async getTask(arg0: TaskId): Promise<Task | null> {

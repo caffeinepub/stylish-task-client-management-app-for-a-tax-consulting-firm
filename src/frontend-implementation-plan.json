@@ -1,58 +1,36 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix Tasks Page Loading Issue",
+  "title": "Retry deployment to production",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Investigate and fix the issue preventing tasks from loading when the Tasks page is clicked, ensuring proper query execution, error boundary handling, and loading states in TasksPage.tsx",
+      "summary": "Retry the deployment of Version 42 to production network after resolving the previous deployment error",
       "acceptanceCriteria": [
-        "Tasks page loads successfully when navigated to from the navigation menu",
-        "Task list displays data or shows appropriate loading/error states",
-        "No JavaScript errors in console when accessing Tasks page",
-        "Page responds within 3 seconds of click"
+        "Version 42 successfully deploys to production without errors",
+        "Application is accessible on the production URL",
+        "All existing functionality (clients, tasks, assignees, todos) works correctly after deployment"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/TasksPage.tsx",
+          "path": "frontend/index.html",
           "operation": "modify",
-          "description": "Add comprehensive error logging and diagnostics to the TasksPage component. Log the query status, error messages, and data state at key points (mount, query status changes, error states). Ensure the loading state is properly displayed while data is being fetched. Add console logging for the tasks query execution including timing information, query key, and response data structure. Verify that both authenticated (useAllTasksWithCaptain) and public (usePublicTasksWithCaptain) query hooks are being called correctly based on authentication state and that error boundaries are catching any runtime failures."
+          "description": "Verify the HTML entry point has proper diagnostic logging enabled for monitoring deployment success and detecting any HTTP 503 errors or asset loading issues that might occur during redeployment"
         },
         {
-          "path": "frontend/src/hooks/tasks.ts",
+          "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Add detailed error logging to the useAllTasksWithCaptain and usePublicTasksWithCaptain hooks. Log when queries are initiated, when the actor becomes available, and when queries complete (success or error). Include query status (isLoading, isFetching, isError), error details if present, and timing information. Add console warnings if the actor is undefined or if the query is disabled due to missing dependencies. Ensure proper error propagation to the UI layer."
+          "description": "Confirm the root application component's error handling and 30-second loading timeout detection are properly configured to catch any deployment-related initialization issues"
         },
         {
-          "path": "frontend/src/components/layout/AppLayout.tsx",
+          "path": "frontend/src/components/errors/AppStartupErrorBoundary.tsx",
           "operation": "modify",
-          "description": "Add navigation click event logging for the Tasks menu item. Log when the Tasks navigation link is clicked, including timestamp and current route. This will help diagnose if navigation itself is failing or if the issue occurs after navigation completes."
-        }
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "summary": "Add error logging and diagnostics to the Tasks page component to capture and report any data fetching failures, including query status, error messages, and network request details",
-      "acceptanceCriteria": [
-        "Console logs show clear error messages if tasks query fails",
-        "Loading states are visible to user during data fetch",
-        "Error boundary catches and displays any runtime errors"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/TasksPage.tsx",
-          "operation": "modify",
-          "description": "Enhance the TasksPage component with comprehensive error and loading state UI. Display a clear loading spinner or skeleton UI when isLoading is true. Show detailed error messages to users when queries fail, including retry functionality. Add console logging that captures the complete query state (data, error, isLoading, isFetching, isError, failureCount) and logs it whenever the state changes. Include timestamp and user authentication status in all log entries for better debugging."
-        },
-        {
-          "path": "frontend/src/hooks/useActor.ts",
-          "operation": "modify",
-          "description": "Add detailed logging to the useActor hook to diagnose actor initialization issues. Log when the actor is being created, when it becomes available, and if there are any errors during creation. Include the authentication state (identity present/absent) and actor ready state in console logs. This will help identify if the Tasks page loading issue is related to actor availability."
+          "description": "Ensure the error boundary is properly catching and logging any startup errors that might occur during the redeployment process"
         },
         {
           "path": "frontend/src/utils/assetLoadingDiagnostics.ts",
           "operation": "modify",
-          "description": "Extend the existing diagnostics utility to capture and log network requests related to backend canister calls. Add interception for fetch requests to the backend canister endpoints, logging request timing, response status, and any 503 or connection errors. Include detection for backend canister health and availability issues that might prevent tasks from loading."
+          "description": "Verify the asset loading diagnostics utility is properly intercepting fetch and script errors, with special attention to HTTP 503 error detection to identify any deployment-related asset loading failures"
         }
       ]
     }
