@@ -79,6 +79,11 @@ actor {
     paymentStatus : ?Text;
   };
 
+  public type TaskWithCaptain = {
+    task : Task;
+    captainName : ?Text;
+  };
+
   public type UserProfile = {
     name : Text;
   };
@@ -119,11 +124,6 @@ actor {
     priority : ?Nat;
   };
 
-  public type TaskWithCaptain = {
-    task : Task;
-    captainName : ?Text;
-  };
-
   // Persistent data structures
   let clients = Map.empty<Principal, Map.Map<ClientId, Client>>();
   let tasks = Map.empty<Principal, Map.Map<TaskId, Task>>();
@@ -134,6 +134,13 @@ actor {
   var nextTaskId = 0;
   var nextAssigneeId = 0;
   var nextTodoId = 0;
+
+  public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can save profiles");
+    };
+    userProfiles.add(caller, profile);
+  };
 
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
@@ -149,13 +156,7 @@ actor {
     userProfiles.get(user);
   };
 
-  public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can save profiles");
-    };
-    userProfiles.add(caller, profile);
-  };
-
+  // Internal helper functions to get/create caller-specific storage
   func getClientStorage(caller : Principal) : Map.Map<ClientId, Client> {
     switch (clients.get(caller)) {
       case (?clientMap) { clientMap };
@@ -200,9 +201,7 @@ actor {
     };
   };
 
-  // ===== CRUD OPERATIONS =====
-
-  // Assignees
+  // Assignee CRUD
   public shared ({ caller }) func createAssignee(assignee : PartialAssigneeInput) : async AssigneeId {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Please sign in to continue");
@@ -270,7 +269,7 @@ actor {
     assigneeStorage.values().toArray();
   };
 
-  // Clients
+  // Client CRUD
   public shared ({ caller }) func createClient(client : PartialClientInput) : async ClientId {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Please sign in to continue");
@@ -343,7 +342,7 @@ actor {
     clientStorage.values().toArray();
   };
 
-  // Tasks
+  // Task CRUD
   public shared ({ caller }) func createTask(
     clientName : Text,
     taskCategory : Text,
@@ -551,6 +550,7 @@ actor {
     taskStorage.get(taskId);
   };
 
+  // Optimized getAllTasks to avoid unnecessary captain lookups
   public query ({ caller }) func getAllTasks() : async [Task] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Please sign in to continue");
@@ -592,7 +592,7 @@ actor {
     resultList.toArray();
   };
 
-  // Todos
+  // Todo CRUD
   public shared ({ caller }) func createTodo(todo : PartialTodoInput) : async TodoId {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can create todos");

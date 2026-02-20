@@ -1,7 +1,7 @@
 import type { Task } from '../backend';
 import { getStatusDisplayLabel } from '../constants/taskStatus';
 
-export type SortField = 'dueDate' | 'status' | 'taskCategory' | 'subCategory' | 'clientName' | 'assignedName' | 'assignmentDate' | 'completionDate' | 'bill' | 'createdAt';
+export type SortField = 'dueDate' | 'status' | 'taskCategory' | 'subCategory' | 'clientName' | 'assignedName' | 'assignmentDate' | 'completionDate' | 'bill' | 'advanceReceived' | 'outstandingAmount' | 'createdAt';
 export type SortDirection = 'asc' | 'desc';
 
 export const SORT_FIELD_LABELS: Record<SortField, string> = {
@@ -14,6 +14,8 @@ export const SORT_FIELD_LABELS: Record<SortField, string> = {
   assignmentDate: 'Assignment Date',
   completionDate: 'Completion Date',
   bill: 'Bill Amount',
+  advanceReceived: 'Advance Received',
+  outstandingAmount: 'Outstanding Amount',
   createdAt: 'Created At',
 };
 
@@ -106,6 +108,12 @@ export function sortTasks(
 
       case 'bill':
         return compareValues(a.bill, b.bill, direction, compareNumber);
+
+      case 'advanceReceived':
+        return compareValues(a.advanceReceived, b.advanceReceived, direction, compareNumber);
+
+      case 'outstandingAmount':
+        return compareValues(a.outstandingAmount, b.outstandingAmount, direction, compareNumber);
 
       case 'createdAt':
         return compareValues(a.createdAt, b.createdAt, direction, compareBigInt);

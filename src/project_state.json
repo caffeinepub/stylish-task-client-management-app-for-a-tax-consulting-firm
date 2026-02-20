@@ -3,20 +3,47 @@
   "projectStateVersion": 3,
   "summary": "New project",
   "architectural_notes": [],
-  "known_issues": [],
-  "isFixRequest": false,
-  "existing_features": [],
-  "new_feature_requests": [
+  "known_issues": [
+    "Slow initial load time in production"
+  ],
+  "isFixRequest": true,
+  "existing_features": [
     {
-      "id": "AR-1",
-      "summary": "Retry the deployment of Version 42 to production network after resolving the previous deployment error",
+      "id": "feature-implement-pagination-or-virtual-scrolling-for-the-task-list-to-avoid-loading-all-116-tasks-at-once",
+      "title": "Implement pagination or virtual scrolling for the task list to avoid loading all 116 tasks at once",
       "reqIds": [
         "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-loading-skeleton-or-progressive-rendering-for-task-list-items-instead-of-showing-generic-loading-spinner",
+      "title": "Add loading skeleton or progressive rendering for task list items instead of showing generic loading spinner",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-react-query-stale-time-configuration-for-tasks-to-reduce-unnecessary-refetches-on-navigation",
+      "title": "Implement React Query stale-time configuration for tasks to reduce unnecessary refetches on navigation",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-3",
+      "summary": "Optimize backend query performance for getAllTasks, particularly when including captain details via getAssigneeByCaptainPrincipal",
+      "reqIds": [
+        "REQ-3"
       ],
       "status": "pending"
     }
   ],
-  "projectName": "Retry deployment to production",
+  "projectName": "CSWA Client Management",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

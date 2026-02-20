@@ -1,36 +1,69 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Retry deployment to production",
+  "title": "Optimize task loading performance",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Retry the deployment of Version 42 to production network after resolving the previous deployment error",
+      "summary": "Implement pagination or virtual scrolling for the task list to avoid loading all 116 tasks at once",
       "acceptanceCriteria": [
-        "Version 42 successfully deploys to production without errors",
-        "Application is accessible on the production URL",
-        "All existing functionality (clients, tasks, assignees, todos) works correctly after deployment"
+        "Task list loads initial page (e.g., 20-50 tasks) within 2 seconds",
+        "Additional tasks load on scroll or page navigation",
+        "Total task count (116) remains visible to users",
+        "Existing search and filter functionality continues to work with paginated data"
       ],
       "file_operations": [
         {
-          "path": "frontend/index.html",
+          "path": "frontend/src/hooks/tasks.ts",
           "operation": "modify",
-          "description": "Verify the HTML entry point has proper diagnostic logging enabled for monitoring deployment success and detecting any HTTP 503 errors or asset loading issues that might occur during redeployment"
+          "description": "Add pagination state management and logic to useGetAllTasks hook. Implement a usePaginatedTasks hook that wraps useGetAllTasks and provides pagination controls (currentPage, pageSize, totalPages). Apply client-side pagination to the fetched tasks array after filtering and sorting, slicing the array based on currentPage and pageSize. Ensure the hook exposes both the paginated tasks and the full count for display."
         },
         {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/pages/TasksPage.tsx",
           "operation": "modify",
-          "description": "Confirm the root application component's error handling and 30-second loading timeout detection are properly configured to catch any deployment-related initialization issues"
+          "description": "Replace useGetAllTasks with usePaginatedTasks hook. Add pagination controls UI component (Previous/Next buttons, page number display, and page size selector) below the task list. Display the total task count (e.g., 'Showing 1-20 of 116 tasks') above the task list. Wire pagination controls to update currentPage state. Ensure search, filter, and sort operations reset pagination to page 1. Preserve URL parameter support for filters while maintaining pagination state in component state."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Add loading skeleton or progressive rendering for task list items instead of showing generic loading spinner",
+      "acceptanceCriteria": [
+        "Skeleton UI displays immediately while tasks are loading",
+        "Individual task items render progressively as data becomes available",
+        "User can see partial results before all data is loaded"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/tasks/TaskListSkeleton.tsx",
+          "operation": "create",
+          "description": "Create a TaskListSkeleton component that renders skeleton placeholders for task list items. Use shadcn/ui Skeleton component to create animated loading placeholders that match the structure of actual task rows (columns for client, category, status, dates, amounts). Render 10-15 skeleton rows to fill the viewport. Export the component for use in TasksPage."
         },
         {
-          "path": "frontend/src/components/errors/AppStartupErrorBoundary.tsx",
+          "path": "frontend/src/pages/TasksPage.tsx",
           "operation": "modify",
-          "description": "Ensure the error boundary is properly catching and logging any startup errors that might occur during the redeployment process"
+          "description": "Replace the generic 'Loading tasks...' spinner with the TaskListSkeleton component when isLoading is true. Ensure the skeleton is displayed immediately on mount before data arrives. Once data is available, smoothly transition from skeleton to actual task rows. Maintain the existing error handling and empty state displays."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Implement React Query stale-time configuration for tasks to reduce unnecessary refetches on navigation",
+      "acceptanceCriteria": [
+        "Tasks query has appropriate staleTime (e.g., 30 seconds) to avoid immediate refetch",
+        "Cache is reused when navigating back to tasks page",
+        "Manual refresh option remains available for users"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/tasks.ts",
+          "operation": "modify",
+          "description": "Update the useGetAllTasks hook's useQuery configuration to include staleTime: 30000 (30 seconds) and cacheTime: 300000 (5 minutes). This prevents immediate refetches when navigating back to the tasks page within 30 seconds. Ensure refetchOnWindowFocus is set to false or controlled to avoid excessive refetches. Document the caching strategy in a comment explaining the performance optimization."
         },
         {
-          "path": "frontend/src/utils/assetLoadingDiagnostics.ts",
+          "path": "frontend/src/pages/TasksPage.tsx",
           "operation": "modify",
-          "description": "Verify the asset loading diagnostics utility is properly intercepting fetch and script errors, with special attention to HTTP 503 error detection to identify any deployment-related asset loading failures"
+          "description": "Add a manual refresh button in the task list header area (near 'Export to Excel' or search bar) that calls queryClient.invalidateQueries(['tasks']) to force a fresh fetch. Use a RefreshCw icon from lucide-react and show a loading state on the button during refresh. Provide visual feedback (toast notification) when refresh completes successfully."
         }
       ]
     }

@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useTasksWithCaptain, useBulkDeleteTasks } from '../hooks/tasks';
+import { useTasksWithCaptain, useBulkDeleteTasks, usePaginatedTasks } from '../hooks/tasks';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -26,7 +27,8 @@ import TaskBulkUploadDialog from '../components/tasks/TaskBulkUploadDialog';
 import TaskBulkEditDialog from '../components/tasks/TaskBulkEditDialog';
 import TaskQuickStatus from '../components/tasks/TaskQuickStatus';
 import InlineCommentEditor from '../components/tasks/InlineCommentEditor';
-import { Search, Plus, Upload, Trash2, Edit, Download, ArrowUpDown, Loader2 } from 'lucide-react';
+import TaskListSkeleton from '../components/tasks/TaskListSkeleton';
+import { Search, Plus, Upload, Trash2, Edit, Download, ArrowUpDown, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { TaskId, TaskWithCaptain, Task } from '../backend';
 import { exportTasksToExcel } from '../utils/taskExcel';
 import { toast } from 'sonner';
@@ -39,6 +41,7 @@ export default function TasksPage() {
   const navigate = useNavigate();
   const { identity } = useInternetIdentity();
   const isAuthenticated = !!identity;
+  const queryClient = useQueryClient();
 
   const searchParams = useSearch({ strict: false }) as Record<string, string | undefined>;
   const urlClientName = searchParams.clientName;
@@ -105,6 +108,8 @@ export default function TasksPage() {
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [sortField, setSortField] = useState<SortField>('createdAt');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [pageSize, setPageSize] = useState(20);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const bulkDeleteMutation = useBulkDeleteTasks();
 
@@ -198,6 +203,14 @@ export default function TasksPage() {
     sortDirection,
   ]);
 
+  // Pagination
+  const pagination = usePaginatedTasks(filteredTasks, pageSize);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    pagination.resetPage();
+  }, [searchQuery, filterClientName, filterTaskCategory, filterSubCategory, filterAssignedName, filterStatus]);
+
   // Get selected tasks as Task objects
   const selectedTasks = useMemo(() => {
     return tasksWithCaptain
@@ -207,7 +220,7 @@ export default function TasksPage() {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedTaskIds(new Set(filteredTasks.map((t) => t.task.id)));
+      setSelectedTaskIds(new Set(pagination.tasks.map((t) => t.task.id)));
     } else {
       setSelectedTaskIds(new Set());
     }
@@ -240,6 +253,18 @@ export default function TasksPage() {
     }
   };
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await queryClient.invalidateQueries({ queryKey: ['tasksWithCaptain'] });
+      toast.success('Tasks refreshed successfully');
+    } catch (error) {
+      toast.error('Failed to refresh tasks');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -249,8 +274,8 @@ export default function TasksPage() {
     }
   };
 
-  const allSelected = filteredTasks.length > 0 && selectedTaskIds.size === filteredTasks.length;
-  const someSelected = selectedTaskIds.size > 0 && selectedTaskIds.size < filteredTasks.length;
+  const allSelected = pagination.tasks.length > 0 && selectedTaskIds.size === pagination.tasks.length;
+  const someSelected = selectedTaskIds.size > 0 && selectedTaskIds.size < pagination.tasks.length;
 
   // Show error state
   if (isError) {
@@ -412,18 +437,33 @@ export default function TasksPage() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Task List ({filteredTasks.length})</CardTitle>
-          <Button variant="outline" size="sm" onClick={handleExport}>
-            <Download className="h-4 w-4 mr-2" />
-            Export to Excel
-          </Button>
+          <div className="space-y-1">
+            <CardTitle>Task List ({pagination.totalCount})</CardTitle>
+            {pagination.totalCount > 0 && (
+              <p className="text-sm text-muted-foreground">
+                Showing {pagination.startIndex}-{pagination.endIndex} of {pagination.totalCount} tasks
+              </p>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleRefresh}
+              disabled={isRefreshing || isFetching}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing || isFetching ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExport}>
+              <Download className="h-4 w-4 mr-2" />
+              Export to Excel
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          {isLoading || isFetching ? (
-            <div className="text-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-              <p className="text-muted-foreground">Loading tasks...</p>
-            </div>
+          {isLoading ? (
+            <TaskListSkeleton rows={15} showCheckbox={isAuthenticated} />
           ) : filteredTasks.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               {searchQuery || 
@@ -436,122 +476,218 @@ export default function TasksPage() {
                 : 'No tasks yet.'}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {isAuthenticated && (
-                      <TableHead className="w-12">
-                        <Checkbox
-                          checked={allSelected}
-                          onCheckedChange={handleSelectAll}
-                          aria-label="Select all"
-                          className={someSelected ? 'data-[state=checked]:bg-primary/50' : ''}
-                        />
+            <>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      {isAuthenticated && (
+                        <TableHead className="w-12">
+                          <Checkbox
+                            checked={allSelected}
+                            onCheckedChange={handleSelectAll}
+                            aria-label="Select all"
+                            className={someSelected ? 'data-[state=checked]:bg-primary/50' : ''}
+                          />
+                        </TableHead>
+                      )}
+                      <TableHead>
+                        <Button variant="ghost" size="sm" onClick={() => handleSort('clientName')}>
+                          Client Name
+                          <ArrowUpDown className="ml-2 h-4 w-4" />
+                        </Button>
                       </TableHead>
-                    )}
-                    <TableHead>
-                      <Button variant="ghost" size="sm" onClick={() => handleSort('clientName')}>
-                        Client Name
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      </Button>
-                    </TableHead>
-                    <TableHead>
-                      <Button variant="ghost" size="sm" onClick={() => handleSort('taskCategory')}>
-                        Category
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      </Button>
-                    </TableHead>
-                    <TableHead>
-                      <Button variant="ghost" size="sm" onClick={() => handleSort('subCategory')}>
-                        Sub-Category
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      </Button>
-                    </TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="min-w-[200px]">Comment</TableHead>
-                    <TableHead>
-                      <Button variant="ghost" size="sm" onClick={() => handleSort('assignedName')}>
-                        Assigned
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      </Button>
-                    </TableHead>
-                    <TableHead>
-                      <Button variant="ghost" size="sm" onClick={() => handleSort('dueDate')}>
-                        Due Date
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      </Button>
-                    </TableHead>
-                    {isAuthenticated && <TableHead className="text-right">Actions</TableHead>}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredTasks.map((taskWithCaptain) => {
-                    const task = taskWithCaptain.task;
-                    return (
-                      <TableRow key={task.id.toString()}>
-                        {isAuthenticated && (
+                      <TableHead>
+                        <Button variant="ghost" size="sm" onClick={() => handleSort('taskCategory')}>
+                          Category
+                          <ArrowUpDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button variant="ghost" size="sm" onClick={() => handleSort('subCategory')}>
+                          Sub-Category
+                          <ArrowUpDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>
+                        <Button variant="ghost" size="sm" onClick={() => handleSort('assignedName')}>
+                          Assigned To
+                          <ArrowUpDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button variant="ghost" size="sm" onClick={() => handleSort('dueDate')}>
+                          Due Date
+                          <ArrowUpDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button variant="ghost" size="sm" onClick={() => handleSort('assignmentDate')}>
+                          Assignment Date
+                          <ArrowUpDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button variant="ghost" size="sm" onClick={() => handleSort('completionDate')}>
+                          Completion Date
+                          <ArrowUpDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button variant="ghost" size="sm" onClick={() => handleSort('bill')}>
+                          Bill
+                          <ArrowUpDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button variant="ghost" size="sm" onClick={() => handleSort('advanceReceived')}>
+                          Advance
+                          <ArrowUpDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button variant="ghost" size="sm" onClick={() => handleSort('outstandingAmount')}>
+                          Outstanding
+                          <ArrowUpDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </TableHead>
+                      <TableHead>Payment Status</TableHead>
+                      <TableHead>Comment</TableHead>
+                      {isAuthenticated && <TableHead className="w-12"></TableHead>}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pagination.tasks.map((taskWithCaptain) => {
+                      const task = taskWithCaptain.task;
+                      const isSelected = selectedTaskIds.has(task.id);
+                      return (
+                        <TableRow key={task.id.toString()}>
+                          {isAuthenticated && (
+                            <TableCell>
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={(checked) => handleSelectTask(task.id, checked as boolean)}
+                                aria-label={`Select task ${task.id}`}
+                              />
+                            </TableCell>
+                          )}
+                          <TableCell className="font-medium">{task.clientName}</TableCell>
+                          <TableCell>{task.taskCategory}</TableCell>
+                          <TableCell>{task.subCategory}</TableCell>
                           <TableCell>
-                            <Checkbox
-                              checked={selectedTaskIds.has(task.id)}
-                              onCheckedChange={(checked) =>
-                                handleSelectTask(task.id, checked as boolean)
-                              }
-                              aria-label={`Select task ${task.id}`}
-                            />
+                            {isAuthenticated ? (
+                              <TaskQuickStatus task={task} />
+                            ) : (
+                              <span className="text-sm">{task.status || '—'}</span>
+                            )}
                           </TableCell>
-                        )}
-                        <TableCell className="font-medium">{task.clientName}</TableCell>
-                        <TableCell>{task.taskCategory}</TableCell>
-                        <TableCell>{task.subCategory}</TableCell>
-                        <TableCell>
-                          {isAuthenticated ? (
-                            <TaskQuickStatus task={task} />
-                          ) : (
-                            <span className="text-sm">{task.status || '—'}</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {isAuthenticated ? (
-                            <InlineCommentEditor task={task} />
-                          ) : (
-                            <span className="text-sm truncate">{task.comment || '—'}</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {formatAssigneeName(task.assignedName, taskWithCaptain.captainName)}
-                        </TableCell>
-                        <TableCell>{formatTaskDate(task.dueDate)}</TableCell>
-                        {isAuthenticated && (
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setEditingTask(task)}
-                            >
-                              Edit
-                            </Button>
+                          <TableCell>
+                            {formatAssigneeName(task.assignedName, taskWithCaptain.captainName)}
                           </TableCell>
-                        )}
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+                          <TableCell>{formatTaskDate(task.dueDate)}</TableCell>
+                          <TableCell>{formatTaskDate(task.assignmentDate)}</TableCell>
+                          <TableCell>{formatTaskDate(task.completionDate)}</TableCell>
+                          <TableCell>{task.bill !== null && task.bill !== undefined ? `₹${task.bill.toFixed(2)}` : '—'}</TableCell>
+                          <TableCell>{task.advanceReceived !== null && task.advanceReceived !== undefined ? `₹${task.advanceReceived.toFixed(2)}` : '—'}</TableCell>
+                          <TableCell>{task.outstandingAmount !== null && task.outstandingAmount !== undefined ? `₹${task.outstandingAmount.toFixed(2)}` : '—'}</TableCell>
+                          <TableCell>{task.paymentStatus || '—'}</TableCell>
+                          <TableCell className="max-w-xs">
+                            {isAuthenticated ? (
+                              <InlineCommentEditor task={task} />
+                            ) : (
+                              <span className="text-sm truncate block">{task.comment || '—'}</span>
+                            )}
+                          </TableCell>
+                          {isAuthenticated && (
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setEditingTask(task);
+                                  setIsCreateDialogOpen(true);
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Pagination Controls */}
+              {pagination.totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Rows per page:</span>
+                    <Select
+                      value={pageSize.toString()}
+                      onValueChange={(value) => {
+                        setPageSize(Number(value));
+                        pagination.resetPage();
+                      }}
+                    >
+                      <SelectTrigger className="w-20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="20">20</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                        <SelectItem value="100">100</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">
+                      Page {pagination.currentPage} of {pagination.totalPages}
+                    </span>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={pagination.previousPage}
+                        disabled={!pagination.hasPreviousPage}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={pagination.nextPage}
+                        disabled={!pagination.hasNextPage}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
 
       {isAuthenticated && (
         <>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsUploadDialogOpen(true)}>
+              <Upload className="h-4 w-4 mr-2" />
+              Bulk Upload
+            </Button>
+          </div>
+
           <TaskFormDialog
-            open={isCreateDialogOpen || !!editingTask}
+            open={isCreateDialogOpen}
             onOpenChange={(open) => {
-              if (!open) {
-                setIsCreateDialogOpen(false);
-                setEditingTask(undefined);
-              }
+              setIsCreateDialogOpen(open);
+              if (!open) setEditingTask(undefined);
             }}
             task={editingTask}
           />
@@ -563,12 +699,11 @@ export default function TasksPage() {
 
           <TaskBulkEditDialog
             open={isBulkEditDialogOpen}
-            onOpenChange={setIsBulkEditDialogOpen}
-            selectedTasks={selectedTasks}
-            onSuccess={() => {
-              setSelectedTaskIds(new Set());
-              setIsBulkEditDialogOpen(false);
+            onOpenChange={(open) => {
+              setIsBulkEditDialogOpen(open);
+              if (!open) setSelectedTaskIds(new Set());
             }}
+            selectedTasks={selectedTasks}
           />
         </>
       )}

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
 import type { Task, TaskId, TaskWithCaptain, PartialTaskUpdate } from '../backend';
 import { toast } from 'sonner';
+import { useState, useMemo } from 'react';
 
 export function useGetAllTasks() {
   const { actor, isFetching } = useActor();
@@ -33,6 +34,9 @@ export function useGetAllTasks() {
       return result;
     },
     enabled: !!actor && !isFetching,
+    staleTime: 30000, // 30 seconds - avoid immediate refetch
+    gcTime: 300000, // 5 minutes - keep in cache
+    refetchOnWindowFocus: false, // Prevent excessive refetches
   });
 }
 
@@ -77,7 +81,68 @@ export function useTasksWithCaptain() {
       }
     },
     enabled: !!actor && !isFetching,
+    staleTime: 30000, // 30 seconds - avoid immediate refetch
+    gcTime: 300000, // 5 minutes - keep in cache
+    refetchOnWindowFocus: false, // Prevent excessive refetches
   });
+}
+
+// Pagination hook for tasks
+export function usePaginatedTasks(
+  tasks: TaskWithCaptain[],
+  pageSize: number = 20
+) {
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const paginatedData = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginatedTasks = tasks.slice(startIndex, endIndex);
+    const totalPages = Math.ceil(tasks.length / pageSize);
+
+    return {
+      tasks: paginatedTasks,
+      currentPage,
+      pageSize,
+      totalPages,
+      totalCount: tasks.length,
+      startIndex: startIndex + 1,
+      endIndex: Math.min(endIndex, tasks.length),
+      hasNextPage: currentPage < totalPages,
+      hasPreviousPage: currentPage > 1,
+    };
+  }, [tasks, currentPage, pageSize]);
+
+  const goToPage = (page: number) => {
+    const totalPages = Math.ceil(tasks.length / pageSize);
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const nextPage = () => {
+    if (paginatedData.hasNextPage) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  };
+
+  const previousPage = () => {
+    if (paginatedData.hasPreviousPage) {
+      setCurrentPage((prev) => prev - 1);
+    }
+  };
+
+  const resetPage = () => {
+    setCurrentPage(1);
+  };
+
+  return {
+    ...paginatedData,
+    goToPage,
+    nextPage,
+    previousPage,
+    resetPage,
+  };
 }
 
 // Removed usePublicTasks and usePublicTasksWithCaptain - backend requires authentication for all data access

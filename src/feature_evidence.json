@@ -1,4 +1,65 @@
 {
   "kind": "feature_evidence_report",
-  "features": []
+  "features": [
+    {
+      "featureId": "feature-implement-pagination-or-virtual-scrolling-for-the-task-list-to-avoid-loading-all-116-tasks-at-once",
+      "featureTitle": "Implement pagination or virtual scrolling for the task list to avoid loading all 116 tasks at once",
+      "files": [
+        "frontend/src/hooks/tasks.ts",
+        "frontend/src/pages/TasksPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-loading-skeleton-or-progressive-rendering-for-task-list-items-instead-of-showing-generic-loading-spinner",
+      "featureTitle": "Add loading skeleton or progressive rendering for task list items instead of showing generic loading spinner",
+      "files": [
+        "frontend/src/components/tasks/TaskListSkeleton.tsx",
+        "frontend/src/pages/TasksPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-implement-react-query-stale-time-configuration-for-tasks-to-reduce-unnecessary-refetches-on-navigation",
+      "featureTitle": "Implement React Query stale-time configuration for tasks to reduce unnecessary refetches on navigation",
+      "files": [
+        "frontend/src/hooks/tasks.ts",
+        "frontend/src/pages/TasksPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
+      ],
+      "confidence": "high"
+    }
+  ]
 }
