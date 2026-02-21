@@ -2,30 +2,12 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-the-color-theme-across-the-entire-application-to-a-stylish-modern-palette-replace-the-current-warm-neutral-sage-green-color-scheme-with-a-fresh-contemporary-design-that-avoids-blue-and-purple-unless-specifically-requested-the-new-theme-should-use-sophisticated-color-combinations-that-work-well-in-both-light-and-dark-modes-maintaining-proper-contrast-ratios-for-accessibility",
-      "featureTitle": "Update the color theme across the entire application to a stylish, modern palette. Replace the current warm neutral/sage green color scheme with a fresh, contemporary design that avoids blue and purple unless specifically requested. The new theme should use sophisticated color combinations that work well in both light and dark modes, maintaining proper contrast ratios for accessibility.",
+      "featureId": "feature-verify-frontend-can-successfully-connect-to-the-backend-actor-after-deployment",
+      "featureTitle": "Verify frontend can successfully connect to the backend actor after deployment",
       "files": [
-        "frontend/src/index.css",
-        "frontend/tailwind.config.js"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-redesign-the-dashboard-layout-dashboardpage-tsx-with-a-stylish-modern-visual-presentation-improve-the-visual-hierarchy-of-summary-metrics-cards-tasks-clients-revenue-and-the-aggregated-data-sections-use-contemporary-card-designs-improved-spacing-modern-typography-and-visual-elements-that-match-the-new-color-theme-the-layout-should-feel-polished-and-professional-while-maintaining-all-existing-functionality",
-      "featureTitle": "Redesign the dashboard layout (DashboardPage.tsx) with a stylish, modern visual presentation. Improve the visual hierarchy of summary metrics cards (tasks, clients, revenue) and the aggregated data sections. Use contemporary card designs, improved spacing, modern typography, and visual elements that match the new color theme. The layout should feel polished and professional while maintaining all existing functionality.",
-      "files": [
-        "frontend/src/pages/DashboardPage.tsx"
+        "frontend/src/App.tsx",
+        "frontend/src/components/errors/StartupErrorScreen.tsx",
+        "frontend/src/utils/assetLoadingDiagnostics.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -41,11 +23,12 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-update-the-application-layout-components-applayout-tsx-navigation-sidebar-to-align-with-the-new-stylish-theme-modernize-the-header-sidebar-navigation-and-mobile-sheet-navigation-with-contemporary-design-patterns-that-complement-the-new-color-scheme-and-dashboard-redesign",
-      "featureTitle": "Update the application layout components (AppLayout.tsx, navigation sidebar) to align with the new stylish theme. Modernize the header, sidebar navigation, and mobile sheet navigation with contemporary design patterns that complement the new color scheme and dashboard redesign.",
+      "featureId": "feature-ensure-all-authentication-flows-work-correctly-after-deployment",
+      "featureTitle": "Ensure all authentication flows work correctly after deployment",
       "files": [
+        "frontend/src/App.tsx",
         "frontend/src/components/auth/SignedOutScreen.tsx",
-        "frontend/src/components/layout/AppLayout.tsx"
+        "frontend/src/hooks/useCurrentUserProfile.ts"
       ],
       "components": [
         "authorization@4.0.0",

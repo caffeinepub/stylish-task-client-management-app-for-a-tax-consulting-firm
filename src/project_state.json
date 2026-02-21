@@ -1,32 +1,22 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Dashboard application with stylish UI redesign",
+  "summary": "New project",
   "architectural_notes": [],
-  "known_issues": [
-    "Backend canister connection issues causing 'Connecting to backend...' spinner"
-  ],
+  "known_issues": [],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-update-the-color-theme-across-the-entire-application-to-a-stylish-modern-palette-replace-the-current-warm-neutral-sage-green-color-scheme-with-a-fresh-contemporary-design-that-avoids-blue-and-purple-unless-specifically-requested-the-new-theme-should-use-sophisticated-color-combinations-that-work-well-in-both-light-and-dark-modes-maintaining-proper-contrast-ratios-for-accessibility",
-      "title": "Update the color theme across the entire application to a stylish, modern palette. Replace the current warm neutral/sage green color scheme with a fresh, contemporary design that avoids blue and purple unless specifically requested. The new theme should use sophisticated color combinations that work well in both light and dark modes, maintaining proper contrast ratios for accessibility.",
-      "reqIds": [
-        "REQ-1"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-redesign-the-dashboard-layout-dashboardpage-tsx-with-a-stylish-modern-visual-presentation-improve-the-visual-hierarchy-of-summary-metrics-cards-tasks-clients-revenue-and-the-aggregated-data-sections-use-contemporary-card-designs-improved-spacing-modern-typography-and-visual-elements-that-match-the-new-color-theme-the-layout-should-feel-polished-and-professional-while-maintaining-all-existing-functionality",
-      "title": "Redesign the dashboard layout (DashboardPage.tsx) with a stylish, modern visual presentation. Improve the visual hierarchy of summary metrics cards (tasks, clients, revenue) and the aggregated data sections. Use contemporary card designs, improved spacing, modern typography, and visual elements that match the new color theme. The layout should feel polished and professional while maintaining all existing functionality.",
+      "id": "feature-verify-frontend-can-successfully-connect-to-the-backend-actor-after-deployment",
+      "title": "Verify frontend can successfully connect to the backend actor after deployment",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-update-the-application-layout-components-applayout-tsx-navigation-sidebar-to-align-with-the-new-stylish-theme-modernize-the-header-sidebar-navigation-and-mobile-sheet-navigation-with-contemporary-design-patterns-that-complement-the-new-color-scheme-and-dashboard-redesign",
-      "title": "Update the application layout components (AppLayout.tsx, navigation sidebar) to align with the new stylish theme. Modernize the header, sidebar navigation, and mobile sheet navigation with contemporary design patterns that complement the new color scheme and dashboard redesign.",
+      "id": "feature-ensure-all-authentication-flows-work-correctly-after-deployment",
+      "title": "Ensure all authentication flows work correctly after deployment",
       "reqIds": [
         "REQ-3"
       ],
@@ -36,18 +26,14 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Change color theme to stylish design",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Update dashboard view to stylish layout",
-      "reqIds": [],
+      "summary": "Investigate and fix the backend canister connection issue that caused the deployment error in Version 48",
+      "reqIds": [
+        "REQ-1"
+      ],
       "status": "pending"
     }
   ],
-  "projectName": "CSWA Client Management",
+  "projectName": "Retry deployment with connection fixes",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

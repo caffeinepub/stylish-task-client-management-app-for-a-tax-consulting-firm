@@ -1,67 +1,77 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Change color theme and dashboard view to stylish design",
+  "title": "Frontend Connection Verification and Authentication Flow Fixes",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Update the color theme across the entire application to a stylish, modern palette",
+      "id": "REQ-2",
+      "summary": "Verify frontend can successfully connect to the backend actor after deployment",
       "acceptanceCriteria": [
-        "All pages and components use the new color theme consistently",
-        "Color theme works in both light and dark modes",
-        "Text and interactive elements maintain WCAG AA contrast standards",
-        "CSS variables in index.css are updated with the new color palette"
+        "useActor hook successfully initializes the backend actor",
+        "API calls complete without 503 or connection errors",
+        "Dashboard loads and displays data correctly"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/index.css",
+          "path": "frontend/src/hooks/useActor.ts",
           "operation": "modify",
-          "description": "Replace the current warm neutral/sage green color scheme with a fresh, contemporary palette using sophisticated color combinations. Update all CSS custom properties for both light and dark mode themes, maintaining proper contrast ratios for accessibility (WCAG AA standards). The new palette should avoid blue and purple unless specifically requested, using OKLCH color space values for consistent color appearance across different displays."
+          "description": "Review and enhance actor initialization logic to ensure robust connection handling after deployment. Add additional error handling for connection failures and ensure proper retry logic. Verify that the actor is correctly initialized with the authenticated identity when available."
         },
         {
-          "path": "frontend/tailwind.config.js",
+          "path": "frontend/src/utils/assetLoadingDiagnostics.ts",
           "operation": "modify",
-          "description": "Update Tailwind configuration to align with the new color theme. Ensure custom theme extensions reference the updated CSS variables from index.css, maintaining consistency across the OKLCH color system."
-        }
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "summary": "Redesign the dashboard layout with a stylish, modern visual presentation",
-      "acceptanceCriteria": [
-        "Dashboard has a visually distinct, modern layout",
-        "Summary metrics are displayed in stylish cards with improved visual hierarchy",
-        "Task aggregations by category, subcategory, and status are presented with enhanced visual design",
-        "All existing dashboard functionality (navigation to detail views, data display) is preserved",
-        "Layout is responsive and works on mobile and desktop devices"
-      ],
-      "file_operations": [
+          "description": "Enhance diagnostic reporting to capture detailed information about actor initialization failures and connection errors. Add specific logging for HTTP 503 errors from the backend canister to aid in debugging deployment issues."
+        },
         {
-          "path": "frontend/src/pages/DashboardPage.tsx",
+          "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Redesign the dashboard layout with a stylish, modern visual presentation. Improve the visual hierarchy of summary metrics cards (total tasks, clients, revenue) using contemporary card designs with enhanced spacing, modern typography, and visual elements that align with the new color theme. Redesign the aggregated data sections (tasks by category, subcategory, and status) with polished cards and improved data visualization. Maintain all existing functionality including navigation to ClientDetailPage, TasksPage with filters, and data calculations from taskAggregations utility. Ensure the layout is responsive and works seamlessly on both mobile and desktop devices."
+          "description": "Review the actor loading state management and timeout detection logic. Ensure that connection errors are properly surfaced to the user with clear messaging. Verify that the 30-second timeout detection correctly identifies backend connection failures and provides actionable feedback."
+        },
+        {
+          "path": "frontend/src/components/errors/StartupErrorScreen.tsx",
+          "operation": "modify",
+          "description": "Enhance error categorization to include specific guidance for backend canister connection failures. Add troubleshooting steps specific to deployment issues such as checking canister status and verifying network connectivity to the Internet Computer."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Update the application layout components to align with the new stylish theme",
+      "summary": "Ensure all authentication flows work correctly after deployment",
       "acceptanceCriteria": [
-        "Header and navigation components use the new color theme",
-        "Navigation has a modern, polished appearance",
-        "User profile dropdown and logout functionality remain intact",
-        "Mobile navigation sheet maintains usability with updated styling"
+        "Users can sign in with Internet Identity",
+        "New users are prompted for profile setup",
+        "Authenticated users can access all protected pages"
       ],
       "file_operations": [
         {
+          "path": "frontend/src/hooks/useInternetIdentity.ts",
+          "operation": "modify",
+          "description": "Use the authorization component to verify Internet Identity authentication flow. Review the login state management, identity persistence, and delegation validation logic. Ensure that authentication errors are properly caught and reported. Verify the component's usage instructions before implementing to ensure proper integration with the authorization component's authentication requirements."
+        },
+        {
+          "path": "frontend/src/hooks/useCurrentUserProfile.ts",
+          "operation": "modify",
+          "description": "Use the authorization component's getCallerUserProfile capability to ensure proper profile fetching for authenticated users. Review the loading state management to prevent profile setup modal flash as described in the authorization component usage instructions. Verify that the custom isLoading and isFetched logic properly reflects actor dependency. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/auth/ProfileSetupModal.tsx",
+          "operation": "modify",
+          "description": "Use the authorization component's saveCallerUserProfile capability. Review the modal display logic to ensure it only shows for authenticated users without existing profiles. Verify that the modal properly prevents dismissal until the profile is saved. Ensure proper integration with the useGetCallerUserProfile hook's enhanced loading state logic. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Review the authentication flow coordination between Internet Identity login, actor initialization, and profile setup. Ensure the showProfileSetup logic follows the pattern from authorization component usage: 'isAuthenticated && !profileLoading && isFetched && userProfile === null'. Verify that authenticated users can access all protected pages after successful login and profile setup."
+        },
+        {
           "path": "frontend/src/components/layout/AppLayout.tsx",
           "operation": "modify",
-          "description": "Modernize the AppLayout component to align with the new stylish theme. Update the sticky header, desktop sidebar navigation, and mobile sheet navigation with contemporary design patterns that complement the new color scheme. Apply modern styling to the user profile dropdown and ensure logout functionality remains intact. Maintain responsive behavior and ensure the navigation is polished and professional while preserving all existing functionality."
+          "description": "Use the authorization component to verify proper logout flow. Review the logout functionality to ensure it properly clears authentication state and cached application data as required by the authorization component usage instructions. Ensure queryClient.clear() is called on logout to remove all cached data including user profile."
         },
         {
           "path": "frontend/src/components/auth/SignedOutScreen.tsx",
           "operation": "modify",
-          "description": "Update the signed-out landing page to use the new color theme. Refresh the visual styling of the CSWA branding section, Internet Identity sign-in button, and three feature cards (client management, task tracking, dashboard) to align with the stylish, modern design language while maintaining the same functionality and content."
+          "description": "Review the unauthenticated landing page to ensure the Internet Identity sign-in button properly triggers the authentication flow. Verify that the login button integrates correctly with the useInternetIdentity hook and handles login errors appropriately."
         }
       ]
     }

@@ -39,6 +39,8 @@ export function useGetCallerUserProfile() {
   });
 
   // Return custom state that properly reflects all dependencies
+  // This prevents profile setup modal flash by ensuring isFetched is only true
+  // when all dependencies are ready
   return {
     ...query,
     isLoading: authInitializing || actorFetching || query.isLoading,
@@ -52,11 +54,17 @@ export function useSaveCallerUserProfile() {
 
   return useMutation({
     mutationFn: async (profile: UserProfile) => {
+      console.log('💾 [useSaveCallerUserProfile] Saving profile...', { name: profile.name });
       if (!actor) throw new Error('Actor not available');
       await actor.saveCallerUserProfile(profile);
+      console.log('✅ [useSaveCallerUserProfile] Profile saved successfully');
     },
     onSuccess: () => {
+      console.log('🔄 [useSaveCallerUserProfile] Invalidating profile cache...');
       queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+    },
+    onError: (error) => {
+      console.error('❌ [useSaveCallerUserProfile] Failed to save profile:', error);
     },
   });
 }

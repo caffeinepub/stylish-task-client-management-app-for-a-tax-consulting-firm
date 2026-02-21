@@ -5,9 +5,12 @@ import Principal "mo:core/Principal";
 import Time "mo:core/Time";
 import Nat "mo:core/Nat";
 import Iter "mo:core/Iter";
+import Migration "migration";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
+// Apply migration function using with clause
+(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);

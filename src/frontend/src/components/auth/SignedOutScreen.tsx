@@ -4,7 +4,15 @@ import { useInternetIdentity } from '../../hooks/useInternetIdentity';
 import { FileText, Users, CheckSquare, Sparkles, TrendingUp, Shield } from 'lucide-react';
 
 export default function SignedOutScreen() {
-  const { login, isLoggingIn } = useInternetIdentity();
+  const { login, isLoggingIn, isLoginError } = useInternetIdentity();
+
+  const handleLogin = async () => {
+    try {
+      await login();
+    } catch (error) {
+      console.error('❌ [SignedOutScreen] Login failed:', error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/10 flex items-center justify-center p-4 relative overflow-hidden">
@@ -46,7 +54,7 @@ export default function SignedOutScreen() {
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4 relative">
             <Button 
-              onClick={login} 
+              onClick={handleLogin} 
               disabled={isLoggingIn}
               size="lg"
               className="w-full max-w-md h-12 text-base font-semibold bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground shadow-glow-primary transition-all duration-300"
@@ -60,6 +68,11 @@ export default function SignedOutScreen() {
                 'Sign in to Continue'
               )}
             </Button>
+            {isLoginError && (
+              <p className="text-sm text-destructive">
+                Sign in failed. Please try again.
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -90,7 +103,7 @@ export default function SignedOutScreen() {
             </CardHeader>
             <CardContent className="relative">
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Track deadlines, priorities, and progress for every client engagement with real-time updates
+                Monitor progress, assign responsibilities, and ensure timely completion of all client deliverables
               </p>
             </CardContent>
           </Card>
@@ -101,33 +114,25 @@ export default function SignedOutScreen() {
               <div className="p-3 rounded-xl bg-highlight/10 w-fit mb-3 group-hover:bg-highlight/20 transition-colors">
                 <TrendingUp className="h-8 w-8 text-highlight" />
               </div>
-              <CardTitle className="text-xl font-bold">Dashboard Insights</CardTitle>
+              <CardTitle className="text-xl font-bold">Analytics & Insights</CardTitle>
             </CardHeader>
             <CardContent className="relative">
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Monitor active clients, open tasks, and upcoming deadlines with powerful analytics at a glance
+                Gain valuable insights into team performance, revenue tracking, and operational efficiency
               </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Footer */}
-        <footer className="text-center">
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-            <Shield className="h-4 w-4" />
-            <span>© {new Date().getFullYear()}</span>
-            <span>•</span>
-            <span>Built with ❤️ using</span>
-            <a 
-              href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-semibold text-primary hover:text-primary/80 transition-colors underline"
-            >
-              caffeine.ai
-            </a>
+        {/* Security Badge */}
+        <div className="text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50 backdrop-blur border border-border/50">
+            <Shield className="h-4 w-4 text-primary" />
+            <span className="text-sm text-muted-foreground">
+              Secured by Internet Identity
+            </span>
           </div>
-        </footer>
+        </div>
       </div>
     </div>
   );

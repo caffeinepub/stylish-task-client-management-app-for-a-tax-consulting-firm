@@ -24,6 +24,7 @@ import { useDeferredUrlCleanup } from './hooks/useDeferredUrlCleanup';
 import { Toaster } from './components/ui/sonner';
 import { ThemeProvider } from 'next-themes';
 import { assetDiagnostics } from './utils/assetLoadingDiagnostics';
+import { StartupErrorScreen } from './components/errors/StartupErrorScreen';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -49,14 +50,15 @@ function RootComponent() {
 
   const isAuthenticated = !!identity;
 
-  // Enhanced loading timeout detection with comprehensive diagnostics including HTTP 503 detection
+  // Enhanced loading timeout detection with comprehensive diagnostics
   const [loadingStartTime] = useState(Date.now());
   const [timeoutTriggered, setTimeoutTriggered] = useState(false);
+  const [showTimeoutError, setShowTimeoutError] = useState(false);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       const elapsed = Date.now() - loadingStartTime;
-      if (elapsed > 30000 && !timeoutTriggered) {
+      if (elapsed > 30000 && !timeoutTriggered && !actor && isAuthenticated) {
         setTimeoutTriggered(true);
         
         console.error('⏱️ [App] LOADING TIMEOUT DETECTED - Generating diagnostic report...');
@@ -101,17 +103,12 @@ function RootComponent() {
           })),
         });
         
-        // Router state
-        console.log('🛣️ Router State:', {
-          currentPath: window.location.pathname,
-          currentHash: window.location.hash,
-        });
-        
         // Asset loading diagnostics
         const assetReport = assetDiagnostics.generateReport();
         console.log('📦 Asset Loading State:', {
           totalErrors: assetReport.errors.length,
           http503Errors: assetReport.http503Summary?.count || 0,
+          actorErrors: assetReport.actorErrors?.count || 0,
           failedUrls: assetReport.errors.map(e => ({ url: e.url, status: e.status, type: e.errorType })),
         });
         
@@ -120,6 +117,12 @@ function RootComponent() {
           console.error('Count:', assetReport.http503Summary.count);
           console.error('URLs:', assetReport.http503Summary.urls);
           console.error('This indicates the asset canister is unable to serve requests!');
+        }
+
+        if (assetReport.actorErrors && assetReport.actorErrors.count > 0) {
+          console.error('🚨 ACTOR INITIALIZATION ERRORS DETECTED:');
+          console.error('Count:', assetReport.actorErrors.count);
+          console.error('Messages:', assetReport.actorErrors.messages);
         }
         
         // Environment info
@@ -134,15 +137,18 @@ function RootComponent() {
         console.error('⏱️ [App] Loading timeout diagnostic report complete');
         
         // Provide actionable guidance
-        if (assetReport.http503Summary && assetReport.http503Summary.count > 0) {
-          console.group('💡 [App] Recommended Actions for HTTP 503 Errors');
-          console.warn('1. Check canister cycles: dfx canister status <canister-id>');
-          console.warn('2. Verify deployment: dfx canister info <canister-id>');
-          console.warn('3. Redeploy frontend: dfx deploy frontend');
-          console.warn('4. Check .ic-assets.json5 configuration');
-          console.warn('5. Review build output: ls -la dist/');
+        if (!actor && actorFetching) {
+          console.group('💡 [App] Recommended Actions for Actor Connection Issues');
+          console.warn('1. Check backend canister status: dfx canister status backend');
+          console.warn('2. Verify backend deployment: dfx deploy backend');
+          console.warn('3. Check canister cycles: dfx canister status --all');
+          console.warn('4. Review backend logs for errors');
+          console.warn('5. Verify network connectivity to Internet Computer');
           console.groupEnd();
         }
+
+        // Show error screen after timeout
+        setShowTimeoutError(true);
       }
     }, 30000);
 
@@ -175,7 +181,25 @@ function RootComponent() {
     profileFetched,
     hasProfile: !!userProfile,
     showProfileSetup: isAuthenticated && !profileLoading && profileFetched && userProfile === null,
+    showTimeoutError,
   });
+
+  // Show timeout error screen
+  if (showTimeoutError && !actor) {
+    const timeoutError = new Error(
+      'Backend connection timeout: Unable to connect to the backend canister after 30 seconds'
+    );
+    return (
+      <StartupErrorScreen
+        error={timeoutError}
+        errorInfo={null}
+        onReload={() => {
+          queryClient.clear();
+          window.location.reload();
+        }}
+      />
+    );
+  }
 
   // Show auth initialization screen
   if (authInitializing) {
@@ -198,12 +222,15 @@ function RootComponent() {
 
   // Show actor loading screen
   if (actorFetching || !actor) {
-    console.log('🎬 [RootComponent] Waiting for actor...', { actorFetching, hasActor: !!actor });
+    console.log('🎬 [RootComponent] Waiting for actor...', { 
+      actorFetching, 
+      hasActor: !!actor,
+    });
     return (
       <div className="flex h-screen items-center justify-center bg-background">
-        <div className="text-center">
+        <div className="text-center max-w-md px-4">
           <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-          <p className="text-muted-foreground">Connecting to backend...</p>
+          <p className="text-muted-foreground mb-2">Connecting to backend...</p>
         </div>
       </div>
     );
@@ -222,8 +249,8 @@ function RootComponent() {
     );
   }
 
-  // Show profile error screen (treat as missing profile)
-  const showProfileSetup = profileFetched && (userProfile === null || profileError);
+  // Show profile setup modal following authorization component pattern
+  const showProfileSetup = isAuthenticated && !profileLoading && profileFetched && userProfile === null;
 
   console.log('✅ [RootComponent] Rendering authenticated layout', {
     hasProfile: !!userProfile,
@@ -299,9 +326,7 @@ declare module '@tanstack/react-router' {
 }
 
 function App() {
-  console.log('🎬 [App] Creating route tree');
-  console.log('🎬 [App] Creating router');
-  console.log('🎬 [App] Router created successfully');
+  console.log('🎬 [App] Initializing application...');
 
   return (
     <StrictMode>
