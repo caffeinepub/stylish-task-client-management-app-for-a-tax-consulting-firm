@@ -3,165 +3,172 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Menu, LayoutDashboard, Users, CheckSquare, UserCheck, ListTodo } from 'lucide-react';
+import { Menu, LayoutDashboard, Users, CheckSquare, UserCircle, LogOut, ListTodo, UserCog } from 'lucide-react';
 import { useInternetIdentity } from '../../hooks/useInternetIdentity';
 import { useGetCallerUserProfile } from '../../hooks/useCurrentUserProfile';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { SiX, SiFacebook, SiLinkedin } from 'react-icons/si';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { clear } = useInternetIdentity();
-  const { data: userProfile } = useGetCallerUserProfile();
   const queryClient = useQueryClient();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { data: userProfile } = useGetCallerUserProfile();
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
 
   const handleLogout = async () => {
     await clear();
     queryClient.clear();
+    navigate({ to: '/' });
   };
 
   const navItems = [
-    { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/clients', label: 'Clients', icon: Users },
-    { path: '/tasks', label: 'Tasks', icon: CheckSquare },
-    { path: '/assignees', label: 'Assignees', icon: UserCheck },
-    { path: '/todos', label: 'Todos', icon: ListTodo },
+    { to: '/' as const, label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/clients' as const, label: 'Clients', icon: Users },
+    { to: '/tasks' as const, label: 'Tasks', icon: CheckSquare },
+    { to: '/assignees' as const, label: 'Assignees', icon: UserCog },
+    { to: '/todos' as const, label: 'Todos', icon: ListTodo },
   ];
 
-  const isActive = (path: string) => {
-    if (path === '/') return currentPath === '/';
-    return currentPath.startsWith(path);
-  };
-
-  const handleNavClick = (path: string, label: string) => {
-    console.log('[AppLayout] Navigation clicked', {
-      timestamp: new Date().toISOString(),
-      targetPath: path,
-      targetLabel: label,
-      currentPath,
-    });
-  };
-
-  const NavLinks = ({ mobile = false }: { mobile?: boolean }) => (
-    <>
-      {navItems.map((item) => {
-        const Icon = item.icon;
-        const active = isActive(item.path);
-        return (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
-              active
-                ? 'bg-[oklch(0.50_0.08_130)] text-white dark:bg-[oklch(0.65_0.08_130)] dark:text-[oklch(0.15_0_0)]'
-                : 'text-[oklch(0.35_0_0)] hover:bg-[oklch(0.95_0_0)] dark:text-[oklch(0.85_0_0)] dark:hover:bg-[oklch(0.25_0_0)]'
-            }`}
-            onClick={() => {
-              handleNavClick(item.path, item.label);
-              if (mobile) setMobileMenuOpen(false);
-            }}
-          >
-            <Icon className="h-5 w-5" />
-            <span className="font-medium">{item.label}</span>
-          </Link>
-        );
-      })}
-    </>
-  );
-
-  const userInitials = userProfile?.name
-    ?.split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2) || '?';
+  const isActive = (path: string) => currentPath === path;
 
   return (
-    <div className="min-h-screen bg-[oklch(0.98_0_0)] dark:bg-[oklch(0.145_0_0)]">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)] bg-white/80 dark:bg-[oklch(0.20_0_0)]/80 backdrop-blur-sm">
+      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="container flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-6">
-            {/* Mobile menu */}
-            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-              <SheetTrigger asChild className="lg:hidden">
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-64">
-                <div className="flex flex-col gap-4 mt-8">
-                  <NavLinks mobile />
-                </div>
-              </SheetContent>
-            </Sheet>
-
-            {/* Logo */}
-            <Link to="/" className="flex items-center gap-3">
-              <img 
-                src="/assets/generated/cswa-logo-new.dim_800x200.png" 
-                alt="CSWA Group of Companies Logo" 
-                className="h-9"
-              />
-              <span className="hidden sm:inline-block font-semibold text-lg text-[oklch(0.25_0_0)] dark:text-[oklch(0.95_0_0)]">
-                CSWA Group of Companies
-              </span>
+          {/* Logo and Desktop Nav */}
+          <div className="flex items-center gap-8">
+            <Link to="/" className="flex items-center gap-3 group">
+              <div className="relative">
+                <div className="absolute inset-0 bg-primary/20 rounded-xl blur-lg group-hover:bg-primary/30 transition-colors" />
+                <img 
+                  src="/assets/generated/cswa-logo-new.dim_800x200.png" 
+                  alt="CSWA Logo" 
+                  className="h-10 relative"
+                />
+              </div>
             </Link>
 
-            {/* Desktop nav */}
-            <nav className="hidden lg:flex items-center gap-2 ml-8">
-              <NavLinks />
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center gap-2">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.to);
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
+                      active
+                        ? 'bg-primary text-primary-foreground shadow-glow-primary'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
             </nav>
           </div>
 
-          {/* User menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                <Avatar className="h-10 w-10 border-2 border-[oklch(0.50_0.08_130)]">
-                  <AvatarFallback className="bg-[oklch(0.50_0.08_130)] text-white dark:bg-[oklch(0.65_0.08_130)] dark:text-[oklch(0.15_0_0)]">
-                    {userInitials}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium">{userProfile?.name || 'User'}</p>
-                  <p className="text-xs text-muted-foreground">Tax Consultant</p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
-                Sign out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* User Menu */}
+          <div className="flex items-center gap-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full ring-2 ring-primary/20 hover:ring-primary/40 transition-all">
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground font-bold">
+                      {userProfile?.name?.charAt(0).toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 border-2">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-semibold leading-none">{userProfile?.name || 'User'}</p>
+                    <p className="text-xs leading-none text-muted-foreground">Manage your account</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:text-destructive">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Mobile Menu */}
+            <Sheet>
+              <SheetTrigger asChild className="md:hidden">
+                <Button variant="ghost" size="icon" className="rounded-xl">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-64 border-l-2">
+                <nav className="flex flex-col gap-2 mt-8">
+                  {navItems.map((item) => {
+                    const Icon = item.icon;
+                    const active = isActive(item.to);
+                    return (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
+                          active
+                            ? 'bg-primary text-primary-foreground shadow-glow-primary'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                        }`}
+                      >
+                        <Icon className="h-5 w-5" />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </nav>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="container px-4 py-8">
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-8">
         {children}
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)] mt-16 py-6">
-        <div className="container px-4 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} • Built with ❤️ using{' '}
-            <a 
-              href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-foreground transition-colors"
-            >
-              caffeine.ai
-            </a>
-          </p>
+      <footer className="border-t border-border/40 bg-card/50 backdrop-blur mt-16">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>© {new Date().getFullYear()}</span>
+              <span>•</span>
+              <span>Built with ❤️ using</span>
+              <a
+                href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-primary hover:text-primary/80 transition-colors underline"
+              >
+                caffeine.ai
+              </a>
+            </div>
+            <div className="flex items-center gap-4">
+              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                <SiX className="h-4 w-4" />
+              </a>
+              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                <SiFacebook className="h-4 w-4" />
+              </a>
+              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                <SiLinkedin className="h-4 w-4" />
+              </a>
+            </div>
+          </div>
         </div>
       </footer>
     </div>

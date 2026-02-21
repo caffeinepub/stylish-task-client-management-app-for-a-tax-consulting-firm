@@ -1,10 +1,81 @@
 {
   "kind": "build_request",
-  "title": "Retry deployment",
+  "title": "Change color theme and dashboard view to stylish design",
+  "projectName": "CSWA Client Management",
   "priority": "normal",
-  "requirements": [],
-  "constraints": [],
-  "nonGoals": [],
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "text": "Update the color theme across the entire application to a stylish, modern palette. Replace the current warm neutral/sage green color scheme with a fresh, contemporary design that avoids blue and purple unless specifically requested. The new theme should use sophisticated color combinations that work well in both light and dark modes, maintaining proper contrast ratios for accessibility.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-latest"
+        ],
+        "quotes": [
+          "change colour theme and dashboard view to stylish"
+        ]
+      },
+      "acceptanceCriteria": [
+        "All pages and components use the new color theme consistently",
+        "Color theme works in both light and dark modes",
+        "Text and interactive elements maintain WCAG AA contrast standards",
+        "CSS variables in index.css are updated with the new color palette"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Redesign the dashboard layout (DashboardPage.tsx) with a stylish, modern visual presentation. Improve the visual hierarchy of summary metrics cards (tasks, clients, revenue) and the aggregated data sections. Use contemporary card designs, improved spacing, modern typography, and visual elements that match the new color theme. The layout should feel polished and professional while maintaining all existing functionality.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-latest"
+        ],
+        "quotes": [
+          "change colour theme and dashboard view to stylish"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Dashboard has a visually distinct, modern layout",
+        "Summary metrics are displayed in stylish cards with improved visual hierarchy",
+        "Task aggregations by category, subcategory, and status are presented with enhanced visual design",
+        "All existing dashboard functionality (navigation to detail views, data display) is preserved",
+        "Layout is responsive and works on mobile and desktop devices"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Update the application layout components (AppLayout.tsx, navigation sidebar) to align with the new stylish theme. Modernize the header, sidebar navigation, and mobile sheet navigation with contemporary design patterns that complement the new color scheme and dashboard redesign.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-latest"
+        ],
+        "quotes": [
+          "change colour theme and dashboard view to stylish"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Header and navigation components use the new color theme",
+        "Navigation has a modern, polished appearance",
+        "User profile dropdown and logout functionality remain intact",
+        "Mobile navigation sheet maintains usability with updated styling"
+      ]
+    }
+  ],
+  "constraints": [
+    "Do not modify frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or any files in frontend/src/components/ui",
+    "Maintain all existing functionality - this is a visual redesign only",
+    "Preserve all CRUD operations, bulk upload/edit, filtering, sorting, and pagination features",
+    "Do not change the Motoko backend (backend/main.mo)"
+  ],
+  "nonGoals": [
+    "Adding new features or functionality beyond visual redesign",
+    "Changing the technology stack (React, Tailwind, Shadcn)",
+    "Modifying backend logic or data models",
+    "Changing authentication or authorization flows",
+    "Adding third-party UI libraries beyond existing dependencies"
+  ],
   "imageRequirements": {
     "required": [],
     "edits": []

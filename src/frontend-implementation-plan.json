@@ -1,6 +1,69 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Retry deployment",
-  "requirements": []
+  "title": "Change color theme and dashboard view to stylish design",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "summary": "Update the color theme across the entire application to a stylish, modern palette",
+      "acceptanceCriteria": [
+        "All pages and components use the new color theme consistently",
+        "Color theme works in both light and dark modes",
+        "Text and interactive elements maintain WCAG AA contrast standards",
+        "CSS variables in index.css are updated with the new color palette"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/index.css",
+          "operation": "modify",
+          "description": "Replace the current warm neutral/sage green color scheme with a fresh, contemporary palette using sophisticated color combinations. Update all CSS custom properties for both light and dark mode themes, maintaining proper contrast ratios for accessibility (WCAG AA standards). The new palette should avoid blue and purple unless specifically requested, using OKLCH color space values for consistent color appearance across different displays."
+        },
+        {
+          "path": "frontend/tailwind.config.js",
+          "operation": "modify",
+          "description": "Update Tailwind configuration to align with the new color theme. Ensure custom theme extensions reference the updated CSS variables from index.css, maintaining consistency across the OKLCH color system."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Redesign the dashboard layout with a stylish, modern visual presentation",
+      "acceptanceCriteria": [
+        "Dashboard has a visually distinct, modern layout",
+        "Summary metrics are displayed in stylish cards with improved visual hierarchy",
+        "Task aggregations by category, subcategory, and status are presented with enhanced visual design",
+        "All existing dashboard functionality (navigation to detail views, data display) is preserved",
+        "Layout is responsive and works on mobile and desktop devices"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/DashboardPage.tsx",
+          "operation": "modify",
+          "description": "Redesign the dashboard layout with a stylish, modern visual presentation. Improve the visual hierarchy of summary metrics cards (total tasks, clients, revenue) using contemporary card designs with enhanced spacing, modern typography, and visual elements that align with the new color theme. Redesign the aggregated data sections (tasks by category, subcategory, and status) with polished cards and improved data visualization. Maintain all existing functionality including navigation to ClientDetailPage, TasksPage with filters, and data calculations from taskAggregations utility. Ensure the layout is responsive and works seamlessly on both mobile and desktop devices."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Update the application layout components to align with the new stylish theme",
+      "acceptanceCriteria": [
+        "Header and navigation components use the new color theme",
+        "Navigation has a modern, polished appearance",
+        "User profile dropdown and logout functionality remain intact",
+        "Mobile navigation sheet maintains usability with updated styling"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/layout/AppLayout.tsx",
+          "operation": "modify",
+          "description": "Modernize the AppLayout component to align with the new stylish theme. Update the sticky header, desktop sidebar navigation, and mobile sheet navigation with contemporary design patterns that complement the new color scheme. Apply modern styling to the user profile dropdown and ensure logout functionality remains intact. Maintain responsive behavior and ensure the navigation is polished and professional while preserving all existing functionality."
+        },
+        {
+          "path": "frontend/src/components/auth/SignedOutScreen.tsx",
+          "operation": "modify",
+          "description": "Update the signed-out landing page to use the new color theme. Refresh the visual styling of the CSWA branding section, Internet Identity sign-in button, and three feature cards (client management, task tracking, dashboard) to align with the stylish, modern design language while maintaining the same functionality and content."
+        }
+      ]
+    }
+  ]
 }

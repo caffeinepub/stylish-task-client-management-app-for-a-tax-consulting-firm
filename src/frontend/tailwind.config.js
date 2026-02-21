@@ -25,7 +25,12 @@ export default {
                     'Roboto',
                     'sans-serif'
                 ],
-                serif: ['Georgia', 'Cambria', 'Times New Roman', 'Times', 'serif']
+                serif: ['Georgia', 'Cambria', 'Times New Roman', 'Times', 'serif'],
+                display: [
+                    'Inter',
+                    'system-ui',
+                    'sans-serif'
+                ]
             },
             colors: {
                 border: 'oklch(var(--border))',
@@ -53,6 +58,14 @@ export default {
                     DEFAULT: 'oklch(var(--accent) / <alpha-value>)',
                     foreground: 'oklch(var(--accent-foreground))'
                 },
+                success: {
+                    DEFAULT: 'oklch(var(--success) / <alpha-value>)',
+                    foreground: 'oklch(var(--success-foreground))'
+                },
+                highlight: {
+                    DEFAULT: 'oklch(var(--highlight) / <alpha-value>)',
+                    foreground: 'oklch(var(--highlight-foreground))'
+                },
                 popover: {
                     DEFAULT: 'oklch(var(--popover))',
                     foreground: 'oklch(var(--popover-foreground))'
@@ -72,11 +85,17 @@ export default {
             borderRadius: {
                 lg: 'var(--radius)',
                 md: 'calc(var(--radius) - 2px)',
-                sm: 'calc(var(--radius) - 4px)'
+                sm: 'calc(var(--radius) - 4px)',
+                xl: 'calc(var(--radius) + 4px)',
+                '2xl': 'calc(var(--radius) + 8px)'
             },
             boxShadow: {
                 xs: '0 1px 2px 0 rgba(0,0,0,0.05)',
-                soft: '0 2px 8px -2px rgba(0,0,0,0.08)'
+                soft: '0 2px 8px -2px rgba(0,0,0,0.08)',
+                glow: '0 0 20px -5px rgba(0,0,0,0.15)',
+                'glow-primary': '0 0 30px -8px oklch(var(--primary) / 0.4)',
+                'glow-accent': '0 0 30px -8px oklch(var(--accent) / 0.4)',
+                'glow-highlight': '0 0 30px -8px oklch(var(--highlight) / 0.4)'
             },
             keyframes: {
                 'accordion-down': {
@@ -86,11 +105,21 @@ export default {
                 'accordion-up': {
                     from: { height: 'var(--radix-accordion-content-height)' },
                     to: { height: '0' }
+                },
+                'fade-in': {
+                    from: { opacity: '0', transform: 'translateY(10px)' },
+                    to: { opacity: '1', transform: 'translateY(0)' }
+                },
+                'slide-in': {
+                    from: { transform: 'translateX(-100%)' },
+                    to: { transform: 'translateX(0)' }
                 }
             },
             animation: {
                 'accordion-down': 'accordion-down 0.2s ease-out',
-                'accordion-up': 'accordion-up 0.2s ease-out'
+                'accordion-up': 'accordion-up 0.2s ease-out',
+                'fade-in': 'fade-in 0.5s ease-out',
+                'slide-in': 'slide-in 0.3s ease-out'
             }
         }
     },

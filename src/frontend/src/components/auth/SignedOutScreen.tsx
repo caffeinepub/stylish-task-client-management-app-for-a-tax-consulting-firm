@@ -1,94 +1,132 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useInternetIdentity } from '../../hooks/useInternetIdentity';
-import { FileText, Users, CheckSquare } from 'lucide-react';
+import { FileText, Users, CheckSquare, Sparkles, TrendingUp, Shield } from 'lucide-react';
 
 export default function SignedOutScreen() {
   const { login, isLoggingIn } = useInternetIdentity();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[oklch(0.97_0_0)] via-[oklch(0.95_0.01_80)] to-[oklch(0.93_0.02_120)] dark:from-[oklch(0.145_0_0)] dark:via-[oklch(0.18_0.01_80)] dark:to-[oklch(0.20_0.02_120)] flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl">
-        <div className="text-center mb-8">
-          <img 
-            src="/assets/generated/cswa-logo-new.dim_800x200.png" 
-            alt="CSWA Group of Companies Logo" 
-            className="h-24 mx-auto mb-4 opacity-90"
-          />
-          <h1 className="text-4xl font-bold text-[oklch(0.25_0_0)] dark:text-[oklch(0.95_0_0)] mb-2">
+    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/10 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Decorative background elements */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-highlight/5 rounded-full blur-3xl" />
+
+      <div className="w-full max-w-5xl relative z-10">
+        {/* Hero Section */}
+        <div className="text-center mb-12">
+          <div className="relative inline-block mb-6">
+            <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-2xl" />
+            <img 
+              src="/assets/generated/cswa-logo-new.dim_800x200.png" 
+              alt="CSWA Group of Companies Logo" 
+              className="h-28 mx-auto relative"
+            />
+          </div>
+          <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-primary via-accent to-highlight bg-clip-text text-transparent mb-4">
             CSWA Group of Companies
           </h1>
-          <p className="text-lg text-[oklch(0.45_0_0)] dark:text-[oklch(0.70_0_0)]">
-            Streamline your client relationships and task workflows
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Transform your client relationships and task workflows with our powerful management platform
           </p>
         </div>
 
-        <Card className="mb-8 border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)]">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Welcome</CardTitle>
-            <CardDescription>Sign in to access your workspace</CardDescription>
+        {/* Sign In Card */}
+        <Card className="mb-12 border-2 border-primary/20 shadow-glow-primary overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
+          <CardHeader className="text-center relative">
+            <div className="flex justify-center mb-4">
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20">
+                <Sparkles className="h-8 w-8 text-primary" />
+              </div>
+            </div>
+            <CardTitle className="text-3xl font-bold">Welcome Back</CardTitle>
+            <CardDescription className="text-base">Sign in to access your workspace and start managing</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col items-center gap-4">
+          <CardContent className="flex flex-col items-center gap-4 relative">
             <Button 
               onClick={login} 
               disabled={isLoggingIn}
               size="lg"
-              className="w-full max-w-xs bg-[oklch(0.35_0.05_120)] hover:bg-[oklch(0.30_0.05_120)] text-white dark:bg-[oklch(0.65_0.08_130)] dark:hover:bg-[oklch(0.70_0.08_130)] dark:text-[oklch(0.15_0_0)]"
+              className="w-full max-w-md h-12 text-base font-semibold bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground shadow-glow-primary transition-all duration-300"
             >
-              {isLoggingIn ? 'Signing in...' : 'Sign in to Continue'}
+              {isLoggingIn ? (
+                <span className="flex items-center gap-2">
+                  <div className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                  Signing in...
+                </span>
+              ) : (
+                'Sign in to Continue'
+              )}
             </Button>
           </CardContent>
         </Card>
 
-        <div className="grid md:grid-cols-3 gap-4 mb-8">
-          <Card className="border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)]">
-            <CardHeader>
-              <Users className="h-8 w-8 mb-2 text-[oklch(0.50_0.08_130)]" />
-              <CardTitle className="text-lg">Client Management</CardTitle>
+        {/* Feature Cards */}
+        <div className="grid md:grid-cols-3 gap-6 mb-12">
+          <Card className="border-2 border-primary/20 hover:border-primary/40 transition-all duration-300 hover:shadow-glow-primary group overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl group-hover:bg-primary/20 transition-colors" />
+            <CardHeader className="relative">
+              <div className="p-3 rounded-xl bg-primary/10 w-fit mb-3 group-hover:bg-primary/20 transition-colors">
+                <Users className="h-8 w-8 text-primary" />
+              </div>
+              <CardTitle className="text-xl font-bold">Client Management</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Organize client information, contact details, and tax year projects in one place
+            <CardContent className="relative">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Organize client information, contact details, and tax year projects in one centralized platform
               </p>
             </CardContent>
           </Card>
 
-          <Card className="border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)]">
-            <CardHeader>
-              <CheckSquare className="h-8 w-8 mb-2 text-[oklch(0.50_0.08_130)]" />
-              <CardTitle className="text-lg">Task Tracking</CardTitle>
+          <Card className="border-2 border-accent/20 hover:border-accent/40 transition-all duration-300 hover:shadow-glow-accent group overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-full blur-2xl group-hover:bg-accent/20 transition-colors" />
+            <CardHeader className="relative">
+              <div className="p-3 rounded-xl bg-accent/10 w-fit mb-3 group-hover:bg-accent/20 transition-colors">
+                <CheckSquare className="h-8 w-8 text-accent" />
+              </div>
+              <CardTitle className="text-xl font-bold">Task Tracking</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Track deadlines, priorities, and progress for every client engagement
+            <CardContent className="relative">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Track deadlines, priorities, and progress for every client engagement with real-time updates
               </p>
             </CardContent>
           </Card>
 
-          <Card className="border-[oklch(0.88_0_0)] dark:border-[oklch(0.30_0_0)]">
-            <CardHeader>
-              <FileText className="h-8 w-8 mb-2 text-[oklch(0.50_0.08_130)]" />
-              <CardTitle className="text-lg">Dashboard Insights</CardTitle>
+          <Card className="border-2 border-highlight/20 hover:border-highlight/40 transition-all duration-300 hover:shadow-glow-highlight group overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-highlight/10 rounded-full blur-2xl group-hover:bg-highlight/20 transition-colors" />
+            <CardHeader className="relative">
+              <div className="p-3 rounded-xl bg-highlight/10 w-fit mb-3 group-hover:bg-highlight/20 transition-colors">
+                <TrendingUp className="h-8 w-8 text-highlight" />
+              </div>
+              <CardTitle className="text-xl font-bold">Dashboard Insights</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Monitor active clients, open tasks, and upcoming deadlines at a glance
+            <CardContent className="relative">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Monitor active clients, open tasks, and upcoming deadlines with powerful analytics at a glance
               </p>
             </CardContent>
           </Card>
         </div>
 
-        <footer className="text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} • Built with ❤️ using{' '}
+        {/* Footer */}
+        <footer className="text-center">
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <Shield className="h-4 w-4" />
+            <span>© {new Date().getFullYear()}</span>
+            <span>•</span>
+            <span>Built with ❤️ using</span>
             <a 
               href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="underline hover:text-foreground transition-colors"
+              className="font-semibold text-primary hover:text-primary/80 transition-colors underline"
             >
               caffeine.ai
             </a>
-          </p>
+          </div>
         </footer>
       </div>
     </div>
