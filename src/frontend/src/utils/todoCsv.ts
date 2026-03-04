@@ -1,4 +1,4 @@
-import type { PartialTodoInput } from '../backend';
+import type { PartialTodoInput } from "../backend";
 
 export interface ParsedTodoRow {
   title: string;
@@ -13,22 +13,28 @@ export interface ParsedTodoRow {
  * Generate and download a CSV template for bulk todo upload
  */
 export function generateTodoCsvTemplate() {
-  const headers = ['Title', 'Description', 'Completed', 'Priority', 'Due Date'];
-  const exampleRow = ['Example Todo', 'Optional description', 'false', '1', '2026-03-01'];
-  
-  const csvContent = [
-    headers.join(','),
-    exampleRow.join(','),
-  ].join('\n');
+  const headers = ["Title", "Description", "Completed", "Priority", "Due Date"];
+  const exampleRow = [
+    "Example Todo",
+    "Optional description",
+    "false",
+    "1",
+    "2026-03-01",
+  ];
 
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
+  const csvContent = [headers.join(","), exampleRow.join(",")].join("\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
   const url = URL.createObjectURL(blob);
-  
-  link.setAttribute('href', url);
-  link.setAttribute('download', `todo_template_${new Date().toISOString().split('T')[0]}.csv`);
-  link.style.visibility = 'hidden';
-  
+
+  link.setAttribute("href", url);
+  link.setAttribute(
+    "download",
+    `todo_template_${new Date().toISOString().split("T")[0]}.csv`,
+  );
+  link.style.visibility = "hidden";
+
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -39,7 +45,7 @@ export function generateTodoCsvTemplate() {
  */
 function parseCsvLine(line: string): string[] {
   const result: string[] = [];
-  let current = '';
+  let current = "";
   let inQuotes = false;
 
   for (let i = 0; i < line.length; i++) {
@@ -53,9 +59,9 @@ function parseCsvLine(line: string): string[] {
       } else {
         inQuotes = !inQuotes;
       }
-    } else if (char === ',' && !inQuotes) {
+    } else if (char === "," && !inQuotes) {
       result.push(current.trim());
-      current = '';
+      current = "";
     } else {
       current += char;
     }
@@ -69,41 +75,42 @@ function parseCsvLine(line: string): string[] {
  * Parse uploaded CSV file content
  */
 export function parseTodoCsv(csvText: string): ParsedTodoRow[] {
-  const lines = csvText.split('\n').filter(line => line.trim());
-  
+  const lines = csvText.split("\n").filter((line) => line.trim());
+
   if (lines.length < 2) {
     return [];
   }
 
   // Skip header row
   const dataLines = lines.slice(1);
-  
-  return dataLines.map((line, index) => {
+
+  return dataLines.map((line, _index) => {
     const columns = parseCsvLine(line);
     const errors: string[] = [];
 
     // Title (required)
-    const title = columns[0]?.trim() || '';
+    const title = columns[0]?.trim() || "";
     if (!title) {
-      errors.push('Title is required');
+      errors.push("Title is required");
     }
 
     // Description (optional)
     const description = columns[1]?.trim() || undefined;
 
     // Completed (boolean, default false)
-    const completedStr = columns[2]?.trim().toLowerCase() || 'false';
-    const completed = completedStr === 'true' || completedStr === '1' || completedStr === 'yes';
+    const completedStr = columns[2]?.trim().toLowerCase() || "false";
+    const completed =
+      completedStr === "true" || completedStr === "1" || completedStr === "yes";
 
     // Priority (optional number)
     let priority: number | undefined = undefined;
     const priorityStr = columns[3]?.trim();
     if (priorityStr) {
-      const parsed = parseInt(priorityStr, 10);
-      if (!isNaN(parsed) && parsed >= 0) {
+      const parsed = Number.parseInt(priorityStr, 10);
+      if (!Number.isNaN(parsed) && parsed >= 0) {
         priority = parsed;
       } else {
-        errors.push('Priority must be a positive number');
+        errors.push("Priority must be a positive number");
       }
     }
 
@@ -112,10 +119,10 @@ export function parseTodoCsv(csvText: string): ParsedTodoRow[] {
     const dueDateStr = columns[4]?.trim();
     if (dueDateStr) {
       const parsed = new Date(dueDateStr);
-      if (!isNaN(parsed.getTime())) {
+      if (!Number.isNaN(parsed.getTime())) {
         dueDate = parsed;
       } else {
-        errors.push('Invalid due date format (use YYYY-MM-DD)');
+        errors.push("Invalid due date format (use YYYY-MM-DD)");
       }
     }
 

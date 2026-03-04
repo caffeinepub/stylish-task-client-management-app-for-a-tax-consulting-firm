@@ -1,20 +1,50 @@
-import { useNavigate } from '@tanstack/react-router';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { useGetAllTasks } from '../hooks/tasks';
-import { useGetAllClients } from '../hooks/clients';
-import { Loader2, TrendingUp, Users, FileText, AlertCircle, ArrowUpRight, Sparkles } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useNavigate } from "@tanstack/react-router";
+import {
+  AlertCircle,
+  ArrowUpRight,
+  FileText,
+  Loader2,
+  Sparkles,
+  TrendingUp,
+  UserCheck,
+  Users,
+} from "lucide-react";
+import { ALLOWED_TASK_STATUSES } from "../constants/taskStatus";
+import { useGetAllClients } from "../hooks/clients";
+import { useGetAllTasks } from "../hooks/tasks";
 import {
   aggregateByCategory,
-  aggregateBySubCategory,
-  aggregateByStatus,
   aggregateByCategoryAndSubCategory,
-} from '../utils/taskAggregations';
+  aggregateByStatus,
+  aggregateBySubCategory,
+  aggregateTasksByAssignee,
+} from "../utils/taskAggregations";
+
+// Status columns to show in the Tasks by Assignee table
+const ASSIGNEE_STATUS_COLUMNS = [
+  "Pending",
+  "In Progress",
+  "Completed",
+  "Hold",
+  "Docs Pending",
+  "Checking",
+  "Payment Pending",
+] as const;
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { data: tasksWithCaptain = [], isLoading: tasksLoading } = useGetAllTasks();
+  const { data: tasksWithCaptain = [], isLoading: tasksLoading } =
+    useGetAllTasks();
   const { data: clients = [], isLoading: clientsLoading } = useGetAllClients();
 
   const tasks = tasksWithCaptain.map((twc) => twc.task);
@@ -26,12 +56,13 @@ export default function DashboardPage() {
   const subCategoryAggregates = aggregateBySubCategory(tasks);
   const statusAggregates = aggregateByStatus(tasks);
   const combinedAggregates = aggregateByCategoryAndSubCategory(tasks);
+  const assigneeAggregates = aggregateTasksByAssignee(tasksWithCaptain);
 
   // Calculate summary metrics
   const totalTasks = tasks.length;
   const totalClients = clients.length;
   const totalRevenue = tasks.reduce((sum, task) => sum + (task.bill || 0), 0);
-  const pendingTasks = tasks.filter((t) => t.status !== 'Completed').length;
+  const pendingTasks = tasks.filter((t) => t.status !== "Completed").length;
 
   if (isLoading) {
     return (
@@ -50,9 +81,13 @@ export default function DashboardPage() {
         <div className="relative">
           <div className="flex items-center gap-3 mb-2">
             <Sparkles className="h-8 w-8 text-primary" />
-            <h1 className="text-4xl font-bold tracking-tight text-foreground">Dashboard</h1>
+            <h1 className="text-4xl font-bold tracking-tight text-foreground">
+              Dashboard
+            </h1>
           </div>
-          <p className="text-lg text-muted-foreground">Real-time insights into your business performance</p>
+          <p className="text-lg text-muted-foreground">
+            Real-time insights into your business performance
+          </p>
         </div>
       </div>
 
@@ -61,13 +96,17 @@ export default function DashboardPage() {
         <Card className="relative overflow-hidden border-2 border-primary/20 hover:border-primary/40 transition-all duration-300 hover:shadow-glow-primary group">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl group-hover:bg-primary/20 transition-colors" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative">
-            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Total Tasks</CardTitle>
+            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Total Tasks
+            </CardTitle>
             <div className="p-2 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
               <FileText className="h-5 w-5 text-primary" />
             </div>
           </CardHeader>
           <CardContent className="relative">
-            <div className="text-4xl font-bold text-foreground mb-2">{totalTasks}</div>
+            <div className="text-4xl font-bold text-foreground mb-2">
+              {totalTasks}
+            </div>
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className="text-xs font-medium">
                 {pendingTasks} pending
@@ -79,13 +118,17 @@ export default function DashboardPage() {
         <Card className="relative overflow-hidden border-2 border-accent/20 hover:border-accent/40 transition-all duration-300 hover:shadow-glow-accent group">
           <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-full blur-2xl group-hover:bg-accent/20 transition-colors" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative">
-            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Total Clients</CardTitle>
+            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Total Clients
+            </CardTitle>
             <div className="p-2 rounded-xl bg-accent/10 group-hover:bg-accent/20 transition-colors">
               <Users className="h-5 w-5 text-accent" />
             </div>
           </CardHeader>
           <CardContent className="relative">
-            <div className="text-4xl font-bold text-foreground mb-2">{totalClients}</div>
+            <div className="text-4xl font-bold text-foreground mb-2">
+              {totalClients}
+            </div>
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className="text-xs font-medium">
                 Active accounts
@@ -97,13 +140,17 @@ export default function DashboardPage() {
         <Card className="relative overflow-hidden border-2 border-highlight/20 hover:border-highlight/40 transition-all duration-300 hover:shadow-glow-highlight group bg-gradient-to-br from-highlight/5 to-transparent">
           <div className="absolute top-0 right-0 w-32 h-32 bg-highlight/10 rounded-full blur-2xl group-hover:bg-highlight/20 transition-colors" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative">
-            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Total Revenue</CardTitle>
+            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Total Revenue
+            </CardTitle>
             <div className="p-2 rounded-xl bg-highlight/10 group-hover:bg-highlight/20 transition-colors">
               <TrendingUp className="h-5 w-5 text-highlight" />
             </div>
           </CardHeader>
           <CardContent className="relative">
-            <div className="text-4xl font-bold text-foreground mb-2">₹{totalRevenue.toLocaleString('en-IN')}</div>
+            <div className="text-4xl font-bold text-foreground mb-2">
+              ₹{totalRevenue.toLocaleString("en-IN")}
+            </div>
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className="text-xs font-medium">
                 Across all tasks
@@ -115,13 +162,17 @@ export default function DashboardPage() {
         <Card className="relative overflow-hidden border-2 border-primary/20 hover:border-primary/40 transition-all duration-300 hover:shadow-glow-primary group bg-gradient-to-br from-primary/5 to-transparent">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl group-hover:bg-primary/20 transition-colors" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative">
-            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Pending Tasks</CardTitle>
+            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Pending Tasks
+            </CardTitle>
             <div className="p-2 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
               <AlertCircle className="h-5 w-5 text-primary" />
             </div>
           </CardHeader>
           <CardContent className="relative">
-            <div className="text-4xl font-bold text-foreground mb-2">{pendingTasks}</div>
+            <div className="text-4xl font-bold text-foreground mb-2">
+              {pendingTasks}
+            </div>
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className="text-xs font-medium">
                 Require attention
@@ -130,6 +181,156 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Tasks by Assignee */}
+      <Card className="border-2 border-border hover:border-accent/30 transition-colors overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-accent/8 via-primary/5 to-transparent border-b">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-2xl font-bold flex items-center gap-2">
+              <div className="w-1 h-8 bg-gradient-to-b from-accent to-primary rounded-full" />
+              <UserCheck className="h-5 w-5 text-accent" />
+              Tasks by Assignee
+            </CardTitle>
+            <Badge variant="outline" className="text-xs">
+              {
+                assigneeAggregates.filter(
+                  (a) => a.assigneeName !== "Unassigned",
+                ).length
+              }{" "}
+              assignees
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {assigneeAggregates.length === 0 ? (
+            <div className="py-12 text-center text-muted-foreground">
+              No tasks assigned yet.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/30 hover:bg-muted/50">
+                    <TableHead className="font-bold text-foreground min-w-[160px]">
+                      Assignee
+                    </TableHead>
+                    <TableHead className="font-bold text-foreground min-w-[120px]">
+                      Captain
+                    </TableHead>
+                    {ASSIGNEE_STATUS_COLUMNS.map((status) => (
+                      <TableHead
+                        key={status}
+                        className="text-center font-bold text-foreground whitespace-nowrap px-3"
+                      >
+                        {status}
+                      </TableHead>
+                    ))}
+                    <TableHead className="text-center font-bold text-foreground">
+                      Total
+                    </TableHead>
+                    <TableHead className="w-10" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {assigneeAggregates.map((agg) => (
+                    <TableRow
+                      key={agg.assigneeName}
+                      className="cursor-pointer hover:bg-accent/5 transition-all duration-200 group border-l-4 border-l-transparent hover:border-l-accent"
+                      onClick={() => {
+                        if (agg.assigneeName !== "Unassigned") {
+                          navigate({
+                            to: "/tasks",
+                            search: {
+                              clientName: undefined,
+                              taskCategory: undefined,
+                              subCategory: undefined,
+                              assignedName: agg.assigneeName,
+                              status: undefined,
+                            },
+                          });
+                        }
+                      }}
+                    >
+                      <TableCell className="font-semibold">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-accent flex-shrink-0" />
+                          <span>{agg.assigneeName}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {agg.captainName || (
+                          <span className="text-muted-foreground/50">—</span>
+                        )}
+                      </TableCell>
+                      {ASSIGNEE_STATUS_COLUMNS.map((status) => {
+                        const count = agg.statusCounts[status] || 0;
+                        return (
+                          <TableCell key={status} className="text-center px-3">
+                            {count > 0 ? (
+                              <Badge
+                                variant={
+                                  status === "Completed"
+                                    ? "default"
+                                    : "secondary"
+                                }
+                                className={`font-mono text-xs min-w-[28px] justify-center cursor-pointer transition-opacity hover:opacity-80 ${
+                                  status === "Completed"
+                                    ? "bg-success/20 text-success border-success/30 hover:bg-success/30"
+                                    : status === "Hold"
+                                      ? "bg-destructive/10 text-destructive border-destructive/20"
+                                      : status === "In Progress"
+                                        ? "bg-primary/10 text-primary border-primary/20"
+                                        : status === "Pending"
+                                          ? "bg-accent/10 text-accent border-accent/20"
+                                          : ""
+                                }`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (agg.assigneeName !== "Unassigned") {
+                                    navigate({
+                                      to: "/tasks",
+                                      search: {
+                                        clientName: undefined,
+                                        taskCategory: undefined,
+                                        subCategory: undefined,
+                                        assignedName: agg.assigneeName,
+                                        status: status,
+                                      },
+                                    });
+                                  }
+                                }}
+                              >
+                                {count}
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground/40 text-xs">
+                                —
+                              </span>
+                            )}
+                          </TableCell>
+                        );
+                      })}
+                      <TableCell className="text-center">
+                        <Badge
+                          variant="outline"
+                          className="font-mono font-bold text-foreground"
+                        >
+                          {agg.total}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {agg.assigneeName !== "Unassigned" && (
+                          <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors" />
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Tasks by Category */}
       <Card className="border-2 border-border hover:border-primary/30 transition-colors overflow-hidden">
@@ -149,20 +350,26 @@ export default function DashboardPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/30 hover:bg-muted/50">
-                  <TableHead className="font-bold text-foreground">Category</TableHead>
-                  <TableHead className="text-right font-bold text-foreground">Count</TableHead>
-                  <TableHead className="text-right font-bold text-foreground">Revenue</TableHead>
-                  <TableHead className="w-12"></TableHead>
+                  <TableHead className="font-bold text-foreground">
+                    Category
+                  </TableHead>
+                  <TableHead className="text-right font-bold text-foreground">
+                    Count
+                  </TableHead>
+                  <TableHead className="text-right font-bold text-foreground">
+                    Revenue
+                  </TableHead>
+                  <TableHead className="w-12" />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {categoryAggregates.map((agg, index) => (
+                {categoryAggregates.map((agg) => (
                   <TableRow
                     key={agg.category}
                     className="cursor-pointer hover:bg-primary/5 transition-all duration-200 group border-l-4 border-l-transparent hover:border-l-primary"
                     onClick={() =>
                       navigate({
-                        to: '/tasks',
+                        to: "/tasks",
                         search: {
                           clientName: undefined,
                           taskCategory: agg.category,
@@ -184,7 +391,9 @@ export default function DashboardPage() {
                         {agg.count}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right font-semibold">₹{agg.revenue.toLocaleString('en-IN')}</TableCell>
+                    <TableCell className="text-right font-semibold">
+                      ₹{agg.revenue.toLocaleString("en-IN")}
+                    </TableCell>
                     <TableCell>
                       <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                     </TableCell>
@@ -214,10 +423,16 @@ export default function DashboardPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/30 hover:bg-muted/50">
-                  <TableHead className="font-bold text-foreground">Sub Category</TableHead>
-                  <TableHead className="text-right font-bold text-foreground">Count</TableHead>
-                  <TableHead className="text-right font-bold text-foreground">Revenue</TableHead>
-                  <TableHead className="w-12"></TableHead>
+                  <TableHead className="font-bold text-foreground">
+                    Sub Category
+                  </TableHead>
+                  <TableHead className="text-right font-bold text-foreground">
+                    Count
+                  </TableHead>
+                  <TableHead className="text-right font-bold text-foreground">
+                    Revenue
+                  </TableHead>
+                  <TableHead className="w-12" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -227,7 +442,7 @@ export default function DashboardPage() {
                     className="cursor-pointer hover:bg-accent/5 transition-all duration-200 group border-l-4 border-l-transparent hover:border-l-accent"
                     onClick={() =>
                       navigate({
-                        to: '/tasks',
+                        to: "/tasks",
                         search: {
                           clientName: undefined,
                           taskCategory: undefined,
@@ -249,7 +464,9 @@ export default function DashboardPage() {
                         {agg.count}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right font-semibold">₹{agg.revenue.toLocaleString('en-IN')}</TableCell>
+                    <TableCell className="text-right font-semibold">
+                      ₹{agg.revenue.toLocaleString("en-IN")}
+                    </TableCell>
                     <TableCell>
                       <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors" />
                     </TableCell>
@@ -279,9 +496,13 @@ export default function DashboardPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/30 hover:bg-muted/50">
-                  <TableHead className="font-bold text-foreground">Status</TableHead>
-                  <TableHead className="text-right font-bold text-foreground">Count</TableHead>
-                  <TableHead className="w-12"></TableHead>
+                  <TableHead className="font-bold text-foreground">
+                    Status
+                  </TableHead>
+                  <TableHead className="text-right font-bold text-foreground">
+                    Count
+                  </TableHead>
+                  <TableHead className="w-12" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -291,7 +512,7 @@ export default function DashboardPage() {
                     className="cursor-pointer hover:bg-highlight/5 transition-all duration-200 group border-l-4 border-l-transparent hover:border-l-highlight"
                     onClick={() =>
                       navigate({
-                        to: '/tasks',
+                        to: "/tasks",
                         search: {
                           clientName: undefined,
                           taskCategory: undefined,
@@ -342,11 +563,19 @@ export default function DashboardPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/30 hover:bg-muted/50">
-                  <TableHead className="font-bold text-foreground">Category</TableHead>
-                  <TableHead className="font-bold text-foreground">Sub Category</TableHead>
-                  <TableHead className="text-right font-bold text-foreground">Count</TableHead>
-                  <TableHead className="text-right font-bold text-foreground">Revenue</TableHead>
-                  <TableHead className="w-12"></TableHead>
+                  <TableHead className="font-bold text-foreground">
+                    Category
+                  </TableHead>
+                  <TableHead className="font-bold text-foreground">
+                    Sub Category
+                  </TableHead>
+                  <TableHead className="text-right font-bold text-foreground">
+                    Count
+                  </TableHead>
+                  <TableHead className="text-right font-bold text-foreground">
+                    Revenue
+                  </TableHead>
+                  <TableHead className="w-12" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -356,7 +585,7 @@ export default function DashboardPage() {
                     className="cursor-pointer hover:bg-gradient-to-r hover:from-primary/5 hover:to-accent/5 transition-all duration-200 group border-l-4 border-l-transparent hover:border-l-primary"
                     onClick={() =>
                       navigate({
-                        to: '/tasks',
+                        to: "/tasks",
                         search: {
                           clientName: undefined,
                           taskCategory: agg.taskCategory,
@@ -373,13 +602,20 @@ export default function DashboardPage() {
                         {agg.taskCategory}
                       </div>
                     </TableCell>
-                    <TableCell className="font-medium text-muted-foreground">{agg.subCategory}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-accent" />
+                        {agg.subCategory}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-right">
                       <Badge variant="secondary" className="font-mono">
                         {agg.count}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right font-semibold">₹{agg.revenue.toLocaleString('en-IN')}</TableCell>
+                    <TableCell className="text-right font-semibold">
+                      ₹{agg.revenue.toLocaleString("en-IN")}
+                    </TableCell>
                     <TableCell>
                       <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                     </TableCell>

@@ -1,29 +1,31 @@
-import { useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Check, X, Edit2 } from 'lucide-react';
-import { useUpdateTaskComment } from '../../hooks/tasks';
-import type { Task } from '../../backend';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Check, Edit2, X } from "lucide-react";
+import { useState } from "react";
+import type { Task } from "../../backend";
+import { useUpdateTaskComment } from "../../hooks/tasks";
 
 interface InlineCommentEditorProps {
   task: Task;
 }
 
-export default function InlineCommentEditor({ task }: InlineCommentEditorProps) {
+export default function InlineCommentEditor({
+  task,
+}: InlineCommentEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedComment, setEditedComment] = useState(task.comment || '');
+  const [editedComment, setEditedComment] = useState(task.comment || "");
   const [error, setError] = useState<string | null>(null);
 
   const { mutate: updateComment, isPending } = useUpdateTaskComment();
 
   const handleStartEdit = () => {
-    setEditedComment(task.comment || '');
+    setEditedComment(task.comment || "");
     setError(null);
     setIsEditing(true);
   };
 
   const handleCancel = () => {
-    setEditedComment(task.comment || '');
+    setEditedComment(task.comment || "");
     setError(null);
     setIsEditing(false);
   };
@@ -37,18 +39,18 @@ export default function InlineCommentEditor({ task }: InlineCommentEditorProps) 
           setIsEditing(false);
         },
         onError: (err) => {
-          setError(err instanceof Error ? err.message : 'Failed to update comment');
+          setError(
+            err instanceof Error ? err.message : "Failed to update comment",
+          );
         },
-      }
+      },
     );
   };
 
   if (!isEditing) {
     return (
       <div className="flex items-center gap-2 group">
-        <span className="text-sm flex-1 truncate">
-          {task.comment || '—'}
-        </span>
+        <span className="text-sm flex-1 truncate">{task.comment || "—"}</span>
         <Button
           variant="ghost"
           size="sm"
@@ -72,9 +74,9 @@ export default function InlineCommentEditor({ task }: InlineCommentEditorProps) 
           disabled={isPending}
           autoFocus
           onKeyDown={(e) => {
-            if (e.key === 'Enter') {
+            if (e.key === "Enter") {
               handleSave();
-            } else if (e.key === 'Escape') {
+            } else if (e.key === "Escape") {
               handleCancel();
             }
           }}
@@ -98,9 +100,7 @@ export default function InlineCommentEditor({ task }: InlineCommentEditorProps) 
           <X className="h-4 w-4" />
         </Button>
       </div>
-      {error && (
-        <p className="text-xs text-destructive">{error}</p>
-      )}
+      {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
 }

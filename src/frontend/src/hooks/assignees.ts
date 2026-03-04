@@ -1,13 +1,13 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useActor } from './useActor';
-import type { Assignee, AssigneeId, PartialAssigneeInput } from '../backend';
-import { toast } from 'sonner';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import type { Assignee, AssigneeId, PartialAssigneeInput } from "../backend";
+import { useActor } from "./useActor";
 
 export function useAssignees() {
   const { actor, isFetching } = useActor();
 
   return useQuery<Assignee[]>({
-    queryKey: ['assignees'],
+    queryKey: ["assignees"],
     queryFn: async () => {
       if (!actor) return [];
       return actor.getAllAssignees();
@@ -25,7 +25,7 @@ export function useAssignee(assigneeId: AssigneeId | null) {
   const { actor, isFetching } = useActor();
 
   return useQuery<Assignee | null>({
-    queryKey: ['assignee', assigneeId?.toString()],
+    queryKey: ["assignee", assigneeId?.toString()],
     queryFn: async () => {
       if (!actor || assigneeId === null) return null;
       return actor.getAssignee(assigneeId);
@@ -43,12 +43,12 @@ export function useCreateAssignee() {
 
   return useMutation({
     mutationFn: async (assignee: PartialAssigneeInput) => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) throw new Error("Actor not available");
       return actor.createAssignee(assignee);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['assignees'] });
-      toast.success('Assignee created successfully');
+      queryClient.invalidateQueries({ queryKey: ["assignees"] });
+      toast.success("Assignee created successfully");
     },
     onError: (error: Error) => {
       toast.error(`Failed to create assignee: ${error.message}`);
@@ -61,20 +61,30 @@ export function useUpdateAssignee() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ assigneeId, assignee }: { assigneeId: AssigneeId; assignee: PartialAssigneeInput }) => {
-      if (!actor) throw new Error('Actor not available');
+    mutationFn: async ({
+      assigneeId,
+      assignee,
+    }: { assigneeId: AssigneeId; assignee: PartialAssigneeInput }) => {
+      if (!actor) throw new Error("Actor not available");
       return actor.updateAssignee(assigneeId, assignee);
     },
     onMutate: async ({ assigneeId, assignee }) => {
-      await queryClient.cancelQueries({ queryKey: ['assignees'] });
-      await queryClient.cancelQueries({ queryKey: ['assignee', assigneeId.toString()] });
+      await queryClient.cancelQueries({ queryKey: ["assignees"] });
+      await queryClient.cancelQueries({
+        queryKey: ["assignee", assigneeId.toString()],
+      });
 
-      const previousAssignees = queryClient.getQueryData<Assignee[]>(['assignees']);
-      const previousAssignee = queryClient.getQueryData<Assignee | null>(['assignee', assigneeId.toString()]);
+      const previousAssignees = queryClient.getQueryData<Assignee[]>([
+        "assignees",
+      ]);
+      const previousAssignee = queryClient.getQueryData<Assignee | null>([
+        "assignee",
+        assigneeId.toString(),
+      ]);
 
       if (previousAssignees) {
         queryClient.setQueryData<Assignee[]>(
-          ['assignees'],
+          ["assignees"],
           previousAssignees.map((a) =>
             a.id === assigneeId
               ? {
@@ -82,34 +92,42 @@ export function useUpdateAssignee() {
                   name: assignee.name,
                   captain: assignee.captain,
                 }
-              : a
-          )
+              : a,
+          ),
         );
       }
 
       if (previousAssignee) {
-        queryClient.setQueryData<Assignee>(['assignee', assigneeId.toString()], {
-          ...previousAssignee,
-          name: assignee.name,
-          captain: assignee.captain,
-        });
+        queryClient.setQueryData<Assignee>(
+          ["assignee", assigneeId.toString()],
+          {
+            ...previousAssignee,
+            name: assignee.name,
+            captain: assignee.captain,
+          },
+        );
       }
 
       return { previousAssignees, previousAssignee };
     },
     onError: (error: Error, _variables, context) => {
       if (context?.previousAssignees) {
-        queryClient.setQueryData(['assignees'], context.previousAssignees);
+        queryClient.setQueryData(["assignees"], context.previousAssignees);
       }
       if (context?.previousAssignee) {
-        queryClient.setQueryData(['assignee', _variables.assigneeId.toString()], context.previousAssignee);
+        queryClient.setQueryData(
+          ["assignee", _variables.assigneeId.toString()],
+          context.previousAssignee,
+        );
       }
       toast.error(`Failed to update assignee: ${error.message}`);
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['assignees'] });
-      queryClient.invalidateQueries({ queryKey: ['assignee', variables.assigneeId.toString()] });
-      toast.success('Assignee updated successfully');
+      queryClient.invalidateQueries({ queryKey: ["assignees"] });
+      queryClient.invalidateQueries({
+        queryKey: ["assignee", variables.assigneeId.toString()],
+      });
+      toast.success("Assignee updated successfully");
     },
   });
 }
@@ -120,12 +138,12 @@ export function useDeleteAssignee() {
 
   return useMutation({
     mutationFn: async (assigneeId: AssigneeId) => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) throw new Error("Actor not available");
       return actor.deleteAssignee(assigneeId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['assignees'] });
-      toast.success('Assignee deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ["assignees"] });
+      toast.success("Assignee deleted successfully");
     },
     onError: (error: Error) => {
       toast.error(`Failed to delete assignee: ${error.message}`);
@@ -139,11 +157,11 @@ export function useBulkDeleteAssignees() {
 
   return useMutation({
     mutationFn: async (assigneeIds: AssigneeId[]) => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) throw new Error("Actor not available");
       await Promise.all(assigneeIds.map((id) => actor.deleteAssignee(id)));
     },
     onSuccess: (_data, assigneeIds) => {
-      queryClient.invalidateQueries({ queryKey: ['assignees'] });
+      queryClient.invalidateQueries({ queryKey: ["assignees"] });
       toast.success(`${assigneeIds.length} assignee(s) deleted successfully`);
     },
     onError: (error: Error) => {
@@ -158,12 +176,14 @@ export function useBulkCreateAssignees() {
 
   return useMutation({
     mutationFn: async (assignees: PartialAssigneeInput[]) => {
-      if (!actor) throw new Error('Actor not available');
-      const results = await Promise.all(assignees.map((assignee) => actor.createAssignee(assignee)));
+      if (!actor) throw new Error("Actor not available");
+      const results = await Promise.all(
+        assignees.map((assignee) => actor.createAssignee(assignee)),
+      );
       return results;
     },
     onSuccess: (_data, assignees) => {
-      queryClient.invalidateQueries({ queryKey: ['assignees'] });
+      queryClient.invalidateQueries({ queryKey: ["assignees"] });
       toast.success(`${assignees.length} assignee(s) created successfully`);
     },
     onError: (error: Error) => {

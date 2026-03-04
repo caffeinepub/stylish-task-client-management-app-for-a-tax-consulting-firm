@@ -1,36 +1,43 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useActor } from './useActor';
-import type { Task, TaskId, TaskWithCaptain, PartialTaskUpdate } from '../backend';
-import { toast } from 'sonner';
-import { useState, useMemo } from 'react';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
+import type {
+  PartialTaskUpdate,
+  Task,
+  TaskId,
+  TaskWithCaptain,
+} from "../backend";
+import { useActor } from "./useActor";
 
 export function useGetAllTasks() {
   const { actor, isFetching } = useActor();
 
   return useQuery<TaskWithCaptain[]>({
-    queryKey: ['tasks'],
+    queryKey: ["tasks"],
     queryFn: async () => {
-      console.log('[useGetAllTasks] Query initiated', {
+      console.log("[useGetAllTasks] Query initiated", {
         timestamp: new Date().toISOString(),
         actorAvailable: !!actor,
         actorFetching: isFetching,
       });
-      
+
       if (!actor) {
-        console.warn('[useGetAllTasks] Actor not available, returning empty array');
+        console.warn(
+          "[useGetAllTasks] Actor not available, returning empty array",
+        );
         return [];
       }
-      
+
       const startTime = performance.now();
       const result = await actor.getAllTasksWithCaptain();
       const endTime = performance.now();
-      
-      console.log('[useGetAllTasks] Query completed', {
+
+      console.log("[useGetAllTasks] Query completed", {
         timestamp: new Date().toISOString(),
         duration: `${(endTime - startTime).toFixed(2)}ms`,
         resultCount: result.length,
       });
-      
+
       return result;
     },
     enabled: !!actor && !isFetching,
@@ -44,34 +51,36 @@ export function useTasksWithCaptain() {
   const { actor, isFetching } = useActor();
 
   return useQuery<TaskWithCaptain[]>({
-    queryKey: ['tasksWithCaptain'],
+    queryKey: ["tasksWithCaptain"],
     queryFn: async () => {
-      console.log('[useTasksWithCaptain] Query initiated', {
+      console.log("[useTasksWithCaptain] Query initiated", {
         timestamp: new Date().toISOString(),
         actorAvailable: !!actor,
         actorFetching: isFetching,
       });
-      
+
       if (!actor) {
-        console.warn('[useTasksWithCaptain] Actor not available, returning empty array');
+        console.warn(
+          "[useTasksWithCaptain] Actor not available, returning empty array",
+        );
         return [];
       }
-      
+
       const startTime = performance.now();
       try {
         const result = await actor.getAllTasksWithCaptain();
         const endTime = performance.now();
-        
-        console.log('[useTasksWithCaptain] Query completed successfully', {
+
+        console.log("[useTasksWithCaptain] Query completed successfully", {
           timestamp: new Date().toISOString(),
           duration: `${(endTime - startTime).toFixed(2)}ms`,
           resultCount: result.length,
         });
-        
+
         return result;
       } catch (error) {
         const endTime = performance.now();
-        console.error('[useTasksWithCaptain] Query failed', {
+        console.error("[useTasksWithCaptain] Query failed", {
           timestamp: new Date().toISOString(),
           duration: `${(endTime - startTime).toFixed(2)}ms`,
           error: error instanceof Error ? error.message : String(error),
@@ -88,10 +97,7 @@ export function useTasksWithCaptain() {
 }
 
 // Pagination hook for tasks
-export function usePaginatedTasks(
-  tasks: TaskWithCaptain[],
-  pageSize: number = 20
-) {
+export function usePaginatedTasks(tasks: TaskWithCaptain[], pageSize = 20) {
   const [currentPage, setCurrentPage] = useState(1);
 
   const paginatedData = useMemo(() => {
@@ -151,7 +157,7 @@ export function useTask(taskId: TaskId | null) {
   const { actor, isFetching } = useActor();
 
   return useQuery<Task | null>({
-    queryKey: ['task', taskId?.toString()],
+    queryKey: ["task", taskId?.toString()],
     queryFn: async () => {
       if (!actor || taskId === null) return null;
       return actor.getTask(taskId);
@@ -165,14 +171,18 @@ export function useCreateTask() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ clientName, taskCategory, subCategory }: { clientName: string; taskCategory: string; subCategory: string }) => {
-      if (!actor) throw new Error('Actor not available');
+    mutationFn: async ({
+      clientName,
+      taskCategory,
+      subCategory,
+    }: { clientName: string; taskCategory: string; subCategory: string }) => {
+      if (!actor) throw new Error("Actor not available");
       return actor.createTask(clientName, taskCategory, subCategory);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['tasksWithCaptain'] });
-      toast.success('Task created successfully');
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["tasksWithCaptain"] });
+      toast.success("Task created successfully");
     },
     onError: (error: Error) => {
       toast.error(`Failed to create task: ${error.message}`);
@@ -216,7 +226,7 @@ export function useUpdateTask() {
       outstandingAmount?: number | null;
       paymentStatus?: string | null;
     }) => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) throw new Error("Actor not available");
       return actor.updateTask(
         taskId,
         clientName,
@@ -231,14 +241,16 @@ export function useUpdateTask() {
         bill ?? null,
         advanceReceived ?? null,
         outstandingAmount ?? null,
-        paymentStatus ?? null
+        paymentStatus ?? null,
       );
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['tasksWithCaptain'] });
-      queryClient.invalidateQueries({ queryKey: ['task', variables.taskId.toString()] });
-      toast.success('Task updated successfully');
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["tasksWithCaptain"] });
+      queryClient.invalidateQueries({
+        queryKey: ["task", variables.taskId.toString()],
+      });
+      toast.success("Task updated successfully");
     },
     onError: (error: Error) => {
       toast.error(`Failed to update task: ${error.message}`);
@@ -251,11 +263,14 @@ export function useUpdateTaskComment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ taskId, comment }: { taskId: TaskId; comment: string }) => {
-      if (!actor) throw new Error('Actor not available');
+    mutationFn: async ({
+      taskId,
+      comment,
+    }: { taskId: TaskId; comment: string }) => {
+      if (!actor) throw new Error("Actor not available");
       const task = await actor.getTask(taskId);
-      if (!task) throw new Error('Task not found');
-      
+      if (!task) throw new Error("Task not found");
+
       return actor.updateTask(
         taskId,
         task.clientName,
@@ -270,14 +285,16 @@ export function useUpdateTaskComment() {
         task.bill ?? null,
         task.advanceReceived ?? null,
         task.outstandingAmount ?? null,
-        task.paymentStatus ?? null
+        task.paymentStatus ?? null,
       );
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['tasksWithCaptain'] });
-      queryClient.invalidateQueries({ queryKey: ['task', variables.taskId.toString()] });
-      toast.success('Comment updated successfully');
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["tasksWithCaptain"] });
+      queryClient.invalidateQueries({
+        queryKey: ["task", variables.taskId.toString()],
+      });
+      toast.success("Comment updated successfully");
     },
     onError: (error: Error) => {
       toast.error(`Failed to update comment: ${error.message}`);
@@ -291,15 +308,17 @@ export function useBulkUpdateTasks() {
 
   return useMutation({
     mutationFn: async (updates: PartialTaskUpdate[]) => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) throw new Error("Actor not available");
       return actor.bulkUpdateTasks(updates);
     },
     onSuccess: (_data, updates) => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['tasksWithCaptain'] });
-      updates.forEach((update) => {
-        queryClient.invalidateQueries({ queryKey: ['task', update.id.toString()] });
-      });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["tasksWithCaptain"] });
+      for (const update of updates) {
+        queryClient.invalidateQueries({
+          queryKey: ["task", update.id.toString()],
+        });
+      }
       toast.success(`${updates.length} task(s) updated successfully`);
     },
     onError: (error: Error) => {
@@ -314,13 +333,13 @@ export function useDeleteTask() {
 
   return useMutation({
     mutationFn: async (taskId: TaskId) => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) throw new Error("Actor not available");
       return actor.deleteTask(taskId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['tasksWithCaptain'] });
-      toast.success('Task deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["tasksWithCaptain"] });
+      toast.success("Task deleted successfully");
     },
     onError: (error: Error) => {
       toast.error(`Failed to delete task: ${error.message}`);
@@ -334,12 +353,12 @@ export function useBulkDeleteTasks() {
 
   return useMutation({
     mutationFn: async (taskIds: TaskId[]) => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) throw new Error("Actor not available");
       await Promise.all(taskIds.map((id) => actor.deleteTask(id)));
     },
     onSuccess: (_data, taskIds) => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['tasksWithCaptain'] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["tasksWithCaptain"] });
       toast.success(`${taskIds.length} task(s) deleted successfully`);
     },
     onError: (error: Error) => {
@@ -353,16 +372,28 @@ export function useBulkCreateTasks() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (tasks: Array<{ clientName: string; taskCategory: string; subCategory: string }>) => {
-      if (!actor) throw new Error('Actor not available');
+    mutationFn: async (
+      tasks: Array<{
+        clientName: string;
+        taskCategory: string;
+        subCategory: string;
+      }>,
+    ) => {
+      if (!actor) throw new Error("Actor not available");
       const results = await Promise.all(
-        tasks.map((task) => actor.createTask(task.clientName, task.taskCategory, task.subCategory))
+        tasks.map((task) =>
+          actor.createTask(
+            task.clientName,
+            task.taskCategory,
+            task.subCategory,
+          ),
+        ),
       );
       return results;
     },
     onSuccess: (_data, tasks) => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['tasksWithCaptain'] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["tasksWithCaptain"] });
       toast.success(`${tasks.length} task(s) created successfully`);
     },
     onError: (error: Error) => {

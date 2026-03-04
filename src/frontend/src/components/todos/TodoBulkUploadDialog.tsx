@@ -1,19 +1,51 @@
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Upload, Download, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { useBulkCreateTodos } from '../../hooks/todos';
-import { generateTodoCsvTemplate, parseTodoCsv, validateTodoRow, convertToTodoInput, type ParsedTodoRow } from '../../utils/todoCsv';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Download,
+  Loader2,
+  Upload,
+} from "lucide-react";
+import { useState } from "react";
+import { useBulkCreateTodos } from "../../hooks/todos";
+import {
+  type ParsedTodoRow,
+  convertToTodoInput,
+  generateTodoCsvTemplate,
+  parseTodoCsv,
+  validateTodoRow,
+} from "../../utils/todoCsv";
 
 export default function TodoBulkUploadDialog() {
   const [open, setOpen] = useState(false);
   const [parsedTodos, setParsedTodos] = useState<ParsedTodoRow[]>([]);
-  const [fileName, setFileName] = useState<string>('');
+  const [fileName, setFileName] = useState<string>("");
 
-  const { mutate: bulkCreateTodos, isPending, isSuccess, isError } = useBulkCreateTodos();
+  const {
+    mutate: bulkCreateTodos,
+    isPending,
+    isSuccess,
+    isError,
+  } = useBulkCreateTodos();
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -40,7 +72,7 @@ export default function TodoBulkUploadDialog() {
         setTimeout(() => {
           setOpen(false);
           setParsedTodos([]);
-          setFileName('');
+          setFileName("");
         }, 1500);
       },
     });
@@ -74,7 +106,11 @@ export default function TodoBulkUploadDialog() {
                 Start with our template to ensure correct formatting
               </p>
             </div>
-            <Button variant="outline" size="sm" onClick={generateTodoCsvTemplate}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={generateTodoCsvTemplate}
+            >
               <Download className="h-4 w-4 mr-2" />
               Download
             </Button>
@@ -125,8 +161,12 @@ export default function TodoBulkUploadDialog() {
                   <TableBody>
                     {parsedTodos.map((todo, index) => {
                       const isValid = validateTodoRow(todo);
+                      const rowKey = `${todo.title || "row"}-${index}`;
                       return (
-                        <TableRow key={index} className={!isValid ? 'bg-destructive/10' : ''}>
+                        <TableRow
+                          key={rowKey}
+                          className={!isValid ? "bg-destructive/10" : ""}
+                        >
                           <TableCell>
                             {isValid ? (
                               <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -134,17 +174,23 @@ export default function TodoBulkUploadDialog() {
                               <AlertCircle className="h-4 w-4 text-destructive" />
                             )}
                           </TableCell>
-                          <TableCell className="font-medium">{todo.title || '—'}</TableCell>
-                          <TableCell className="max-w-[200px] truncate">{todo.description || '—'}</TableCell>
-                          <TableCell>{todo.completed ? 'Yes' : 'No'}</TableCell>
-                          <TableCell>{todo.priority ?? '—'}</TableCell>
+                          <TableCell className="font-medium">
+                            {todo.title || "—"}
+                          </TableCell>
+                          <TableCell className="max-w-[200px] truncate">
+                            {todo.description || "—"}
+                          </TableCell>
+                          <TableCell>{todo.completed ? "Yes" : "No"}</TableCell>
+                          <TableCell>{todo.priority ?? "—"}</TableCell>
                           <TableCell>
-                            {todo.dueDate ? todo.dueDate.toLocaleDateString('en-IN') : '—'}
+                            {todo.dueDate
+                              ? todo.dueDate.toLocaleDateString("en-IN")
+                              : "—"}
                           </TableCell>
                           <TableCell>
                             {todo.errors.length > 0 && (
                               <span className="text-xs text-destructive">
-                                {todo.errors.join(', ')}
+                                {todo.errors.join(", ")}
                               </span>
                             )}
                           </TableCell>
@@ -178,7 +224,11 @@ export default function TodoBulkUploadDialog() {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
+          <Button
+            variant="outline"
+            onClick={() => setOpen(false)}
+            disabled={isPending}
+          >
             Cancel
           </Button>
           <Button
@@ -186,7 +236,7 @@ export default function TodoBulkUploadDialog() {
             disabled={isPending || validCount === 0}
           >
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isPending ? 'Creating...' : `Create ${validCount} Todo(s)`}
+            {isPending ? "Creating..." : `Create ${validCount} Todo(s)`}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,9 +1,7 @@
-import React, { useState, useMemo } from 'react';
-import { useAssignees, useBulkDeleteAssignees } from '../hooks/assignees';
-import { useInternetIdentity } from '../hooks/useInternetIdentity';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -11,14 +9,16 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import AssigneeFormDialog from '../components/assignees/AssigneeFormDialog';
-import AssigneeBulkUploadDialog from '../components/assignees/AssigneeBulkUploadDialog';
-import { Search, Plus, Upload, Trash2, Download } from 'lucide-react';
-import type { Assignee, AssigneeId } from '../backend';
-import { exportAssigneesToExcel } from '../utils/assigneeExcel';
-import { toast } from 'sonner';
+} from "@/components/ui/table";
+import { Download, Plus, Search, Trash2, Upload } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { toast } from "sonner";
+import type { Assignee, AssigneeId } from "../backend";
+import AssigneeBulkUploadDialog from "../components/assignees/AssigneeBulkUploadDialog";
+import AssigneeFormDialog from "../components/assignees/AssigneeFormDialog";
+import { useAssignees, useBulkDeleteAssignees } from "../hooks/assignees";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
+import { exportAssigneesToExcel } from "../utils/assigneeExcel";
 
 export default function AssigneesPage() {
   const { identity } = useInternetIdentity();
@@ -26,11 +26,15 @@ export default function AssigneesPage() {
 
   const { data: assignees = [], isLoading } = useAssignees();
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedAssignees, setSelectedAssignees] = useState<Set<AssigneeId>>(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedAssignees, setSelectedAssignees] = useState<Set<AssigneeId>>(
+    new Set(),
+  );
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
-  const [editingAssignee, setEditingAssignee] = useState<Assignee | undefined>(undefined);
+  const [editingAssignee, setEditingAssignee] = useState<Assignee | undefined>(
+    undefined,
+  );
 
   const bulkDeleteMutation = useBulkDeleteAssignees();
 
@@ -41,7 +45,7 @@ export default function AssigneesPage() {
     return assignees.filter(
       (assignee) =>
         assignee.name.toLowerCase().includes(query) ||
-        assignee.captain?.toLowerCase().includes(query)
+        assignee.captain?.toLowerCase().includes(query),
     );
   }, [assignees, searchQuery]);
 
@@ -74,14 +78,18 @@ export default function AssigneesPage() {
   const handleExport = async () => {
     try {
       await exportAssigneesToExcel(filteredAssignees);
-      toast.success('Assignees exported successfully');
-    } catch (error) {
-      toast.error('Failed to export assignees');
+      toast.success("Assignees exported successfully");
+    } catch (_error) {
+      toast.error("Failed to export assignees");
     }
   };
 
-  const allSelected = filteredAssignees.length > 0 && selectedAssignees.size === filteredAssignees.length;
-  const someSelected = selectedAssignees.size > 0 && selectedAssignees.size < filteredAssignees.length;
+  const allSelected =
+    filteredAssignees.length > 0 &&
+    selectedAssignees.size === filteredAssignees.length;
+  const someSelected =
+    selectedAssignees.size > 0 &&
+    selectedAssignees.size < filteredAssignees.length;
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -124,7 +132,11 @@ export default function AssigneesPage() {
                 {selectedAssignees.size} assignee(s) selected
               </span>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => setIsUploadDialogOpen(true)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsUploadDialogOpen(true)}
+                >
                   <Upload className="h-4 w-4 mr-2" />
                   Bulk Upload
                 </Button>
@@ -153,10 +165,14 @@ export default function AssigneesPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-8 text-muted-foreground">Loading assignees...</div>
+            <div className="text-center py-8 text-muted-foreground">
+              Loading assignees...
+            </div>
           ) : filteredAssignees.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {searchQuery ? 'No assignees found matching your search.' : 'No assignees yet.'}
+              {searchQuery
+                ? "No assignees found matching your search."
+                : "No assignees yet."}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -169,13 +185,19 @@ export default function AssigneesPage() {
                           checked={allSelected}
                           onCheckedChange={handleSelectAll}
                           aria-label="Select all"
-                          className={someSelected ? 'data-[state=checked]:bg-primary/50' : ''}
+                          className={
+                            someSelected
+                              ? "data-[state=checked]:bg-primary/50"
+                              : ""
+                          }
                         />
                       </TableHead>
                     )}
                     <TableHead>Team Name</TableHead>
                     <TableHead>Captain</TableHead>
-                    {isAuthenticated && <TableHead className="text-right">Actions</TableHead>}
+                    {isAuthenticated && (
+                      <TableHead className="text-right">Actions</TableHead>
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -186,14 +208,19 @@ export default function AssigneesPage() {
                           <Checkbox
                             checked={selectedAssignees.has(assignee.id)}
                             onCheckedChange={(checked) =>
-                              handleSelectAssignee(assignee.id, checked as boolean)
+                              handleSelectAssignee(
+                                assignee.id,
+                                checked as boolean,
+                              )
                             }
                             aria-label={`Select ${assignee.name}`}
                           />
                         </TableCell>
                       )}
-                      <TableCell className="font-medium">{assignee.name}</TableCell>
-                      <TableCell>{assignee.captain || '-'}</TableCell>
+                      <TableCell className="font-medium">
+                        {assignee.name}
+                      </TableCell>
+                      <TableCell>{assignee.captain || "-"}</TableCell>
                       {isAuthenticated && (
                         <TableCell className="text-right">
                           <Button

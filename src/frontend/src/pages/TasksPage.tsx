@@ -1,18 +1,14 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useTasksWithCaptain, useBulkDeleteTasks, usePaginatedTasks } from '../hooks/tasks';
-import { useInternetIdentity } from '../hooks/useInternetIdentity';
-import { useQueryClient } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -20,41 +16,68 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import TaskFormDialog from '../components/tasks/TaskFormDialog';
-import TaskBulkUploadDialog from '../components/tasks/TaskBulkUploadDialog';
-import TaskBulkEditDialog from '../components/tasks/TaskBulkEditDialog';
-import TaskQuickStatus from '../components/tasks/TaskQuickStatus';
-import InlineCommentEditor from '../components/tasks/InlineCommentEditor';
-import TaskListSkeleton from '../components/tasks/TaskListSkeleton';
-import { Search, Plus, Upload, Trash2, Edit, Download, ArrowUpDown, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
-import type { TaskId, TaskWithCaptain, Task } from '../backend';
-import { exportTasksToExcel } from '../utils/taskExcel';
-import { toast } from 'sonner';
-import { formatTaskDate, formatAssigneeName } from '../utils/taskDisplay';
-import { sortTasks, type SortField, type SortDirection } from '../utils/taskSort';
+} from "@/components/ui/table";
+import { useQueryClient } from "@tanstack/react-query";
+import { useSearch } from "@tanstack/react-router";
+import {
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Edit,
+  Plus,
+  RefreshCw,
+  Search,
+  Trash2,
+  Upload,
+} from "lucide-react";
+import React, { useState, useMemo, useEffect } from "react";
+import { toast } from "sonner";
+import type { Task, TaskId, TaskWithCaptain } from "../backend";
+import InlineCommentEditor from "../components/tasks/InlineCommentEditor";
+import TaskBulkEditDialog from "../components/tasks/TaskBulkEditDialog";
+import TaskBulkUploadDialog from "../components/tasks/TaskBulkUploadDialog";
+import TaskFormDialog from "../components/tasks/TaskFormDialog";
+import TaskListSkeleton from "../components/tasks/TaskListSkeleton";
+import TaskQuickStatus from "../components/tasks/TaskQuickStatus";
+import {
+  useBulkDeleteTasks,
+  usePaginatedTasks,
+  useTasksWithCaptain,
+} from "../hooks/tasks";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
+import { formatAssigneeName, formatTaskDate } from "../utils/taskDisplay";
+import { exportTasksToExcel } from "../utils/taskExcel";
+import {
+  type SortDirection,
+  type SortField,
+  sortTasks,
+} from "../utils/taskSort";
 
-const FILTER_ALL_SENTINEL = 'all';
+const FILTER_ALL_SENTINEL = "all";
 
 export default function TasksPage() {
-  const navigate = useNavigate();
   const { identity } = useInternetIdentity();
   const isAuthenticated = !!identity;
   const queryClient = useQueryClient();
 
-  const searchParams = useSearch({ strict: false }) as Record<string, string | undefined>;
+  const searchParams = useSearch({ strict: false }) as Record<
+    string,
+    string | undefined
+  >;
   const urlClientName = searchParams.clientName;
   const urlTaskCategory = searchParams.taskCategory;
   const urlSubCategory = searchParams.subCategory;
   const urlStatus = searchParams.status;
+  const urlAssignedName = searchParams.assignedName;
 
   // Enhanced logging for task queries
   const tasksQuery = useTasksWithCaptain();
 
   // Log query states on mount and changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only log
   useEffect(() => {
-    console.log('[TasksPage] Component mounted', {
+    console.log("[TasksPage] Component mounted", {
       timestamp: new Date().toISOString(),
       isAuthenticated,
       query: {
@@ -67,8 +90,9 @@ export default function TasksPage() {
     });
   }, []);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional debug log, not all deps needed
   useEffect(() => {
-    console.log('[TasksPage] Query state changed', {
+    console.log("[TasksPage] Query state changed", {
       timestamp: new Date().toISOString(),
       isAuthenticated,
       query: {
@@ -95,19 +119,31 @@ export default function TasksPage() {
   const isError = tasksQuery.isError;
   const error = tasksQuery.error;
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterClientName, setFilterClientName] = useState(urlClientName || FILTER_ALL_SENTINEL);
-  const [filterTaskCategory, setFilterTaskCategory] = useState(urlTaskCategory || FILTER_ALL_SENTINEL);
-  const [filterSubCategory, setFilterSubCategory] = useState(urlSubCategory || FILTER_ALL_SENTINEL);
-  const [filterAssignedName, setFilterAssignedName] = useState(FILTER_ALL_SENTINEL);
-  const [filterStatus, setFilterStatus] = useState(urlStatus || FILTER_ALL_SENTINEL);
-  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<TaskId>>(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterClientName, setFilterClientName] = useState(
+    urlClientName || FILTER_ALL_SENTINEL,
+  );
+  const [filterTaskCategory, setFilterTaskCategory] = useState(
+    urlTaskCategory || FILTER_ALL_SENTINEL,
+  );
+  const [filterSubCategory, setFilterSubCategory] = useState(
+    urlSubCategory || FILTER_ALL_SENTINEL,
+  );
+  const [filterAssignedName, setFilterAssignedName] = useState(
+    urlAssignedName || FILTER_ALL_SENTINEL,
+  );
+  const [filterStatus, setFilterStatus] = useState(
+    urlStatus || FILTER_ALL_SENTINEL,
+  );
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<TaskId>>(
+    new Set(),
+  );
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [isBulkEditDialogOpen, setIsBulkEditDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
-  const [sortField, setSortField] = useState<SortField>('createdAt');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [sortField, setSortField] = useState<SortField>("createdAt");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [pageSize, setPageSize] = useState(20);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -119,7 +155,14 @@ export default function TasksPage() {
     if (urlTaskCategory) setFilterTaskCategory(urlTaskCategory);
     if (urlSubCategory) setFilterSubCategory(urlSubCategory);
     if (urlStatus) setFilterStatus(urlStatus);
-  }, [urlClientName, urlTaskCategory, urlSubCategory, urlStatus]);
+    if (urlAssignedName) setFilterAssignedName(urlAssignedName);
+  }, [
+    urlClientName,
+    urlTaskCategory,
+    urlSubCategory,
+    urlStatus,
+    urlAssignedName,
+  ]);
 
   const uniqueClientNames = useMemo(() => {
     const names = new Set(tasksWithCaptain.map((t) => t.task.clientName));
@@ -127,25 +170,33 @@ export default function TasksPage() {
   }, [tasksWithCaptain]);
 
   const uniqueTaskCategories = useMemo(() => {
-    const categories = new Set(tasksWithCaptain.map((t) => t.task.taskCategory));
+    const categories = new Set(
+      tasksWithCaptain.map((t) => t.task.taskCategory),
+    );
     return Array.from(categories).sort();
   }, [tasksWithCaptain]);
 
   const uniqueSubCategories = useMemo(() => {
-    const subCategories = new Set(tasksWithCaptain.map((t) => t.task.subCategory));
+    const subCategories = new Set(
+      tasksWithCaptain.map((t) => t.task.subCategory),
+    );
     return Array.from(subCategories).sort();
   }, [tasksWithCaptain]);
 
   const uniqueAssignedNames = useMemo(() => {
     const names = new Set(
-      tasksWithCaptain.map((t) => t.task.assignedName).filter((name): name is string => !!name)
+      tasksWithCaptain
+        .map((t) => t.task.assignedName)
+        .filter((name): name is string => !!name),
     );
     return Array.from(names).sort();
   }, [tasksWithCaptain]);
 
   const uniqueStatuses = useMemo(() => {
     const statuses = new Set(
-      tasksWithCaptain.map((t) => t.task.status).filter((status): status is string => !!status)
+      tasksWithCaptain
+        .map((t) => t.task.status)
+        .filter((status): status is string => !!status),
     );
     return Array.from(statuses).sort();
   }, [tasksWithCaptain]);
@@ -160,7 +211,7 @@ export default function TasksPage() {
           t.task.clientName.toLowerCase().includes(query) ||
           t.task.taskCategory.toLowerCase().includes(query) ||
           t.task.subCategory.toLowerCase().includes(query) ||
-          t.task.comment?.toLowerCase().includes(query)
+          t.task.comment?.toLowerCase().includes(query),
       );
     }
 
@@ -186,7 +237,7 @@ export default function TasksPage() {
 
     const tasks = result.map((t) => t.task);
     const sortedTasks = sortTasks(tasks, sortField, sortDirection);
-    
+
     return sortedTasks.map((task) => {
       const original = tasksWithCaptain.find((t) => t.task.id === task.id);
       return original || { task, captainName: undefined };
@@ -207,9 +258,17 @@ export default function TasksPage() {
   const pagination = usePaginatedTasks(filteredTasks, pageSize);
 
   // Reset pagination when filters change
+  // biome-ignore lint/correctness/useExhaustiveDependencies: pagination.resetPage is stable, filter deps are intentional
   useEffect(() => {
     pagination.resetPage();
-  }, [searchQuery, filterClientName, filterTaskCategory, filterSubCategory, filterAssignedName, filterStatus]);
+  }, [
+    searchQuery,
+    filterClientName,
+    filterTaskCategory,
+    filterSubCategory,
+    filterAssignedName,
+    filterStatus,
+  ]);
 
   // Get selected tasks as Task objects
   const selectedTasks = useMemo(() => {
@@ -247,19 +306,19 @@ export default function TasksPage() {
   const handleExport = async () => {
     try {
       await exportTasksToExcel(filteredTasks);
-      toast.success('Tasks exported successfully');
-    } catch (error) {
-      toast.error('Failed to export tasks');
+      toast.success("Tasks exported successfully");
+    } catch (_error) {
+      toast.error("Failed to export tasks");
     }
   };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await queryClient.invalidateQueries({ queryKey: ['tasksWithCaptain'] });
-      toast.success('Tasks refreshed successfully');
-    } catch (error) {
-      toast.error('Failed to refresh tasks');
+      await queryClient.invalidateQueries({ queryKey: ["tasksWithCaptain"] });
+      toast.success("Tasks refreshed successfully");
+    } catch (_error) {
+      toast.error("Failed to refresh tasks");
     } finally {
       setIsRefreshing(false);
     }
@@ -267,19 +326,22 @@ export default function TasksPage() {
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   };
 
-  const allSelected = pagination.tasks.length > 0 && selectedTaskIds.size === pagination.tasks.length;
-  const someSelected = selectedTaskIds.size > 0 && selectedTaskIds.size < pagination.tasks.length;
+  const allSelected =
+    pagination.tasks.length > 0 &&
+    selectedTaskIds.size === pagination.tasks.length;
+  const _someSelected =
+    selectedTaskIds.size > 0 && selectedTaskIds.size < pagination.tasks.length;
 
   // Show error state
   if (isError) {
-    console.error('[TasksPage] Error loading tasks:', error);
+    console.error("[TasksPage] Error loading tasks:", error);
     return (
       <div className="container mx-auto py-6 space-y-6">
         <div className="flex items-center justify-between">
@@ -288,11 +350,17 @@ export default function TasksPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center py-8">
-              <p className="text-destructive font-semibold mb-2">Error loading tasks</p>
-              <p className="text-sm text-muted-foreground mb-4">
-                {error instanceof Error ? error.message : 'An unknown error occurred'}
+              <p className="text-destructive font-semibold mb-2">
+                Error loading tasks
               </p>
-              <Button onClick={() => window.location.reload()}>Reload Page</Button>
+              <p className="text-sm text-muted-foreground mb-4">
+                {error instanceof Error
+                  ? error.message
+                  : "An unknown error occurred"}
+              </p>
+              <Button onClick={() => window.location.reload()}>
+                Reload Page
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -330,12 +398,17 @@ export default function TasksPage() {
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              <Select value={filterClientName} onValueChange={setFilterClientName}>
+              <Select
+                value={filterClientName}
+                onValueChange={setFilterClientName}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Client Name" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={FILTER_ALL_SENTINEL}>All Clients</SelectItem>
+                  <SelectItem value={FILTER_ALL_SENTINEL}>
+                    All Clients
+                  </SelectItem>
                   {uniqueClientNames.map((name) => (
                     <SelectItem key={name as string} value={name as string}>
                       {name as string}
@@ -344,40 +417,61 @@ export default function TasksPage() {
                 </SelectContent>
               </Select>
 
-              <Select value={filterTaskCategory} onValueChange={setFilterTaskCategory}>
+              <Select
+                value={filterTaskCategory}
+                onValueChange={setFilterTaskCategory}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Task Category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={FILTER_ALL_SENTINEL}>All Categories</SelectItem>
+                  <SelectItem value={FILTER_ALL_SENTINEL}>
+                    All Categories
+                  </SelectItem>
                   {uniqueTaskCategories.map((category) => (
-                    <SelectItem key={category as string} value={category as string}>
+                    <SelectItem
+                      key={category as string}
+                      value={category as string}
+                    >
                       {category as string}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <Select value={filterSubCategory} onValueChange={setFilterSubCategory}>
+              <Select
+                value={filterSubCategory}
+                onValueChange={setFilterSubCategory}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Sub Category" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={FILTER_ALL_SENTINEL}>All Sub-Categories</SelectItem>
+                <SelectContent className="max-h-[300px] overflow-y-auto">
+                  <SelectItem value={FILTER_ALL_SENTINEL}>
+                    All Sub-Categories
+                  </SelectItem>
                   {uniqueSubCategories.map((subCategory) => (
-                    <SelectItem key={subCategory as string} value={subCategory as string}>
+                    <SelectItem
+                      key={subCategory as string}
+                      value={subCategory as string}
+                    >
                       {subCategory as string}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <Select value={filterAssignedName} onValueChange={setFilterAssignedName}>
+              <Select
+                value={filterAssignedName}
+                onValueChange={setFilterAssignedName}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Assigned Name" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={FILTER_ALL_SENTINEL}>All Assignees</SelectItem>
+                <SelectContent className="max-h-[300px] overflow-y-auto">
+                  <SelectItem value={FILTER_ALL_SENTINEL}>
+                    All Assignees
+                  </SelectItem>
                   {uniqueAssignedNames.map((name) => (
                     <SelectItem key={name as string} value={name as string}>
                       {name as string}
@@ -391,7 +485,9 @@ export default function TasksPage() {
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={FILTER_ALL_SENTINEL}>All Statuses</SelectItem>
+                  <SelectItem value={FILTER_ALL_SENTINEL}>
+                    All Statuses
+                  </SelectItem>
                   {uniqueStatuses.map((status) => (
                     <SelectItem key={status as string} value={status as string}>
                       {status as string}
@@ -412,11 +508,19 @@ export default function TasksPage() {
                 {selectedTaskIds.size} task(s) selected
               </span>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => setIsUploadDialogOpen(true)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsUploadDialogOpen(true)}
+                >
                   <Upload className="h-4 w-4 mr-2" />
                   Bulk Upload
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => setIsBulkEditDialogOpen(true)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsBulkEditDialogOpen(true)}
+                >
                   <Edit className="h-4 w-4 mr-2" />
                   Bulk Edit
                 </Button>
@@ -441,18 +545,21 @@ export default function TasksPage() {
             <CardTitle>Task List ({pagination.totalCount})</CardTitle>
             {pagination.totalCount > 0 && (
               <p className="text-sm text-muted-foreground">
-                Showing {pagination.startIndex}-{pagination.endIndex} of {pagination.totalCount} tasks
+                Showing {pagination.startIndex}-{pagination.endIndex} of{" "}
+                {pagination.totalCount} tasks
               </p>
             )}
           </div>
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleRefresh}
               disabled={isRefreshing || isFetching}
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing || isFetching ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`h-4 w-4 mr-2 ${isRefreshing || isFetching ? "animate-spin" : ""}`}
+              />
               Refresh
             </Button>
             <Button variant="outline" size="sm" onClick={handleExport}>
@@ -466,14 +573,14 @@ export default function TasksPage() {
             <TaskListSkeleton rows={15} showCheckbox={isAuthenticated} />
           ) : filteredTasks.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {searchQuery || 
-               (filterClientName !== FILTER_ALL_SENTINEL) || 
-               (filterTaskCategory !== FILTER_ALL_SENTINEL) || 
-               (filterSubCategory !== FILTER_ALL_SENTINEL) || 
-               (filterAssignedName !== FILTER_ALL_SENTINEL) || 
-               (filterStatus !== FILTER_ALL_SENTINEL)
-                ? 'No tasks found matching your filters.'
-                : 'No tasks yet.'}
+              {searchQuery ||
+              filterClientName !== FILTER_ALL_SENTINEL ||
+              filterTaskCategory !== FILTER_ALL_SENTINEL ||
+              filterSubCategory !== FILTER_ALL_SENTINEL ||
+              filterAssignedName !== FILTER_ALL_SENTINEL ||
+              filterStatus !== FILTER_ALL_SENTINEL
+                ? "No tasks found matching your filters."
+                : "No tasks yet."}
             </div>
           ) : (
             <>
@@ -487,135 +594,193 @@ export default function TasksPage() {
                             checked={allSelected}
                             onCheckedChange={handleSelectAll}
                             aria-label="Select all"
-                            className={someSelected ? 'data-[state=checked]:bg-primary/50' : ''}
                           />
                         </TableHead>
                       )}
-                      <TableHead>
-                        <Button variant="ghost" size="sm" onClick={() => handleSort('clientName')}>
+                      <TableHead
+                        className="cursor-pointer"
+                        onClick={() => handleSort("clientName")}
+                      >
+                        <div className="flex items-center gap-1">
                           Client Name
-                          <ArrowUpDown className="ml-2 h-4 w-4" />
-                        </Button>
+                          <ArrowUpDown className="h-4 w-4" />
+                        </div>
                       </TableHead>
-                      <TableHead>
-                        <Button variant="ghost" size="sm" onClick={() => handleSort('taskCategory')}>
+                      <TableHead
+                        className="cursor-pointer"
+                        onClick={() => handleSort("taskCategory")}
+                      >
+                        <div className="flex items-center gap-1">
                           Category
-                          <ArrowUpDown className="ml-2 h-4 w-4" />
-                        </Button>
+                          <ArrowUpDown className="h-4 w-4" />
+                        </div>
                       </TableHead>
-                      <TableHead>
-                        <Button variant="ghost" size="sm" onClick={() => handleSort('subCategory')}>
-                          Sub-Category
-                          <ArrowUpDown className="ml-2 h-4 w-4" />
-                        </Button>
+                      <TableHead
+                        className="cursor-pointer"
+                        onClick={() => handleSort("subCategory")}
+                      >
+                        <div className="flex items-center gap-1">
+                          Sub Category
+                          <ArrowUpDown className="h-4 w-4" />
+                        </div>
                       </TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>
-                        <Button variant="ghost" size="sm" onClick={() => handleSort('assignedName')}>
+                      <TableHead>Comment</TableHead>
+                      <TableHead
+                        className="cursor-pointer"
+                        onClick={() => handleSort("assignedName")}
+                      >
+                        <div className="flex items-center gap-1">
                           Assigned To
-                          <ArrowUpDown className="ml-2 h-4 w-4" />
-                        </Button>
+                          <ArrowUpDown className="h-4 w-4" />
+                        </div>
                       </TableHead>
-                      <TableHead>
-                        <Button variant="ghost" size="sm" onClick={() => handleSort('dueDate')}>
+                      <TableHead
+                        className="cursor-pointer"
+                        onClick={() => handleSort("dueDate")}
+                      >
+                        <div className="flex items-center gap-1">
                           Due Date
-                          <ArrowUpDown className="ml-2 h-4 w-4" />
-                        </Button>
+                          <ArrowUpDown className="h-4 w-4" />
+                        </div>
                       </TableHead>
-                      <TableHead>
-                        <Button variant="ghost" size="sm" onClick={() => handleSort('assignmentDate')}>
+                      <TableHead
+                        className="cursor-pointer"
+                        onClick={() => handleSort("assignmentDate")}
+                      >
+                        <div className="flex items-center gap-1">
                           Assignment Date
-                          <ArrowUpDown className="ml-2 h-4 w-4" />
-                        </Button>
+                          <ArrowUpDown className="h-4 w-4" />
+                        </div>
                       </TableHead>
-                      <TableHead>
-                        <Button variant="ghost" size="sm" onClick={() => handleSort('completionDate')}>
+                      <TableHead
+                        className="cursor-pointer"
+                        onClick={() => handleSort("completionDate")}
+                      >
+                        <div className="flex items-center gap-1">
                           Completion Date
-                          <ArrowUpDown className="ml-2 h-4 w-4" />
-                        </Button>
+                          <ArrowUpDown className="h-4 w-4" />
+                        </div>
                       </TableHead>
-                      <TableHead>
-                        <Button variant="ghost" size="sm" onClick={() => handleSort('bill')}>
+                      <TableHead
+                        className="cursor-pointer"
+                        onClick={() => handleSort("bill")}
+                      >
+                        <div className="flex items-center gap-1">
                           Bill
-                          <ArrowUpDown className="ml-2 h-4 w-4" />
-                        </Button>
+                          <ArrowUpDown className="h-4 w-4" />
+                        </div>
                       </TableHead>
-                      <TableHead>
-                        <Button variant="ghost" size="sm" onClick={() => handleSort('advanceReceived')}>
+                      <TableHead
+                        className="cursor-pointer"
+                        onClick={() => handleSort("advanceReceived")}
+                      >
+                        <div className="flex items-center gap-1">
                           Advance
-                          <ArrowUpDown className="ml-2 h-4 w-4" />
-                        </Button>
+                          <ArrowUpDown className="h-4 w-4" />
+                        </div>
                       </TableHead>
-                      <TableHead>
-                        <Button variant="ghost" size="sm" onClick={() => handleSort('outstandingAmount')}>
+                      <TableHead
+                        className="cursor-pointer"
+                        onClick={() => handleSort("outstandingAmount")}
+                      >
+                        <div className="flex items-center gap-1">
                           Outstanding
-                          <ArrowUpDown className="ml-2 h-4 w-4" />
-                        </Button>
+                          <ArrowUpDown className="h-4 w-4" />
+                        </div>
                       </TableHead>
                       <TableHead>Payment Status</TableHead>
-                      <TableHead>Comment</TableHead>
-                      {isAuthenticated && <TableHead className="w-12"></TableHead>}
+                      {isAuthenticated && (
+                        <TableHead className="w-24">Actions</TableHead>
+                      )}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {pagination.tasks.map((taskWithCaptain) => {
-                      const task = taskWithCaptain.task;
-                      const isSelected = selectedTaskIds.has(task.id);
-                      return (
-                        <TableRow key={task.id.toString()}>
-                          {isAuthenticated && (
-                            <TableCell>
-                              <Checkbox
-                                checked={isSelected}
-                                onCheckedChange={(checked) => handleSelectTask(task.id, checked as boolean)}
-                                aria-label={`Select task ${task.id}`}
-                              />
-                            </TableCell>
-                          )}
-                          <TableCell className="font-medium">{task.clientName}</TableCell>
-                          <TableCell>{task.taskCategory}</TableCell>
-                          <TableCell>{task.subCategory}</TableCell>
+                    {pagination.tasks.map((twc) => (
+                      <TableRow key={twc.task.id.toString()}>
+                        {isAuthenticated && (
                           <TableCell>
-                            {isAuthenticated ? (
-                              <TaskQuickStatus task={task} />
-                            ) : (
-                              <span className="text-sm">{task.status || '—'}</span>
-                            )}
+                            <Checkbox
+                              checked={selectedTaskIds.has(twc.task.id)}
+                              onCheckedChange={(checked) =>
+                                handleSelectTask(
+                                  twc.task.id,
+                                  checked as boolean,
+                                )
+                              }
+                              aria-label={`Select task ${twc.task.id}`}
+                            />
                           </TableCell>
-                          <TableCell>
-                            {formatAssigneeName(task.assignedName, taskWithCaptain.captainName)}
-                          </TableCell>
-                          <TableCell>{formatTaskDate(task.dueDate)}</TableCell>
-                          <TableCell>{formatTaskDate(task.assignmentDate)}</TableCell>
-                          <TableCell>{formatTaskDate(task.completionDate)}</TableCell>
-                          <TableCell>{task.bill !== null && task.bill !== undefined ? `₹${task.bill.toFixed(2)}` : '—'}</TableCell>
-                          <TableCell>{task.advanceReceived !== null && task.advanceReceived !== undefined ? `₹${task.advanceReceived.toFixed(2)}` : '—'}</TableCell>
-                          <TableCell>{task.outstandingAmount !== null && task.outstandingAmount !== undefined ? `₹${task.outstandingAmount.toFixed(2)}` : '—'}</TableCell>
-                          <TableCell>{task.paymentStatus || '—'}</TableCell>
-                          <TableCell className="max-w-xs">
-                            {isAuthenticated ? (
-                              <InlineCommentEditor task={task} />
-                            ) : (
-                              <span className="text-sm truncate block">{task.comment || '—'}</span>
-                            )}
-                          </TableCell>
-                          {isAuthenticated && (
-                            <TableCell>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setEditingTask(task);
-                                  setIsCreateDialogOpen(true);
-                                }}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
+                        )}
+                        <TableCell className="font-medium">
+                          {twc.task.clientName}
+                        </TableCell>
+                        <TableCell>{twc.task.taskCategory}</TableCell>
+                        <TableCell>{twc.task.subCategory}</TableCell>
+                        <TableCell>
+                          {isAuthenticated ? (
+                            <TaskQuickStatus task={twc.task} />
+                          ) : (
+                            <span className="text-sm">
+                              {twc.task.status || "—"}
+                            </span>
                           )}
-                        </TableRow>
-                      );
-                    })}
+                        </TableCell>
+                        <TableCell className="max-w-xs">
+                          {isAuthenticated ? (
+                            <InlineCommentEditor task={twc.task} />
+                          ) : (
+                            <span className="text-sm truncate block">
+                              {twc.task.comment || "—"}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {formatAssigneeName(
+                            twc.task.assignedName,
+                            twc.captainName,
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {formatTaskDate(twc.task.dueDate)}
+                        </TableCell>
+                        <TableCell>
+                          {formatTaskDate(twc.task.assignmentDate)}
+                        </TableCell>
+                        <TableCell>
+                          {formatTaskDate(twc.task.completionDate)}
+                        </TableCell>
+                        <TableCell>
+                          {twc.task.bill !== null && twc.task.bill !== undefined
+                            ? `₹${twc.task.bill.toLocaleString()}`
+                            : "—"}
+                        </TableCell>
+                        <TableCell>
+                          {twc.task.advanceReceived !== null &&
+                          twc.task.advanceReceived !== undefined
+                            ? `₹${twc.task.advanceReceived.toLocaleString()}`
+                            : "—"}
+                        </TableCell>
+                        <TableCell>
+                          {twc.task.outstandingAmount !== null &&
+                          twc.task.outstandingAmount !== undefined
+                            ? `₹${twc.task.outstandingAmount.toLocaleString()}`
+                            : "—"}
+                        </TableCell>
+                        <TableCell>{twc.task.paymentStatus || "—"}</TableCell>
+                        {isAuthenticated && (
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditingTask(twc.task)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </div>
@@ -624,19 +789,17 @@ export default function TasksPage() {
               {pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between mt-4 pt-4 border-t">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Rows per page:</span>
+                    <span className="text-sm text-muted-foreground">
+                      Rows per page:
+                    </span>
                     <Select
                       value={pageSize.toString()}
-                      onValueChange={(value) => {
-                        setPageSize(Number(value));
-                        pagination.resetPage();
-                      }}
+                      onValueChange={(value) => setPageSize(Number(value))}
                     >
                       <SelectTrigger className="w-20">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="10">10</SelectItem>
                         <SelectItem value="20">20</SelectItem>
                         <SelectItem value="50">50</SelectItem>
                         <SelectItem value="100">100</SelectItem>
@@ -645,27 +808,27 @@ export default function TasksPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={pagination.previousPage}
+                      disabled={!pagination.hasPreviousPage}
+                    >
+                      <ChevronLeft className="h-4 w-4 mr-1" />
+                      Previous
+                    </Button>
                     <span className="text-sm text-muted-foreground">
                       Page {pagination.currentPage} of {pagination.totalPages}
                     </span>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={pagination.previousPage}
-                        disabled={!pagination.hasPreviousPage}
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={pagination.nextPage}
-                        disabled={!pagination.hasNextPage}
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={pagination.nextPage}
+                      disabled={!pagination.hasNextPage}
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
                   </div>
                 </div>
               )}
@@ -676,32 +839,27 @@ export default function TasksPage() {
 
       {isAuthenticated && (
         <>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setIsUploadDialogOpen(true)}>
-              <Upload className="h-4 w-4 mr-2" />
-              Bulk Upload
-            </Button>
-          </div>
-
           <TaskFormDialog
-            open={isCreateDialogOpen}
+            open={isCreateDialogOpen || !!editingTask}
             onOpenChange={(open) => {
-              setIsCreateDialogOpen(open);
-              if (!open) setEditingTask(undefined);
+              if (!open) {
+                setIsCreateDialogOpen(false);
+                setEditingTask(undefined);
+              }
             }}
             task={editingTask}
           />
-
           <TaskBulkUploadDialog
             open={isUploadDialogOpen}
             onOpenChange={setIsUploadDialogOpen}
           />
-
           <TaskBulkEditDialog
             open={isBulkEditDialogOpen}
             onOpenChange={(open) => {
               setIsBulkEditDialogOpen(open);
-              if (!open) setSelectedTaskIds(new Set());
+              if (!open) {
+                setSelectedTaskIds(new Set());
+              }
             }}
             selectedTasks={selectedTasks}
           />

@@ -1,21 +1,21 @@
 // Single source of truth for allowed task statuses
 export const ALLOWED_TASK_STATUSES = [
-  'Pending',
-  'Docs Pending',
-  'In Progress',
-  'Checking',
-  'Payment Pending',
-  'Completed',
-  'Hold',
+  "Pending",
+  "Docs Pending",
+  "In Progress",
+  "Checking",
+  "Payment Pending",
+  "Completed",
+  "Hold",
 ] as const;
 
-export type AllowedTaskStatus = typeof ALLOWED_TASK_STATUSES[number];
+export type AllowedTaskStatus = (typeof ALLOWED_TASK_STATUSES)[number];
 
 // Legacy status mapping for backward compatibility
 const LEGACY_STATUS_MAP: Record<string, AllowedTaskStatus> = {
-  'To Do': 'Pending',
-  'Done': 'Completed',
-  'Blocked': 'Hold',
+  "To Do": "Pending",
+  Done: "Completed",
+  Blocked: "Hold",
 };
 
 /**
@@ -24,7 +24,7 @@ const LEGACY_STATUS_MAP: Record<string, AllowedTaskStatus> = {
  * Returns empty string for null/undefined/whitespace-only values
  */
 export function normalizeStatus(status: string | undefined | null): string {
-  if (!status || status.trim() === '') return '';
+  if (!status || status.trim() === "") return "";
   const trimmed = status.trim();
   return LEGACY_STATUS_MAP[trimmed] || trimmed;
 }
@@ -35,14 +35,14 @@ export function normalizeStatus(status: string | undefined | null): string {
  */
 export function isCompletedStatus(status: string | undefined | null): boolean {
   if (!status) return false;
-  return status === 'Completed' || status === 'Done';
+  return status === "Completed" || status === "Done";
 }
 
 /**
  * Check if a status value is valid (one of the allowed statuses)
  */
 export function isValidStatus(status: string): boolean {
-  if (!status || status.trim() === '') return false;
+  if (!status || status.trim() === "") return false;
   const normalized = normalizeStatus(status);
   return ALLOWED_TASK_STATUSES.includes(normalized as AllowedTaskStatus);
 }
@@ -50,8 +50,10 @@ export function isValidStatus(status: string): boolean {
 /**
  * Get display label for a status (normalizes legacy values)
  */
-export function getStatusDisplayLabel(status: string | undefined | null): string {
-  if (!status) return 'Pending';
+export function getStatusDisplayLabel(
+  status: string | undefined | null,
+): string {
+  if (!status) return "Pending";
   return normalizeStatus(status);
 }
 
@@ -59,11 +61,17 @@ export function getStatusDisplayLabel(status: string | undefined | null): string
  * Safely coerce a status value to a non-empty string suitable for Select components
  * Returns the sentinel value for null/undefined/empty/whitespace/invalid statuses
  */
-export function coerceStatusForSelect(status: string | undefined | null, sentinel: string): string {
-  if (!status || status.trim() === '') return sentinel;
+export function coerceStatusForSelect(
+  status: string | undefined | null,
+  sentinel: string,
+): string {
+  if (!status || status.trim() === "") return sentinel;
   const normalized = normalizeStatus(status);
   // If normalized is empty or not in allowed list, use sentinel
-  if (!normalized || !ALLOWED_TASK_STATUSES.includes(normalized as AllowedTaskStatus)) {
+  if (
+    !normalized ||
+    !ALLOWED_TASK_STATUSES.includes(normalized as AllowedTaskStatus)
+  ) {
     return sentinel;
   }
   return normalized;

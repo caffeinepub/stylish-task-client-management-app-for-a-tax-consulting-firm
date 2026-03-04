@@ -5,21 +5,30 @@ import Principal "mo:core/Principal";
 import Time "mo:core/Time";
 import Nat "mo:core/Nat";
 import Iter "mo:core/Iter";
-import Migration "migration";
+import Array "mo:core/Array";
+import Text "mo:core/Text";
+
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
-// Apply migration function using with clause
-(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
-  // Type definitions
-  type ClientId = Nat;
-  type TaskId = Nat;
-  type AssigneeId = Nat;
-  type TodoId = Nat;
+  public type ClientId = Nat;
+  public type TaskId = Nat;
+  public type AssigneeId = Nat;
+  public type TodoId = Nat;
+  public type TaskTypeId = Nat;
+  public type SubtypeId = Nat;
+
+  let taskTypeIdCounter = Map.empty<Principal, Nat>();
+
+  public type TaskType = {
+    id : TaskTypeId;
+    name : Text;
+    subtypes : [Text];
+  };
 
   public type Client = {
     id : ClientId;
@@ -127,16 +136,147 @@ actor {
     priority : ?Nat;
   };
 
+  public type TaskTypeInput = {
+    name : Text;
+    subtypes : [Text];
+  };
+
+  public type TaskTypeUpdate = {
+    id : TaskTypeId;
+    name : ?Text;
+    subtypes : ?[Text];
+  };
+
+  public type AssigneeWithTaskCount = {
+    assignee : Assignee;
+    taskCount : Nat;
+  };
+
   // Persistent data structures
   let clients = Map.empty<Principal, Map.Map<ClientId, Client>>();
   let tasks = Map.empty<Principal, Map.Map<TaskId, Task>>();
   let assignees = Map.empty<Principal, Map.Map<AssigneeId, Assignee>>();
   let todos = Map.empty<Principal, Map.Map<TodoId, Todo>>();
   let userProfiles = Map.empty<Principal, UserProfile>();
+  let taskTypes = Map.empty<Principal, Map.Map<TaskTypeId, TaskType>>();
   var nextClientId = 0;
   var nextTaskId = 0;
   var nextAssigneeId = 0;
   var nextTodoId = 0;
+
+  public query ({ caller }) func getAggregatedAssignees(searchString : Text) : async [AssigneeWithTaskCount] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Please sign in to continue");
+    };
+
+    var mergedAssignees = Map.empty<Nat, Assignee>();
+    var mergedTasks = Map.empty<Nat, Task>();
+
+    for (assigneeMap in assignees.values()) {
+      switch (mergedAssignees.isEmpty(), assigneeMap.isEmpty()) {
+        case (true, false) {
+          mergedAssignees := assigneeMap;
+        };
+        case (false, true) { () };
+        case (false, false) {
+          for ((key, value) in mergedAssignees.entries()) {
+            mergedAssignees.add(key, value);
+          };
+          for ((key, value) in assigneeMap.entries()) {
+            mergedAssignees.add(key, value);
+          };
+        };
+        case (true, true) { () };
+      };
+    };
+
+    for (taskMap in tasks.values()) {
+      switch (mergedTasks.isEmpty(), taskMap.isEmpty()) {
+        case (true, false) {
+          mergedTasks := taskMap;
+        };
+        case (false, true) { () };
+        case (false, false) {
+          for ((key, value) in mergedTasks.entries()) {
+            mergedTasks.add(key, value);
+          };
+          for ((key, value) in taskMap.entries()) {
+            mergedTasks.add(key, value);
+          };
+        };
+        case (true, true) { () };
+      };
+    };
+
+    if (searchString.isEmpty()) {
+      return mergedAssignees.toArray().map(
+        func((_, assignee)) { { assignee; taskCount = 0 } }
+      );
+    };
+
+    let matchingAssignees = mergedAssignees.filter(
+      func(_, assignee) { assignee.name.toLower().contains(#text(searchString.toLower())) }
+    );
+
+    if (matchingAssignees.isEmpty()) {
+      return [];
+    };
+
+    let resultList = List.empty<AssigneeWithTaskCount>();
+
+    for ((_, assignee) in matchingAssignees.entries()) {
+      var taskCount = 0;
+      for ((_, task) in mergedTasks.entries()) {
+        switch (task.assignedName) {
+          case (?name) {
+            if (name == assignee.name) {
+              taskCount += 1;
+            };
+          };
+          case (null) {};
+        };
+      };
+      resultList.add({ assignee; taskCount });
+    };
+
+    resultList.toArray();
+  };
+
+  public query ({ caller }) func getTasksByAssignee(assigneeName : Text) : async [Task] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Please sign in to continue");
+    };
+
+    var mergedTasks = Map.empty<Nat, Task>();
+    for (taskMap in tasks.values()) {
+      switch (mergedTasks.isEmpty(), taskMap.isEmpty()) {
+        case (true, false) {
+          mergedTasks := taskMap;
+        };
+        case (false, true) { () };
+        case (false, false) {
+          for ((key, value) in mergedTasks.entries()) {
+            mergedTasks.add(key, value);
+          };
+          for ((key, value) in taskMap.entries()) {
+            mergedTasks.add(key, value);
+          };
+        };
+        case (true, true) { () };
+      };
+    };
+
+    let filteredTasks = mergedTasks.filter(
+      func(_, task) {
+        switch (task.assignedName) {
+          case (?name) { name == assigneeName };
+          case (null) { false };
+        };
+      }
+    );
+
+    filteredTasks.toArray().map(func((_, task)) { task });
+  };
 
   public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
@@ -200,6 +340,69 @@ actor {
         let newTodoMap = Map.empty<TodoId, Todo>();
         todos.add(caller, newTodoMap);
         newTodoMap;
+      };
+    };
+  };
+
+  func getTaskTypeStorage(caller : Principal) : Map.Map<TaskTypeId, TaskType> {
+    switch (taskTypes.get(caller)) {
+      case (?typesMap) { typesMap };
+      case (null) {
+        let newTypesMap = Map.empty<TaskTypeId, TaskType>();
+        taskTypes.add(caller, newTypesMap);
+        newTypesMap;
+      };
+    };
+  };
+
+  // Task Types CRUD
+  public shared ({ caller }) func createTaskType(input : TaskTypeInput) : async TaskTypeId {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Please sign in to continue");
+    };
+
+    let currentId = switch (taskTypeIdCounter.get(caller)) {
+      case (?id) { id };
+      case (null) { 0 };
+    };
+
+    let taskTypeId = currentId;
+    taskTypeIdCounter.add(caller, currentId + 1);
+
+    let newTaskType : TaskType = {
+      id = taskTypeId;
+      name = input.name;
+      subtypes = input.subtypes;
+    };
+
+    let storage = getTaskTypeStorage(caller);
+    storage.add(taskTypeId, newTaskType);
+    taskTypeId;
+  };
+
+  public shared ({ caller }) func updateTaskType(update : TaskTypeUpdate) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Please sign in to continue");
+    };
+
+    let storage = getTaskTypeStorage(caller);
+    switch (storage.get(update.id)) {
+      case (null) {
+        Runtime.trap("Task type does not exist");
+      };
+      case (?existing) {
+        let updatedTaskType : TaskType = {
+          id = update.id;
+          name = switch (update.name) {
+            case (null) { existing.name };
+            case (?value) { value };
+          };
+          subtypes = switch (update.subtypes) {
+            case (null) { existing.subtypes };
+            case (?value) { value };
+          };
+        };
+        storage.add(update.id, updatedTaskType);
       };
     };
   };
@@ -670,5 +873,128 @@ actor {
     };
     let todoStorage = getTodoStorage(caller);
     todoStorage.values().toArray();
+  };
+
+  // Task Type queries
+  public query ({ caller }) func getTaskType(taskTypeId : TaskTypeId) : async ?TaskType {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Not signed in");
+    };
+    let storage = getTaskTypeStorage(caller);
+    storage.get(taskTypeId);
+  };
+
+  public query ({ caller }) func getAllTaskTypes() : async [TaskType] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Not signed in");
+    };
+    let storage = getTaskTypeStorage(caller);
+    storage.values().toArray();
+  };
+
+  public shared ({ caller }) func deleteTaskTypes(taskTypeIds : [TaskTypeId]) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Not signed in");
+    };
+
+    let storage = getTaskTypeStorage(caller);
+
+    for (taskTypeId in taskTypeIds.values()) {
+      storage.remove(taskTypeId);
+    };
+  };
+
+  public query ({ caller }) func getDistinctSubtypesForTaskType(parentTaskTypeId : TaskTypeId) : async [Text] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Not signed in");
+    };
+
+    let storage = getTaskTypeStorage(caller);
+
+    switch (storage.get(parentTaskTypeId)) {
+      case (null) {
+        [];
+      };
+      case (?parentTaskType) {
+        let existingSubtypesIter = parentTaskType.subtypes.values();
+        let resultList = List.empty<Text>();
+
+        for (subtype in existingSubtypesIter) {
+          // Check if the subtype is already in the result list
+          let exists = resultList.values().any(
+            func(existing) { Text.equal(existing, subtype) }
+          );
+
+          if (not exists) {
+            resultList.add(subtype);
+          };
+        };
+
+        resultList.toArray();
+      };
+    };
+  };
+
+  // New getDistinctSubtypesForTaskTypeAndPrefix function
+  public query ({ caller }) func getDistinctSubtypesForTaskTypeAndPrefix(parentTaskTypeId : TaskTypeId, prefix : Text) : async [Text] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Not signed in");
+    };
+
+    let storage = getTaskTypeStorage(caller);
+
+    switch (storage.get(parentTaskTypeId)) {
+      case (null) {
+        [];
+      };
+      case (?parentTaskType) {
+        let filteredIter = parentTaskType.subtypes.values().filter(
+          func(subtype) { subtype.size() > 0 and subtype.startsWith(#text(prefix)) }
+        );
+        let resultList = List.empty<Text>();
+
+        for (subtype in filteredIter) {
+          // Check if the subtype is already in the result list
+          let exists = resultList.values().any(
+            func(existing) { Text.equal(existing, subtype) }
+          );
+
+          if (not exists) {
+            resultList.add(subtype);
+          };
+        };
+
+        resultList.toArray();
+      };
+    };
+  };
+
+  public query ({ caller }) func getTaskTypesByPrefix(prefix : Text) : async [TaskType] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Not signed in");
+    };
+
+    let storage = getTaskTypeStorage(caller);
+
+    if (prefix.size() == 0) {
+      return storage.values().toArray();
+    };
+
+    let filtered = storage.filter(func(_id, taskType) { taskType.name.startsWith(#text(prefix)) });
+    filtered.values().toArray();
+  };
+
+  // Utility for Task Types
+  func filterTaskTypesByPrefix(storage : Map.Map<TaskTypeId, TaskType>, prefix : Text) : [TaskType] {
+    if (prefix.size() == 0) {
+      return storage.values().toArray();
+    };
+
+    let filtered = storage.filter(
+      func(_id, taskType) {
+        taskType.name.startsWith(#text(prefix));
+      }
+    );
+    filtered.values().toArray();
   };
 };

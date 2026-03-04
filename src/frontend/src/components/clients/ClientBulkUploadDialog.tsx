@@ -1,35 +1,60 @@
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Upload, Download, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { downloadCsvTemplate, parseCsvFile, convertRowsToBackendFormat, type CsvClientRow, type ValidationError } from '../../utils/clientCsv';
-import { useBulkCreateClients } from '../../hooks/clients';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { AlertCircle, CheckCircle2, Download, Upload } from "lucide-react";
+import { useState } from "react";
+import { useBulkCreateClients } from "../../hooks/clients";
+import {
+  type CsvClientRow,
+  type ValidationError,
+  convertRowsToBackendFormat,
+  downloadCsvTemplate,
+  parseCsvFile,
+} from "../../utils/clientCsv";
 
 interface ClientBulkUploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export default function ClientBulkUploadDialog({ open, onOpenChange }: ClientBulkUploadDialogProps) {
-  const [file, setFile] = useState<File | null>(null);
+export default function ClientBulkUploadDialog({
+  open,
+  onOpenChange,
+}: ClientBulkUploadDialogProps) {
+  const [_file, setFile] = useState<File | null>(null);
   const [parsedRows, setParsedRows] = useState<CsvClientRow[]>([]);
-  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>(
+    [],
+  );
   const [uploadSuccess, setUploadSuccess] = useState(false);
-  
+
   const { mutate: bulkCreateClients, isPending } = useBulkCreateClients();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
-    
+
     setFile(selectedFile);
     setUploadSuccess(false);
-    
+
     const reader = new FileReader();
     reader.onload = (event) => {
       const csvContent = event.target?.result as string;
@@ -43,9 +68,9 @@ export default function ClientBulkUploadDialog({ open, onOpenChange }: ClientBul
   const handleSubmit = () => {
     if (validationErrors.length > 0) return;
     if (parsedRows.length === 0) return;
-    
+
     const backendFormat = convertRowsToBackendFormat(parsedRows);
-    
+
     bulkCreateClients(backendFormat, {
       onSuccess: () => {
         setUploadSuccess(true);
@@ -120,11 +145,13 @@ export default function ClientBulkUploadDialog({ open, onOpenChange }: ClientBul
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
                 <div className="font-semibold mb-2">
-                  Found {validationErrors.length} validation error{validationErrors.length !== 1 ? 's' : ''}:
+                  Found {validationErrors.length} validation error
+                  {validationErrors.length !== 1 ? "s" : ""}:
                 </div>
                 <ScrollArea className="h-32">
                   <ul className="space-y-1 text-sm">
                     {validationErrors.map((error, idx) => (
+                      // biome-ignore lint/suspicious/noArrayIndexKey: validation error list has no stable id
                       <li key={idx}>
                         Row {error.row}, {error.column}: {error.message}
                       </li>
@@ -150,11 +177,16 @@ export default function ClientBulkUploadDialog({ open, onOpenChange }: ClientBul
                   </TableHeader>
                   <TableBody>
                     {parsedRows.map((row, idx) => (
+                      // biome-ignore lint/suspicious/noArrayIndexKey: preview rows have no stable id
                       <TableRow key={idx}>
-                        <TableCell className="font-medium">{row.name}</TableCell>
-                        <TableCell>{row.gstin || '-'}</TableCell>
-                        <TableCell>{row.pan || '-'}</TableCell>
-                        <TableCell className="max-w-xs truncate">{row.notes || '-'}</TableCell>
+                        <TableCell className="font-medium">
+                          {row.name}
+                        </TableCell>
+                        <TableCell>{row.gstin || "-"}</TableCell>
+                        <TableCell>{row.pan || "-"}</TableCell>
+                        <TableCell className="max-w-xs truncate">
+                          {row.notes || "-"}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -176,7 +208,11 @@ export default function ClientBulkUploadDialog({ open, onOpenChange }: ClientBul
           <Button
             type="button"
             onClick={handleSubmit}
-            disabled={isPending || parsedRows.length === 0 || validationErrors.length > 0}
+            disabled={
+              isPending ||
+              parsedRows.length === 0 ||
+              validationErrors.length > 0
+            }
             className="bg-[oklch(0.50_0.08_130)] hover:bg-[oklch(0.45_0.08_130)] dark:bg-[oklch(0.65_0.08_130)] dark:hover:bg-[oklch(0.70_0.08_130)]"
           >
             {isPending ? (

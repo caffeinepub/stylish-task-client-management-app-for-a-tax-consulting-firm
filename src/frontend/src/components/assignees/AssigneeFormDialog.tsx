@@ -1,12 +1,33 @@
-import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { useCreateAssignee, useUpdateAssignee, useDeleteAssignee } from '../../hooks/assignees';
-import { Loader2 } from 'lucide-react';
-import type { Assignee } from '../../backend';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import type { Assignee } from "../../backend";
+import {
+  useCreateAssignee,
+  useDeleteAssignee,
+  useUpdateAssignee,
+} from "../../hooks/assignees";
 
 interface AssigneeFormDialogProps {
   open?: boolean;
@@ -15,14 +36,19 @@ interface AssigneeFormDialogProps {
   trigger?: React.ReactNode;
 }
 
-export default function AssigneeFormDialog({ open, onOpenChange, assignee, trigger }: AssigneeFormDialogProps) {
+export default function AssigneeFormDialog({
+  open,
+  onOpenChange,
+  assignee,
+  trigger,
+}: AssigneeFormDialogProps) {
   const isEdit = !!assignee;
 
   const [internalOpen, setInternalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  
-  const [name, setName] = useState('');
-  const [captain, setCaptain] = useState('');
+
+  const [name, setName] = useState("");
+  const [captain, setCaptain] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { mutate: createAssignee, isPending: isCreating } = useCreateAssignee();
@@ -33,29 +59,30 @@ export default function AssigneeFormDialog({ open, onOpenChange, assignee, trigg
   const dialogOpen = open !== undefined ? open : internalOpen;
   const setDialogOpen = onOpenChange || setInternalOpen;
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: dialogOpen intentionally resets form when dialog opens/closes
   useEffect(() => {
     if (assignee) {
       setName(assignee.name);
-      setCaptain(assignee.captain || '');
+      setCaptain(assignee.captain || "");
     } else {
       resetForm();
     }
   }, [assignee, dialogOpen]);
 
   const resetForm = () => {
-    setName('');
-    setCaptain('');
+    setName("");
+    setCaptain("");
     setErrors({});
   };
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!name.trim()) {
-      newErrors.name = 'Team Name is required';
+      newErrors.name = "Team Name is required";
     }
     if (!captain.trim()) {
-      newErrors.captain = 'Captain is required';
+      newErrors.captain = "Captain is required";
     }
 
     setErrors(newErrors);
@@ -64,7 +91,7 @@ export default function AssigneeFormDialog({ open, onOpenChange, assignee, trigg
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validate()) return;
 
     const assigneeData = {
@@ -83,18 +110,15 @@ export default function AssigneeFormDialog({ open, onOpenChange, assignee, trigg
             setDialogOpen(false);
             resetForm();
           },
-        }
+        },
       );
     } else {
-      createAssignee(
-        assigneeData,
-        {
-          onSuccess: () => {
-            setDialogOpen(false);
-            resetForm();
-          },
-        }
-      );
+      createAssignee(assigneeData, {
+        onSuccess: () => {
+          setDialogOpen(false);
+          resetForm();
+        },
+      });
     }
   };
 
@@ -113,9 +137,13 @@ export default function AssigneeFormDialog({ open, onOpenChange, assignee, trigg
   const content = (
     <>
       <DialogHeader>
-        <DialogTitle>{isEdit ? 'Edit Assignee' : 'Add New Assignee'}</DialogTitle>
+        <DialogTitle>
+          {isEdit ? "Edit Assignee" : "Add New Assignee"}
+        </DialogTitle>
         <DialogDescription>
-          {isEdit ? 'Update assignee information' : 'Enter assignee details to get started'}
+          {isEdit
+            ? "Update assignee information"
+            : "Enter assignee details to get started"}
         </DialogDescription>
       </DialogHeader>
       <form onSubmit={handleSubmit}>
@@ -129,7 +157,9 @@ export default function AssigneeFormDialog({ open, onOpenChange, assignee, trigg
               placeholder="Team name"
               disabled={isPending}
             />
-            {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+            {errors.name && (
+              <p className="text-sm text-destructive">{errors.name}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -141,7 +171,9 @@ export default function AssigneeFormDialog({ open, onOpenChange, assignee, trigg
               placeholder="Captain name"
               disabled={isPending}
             />
-            {errors.captain && <p className="text-sm text-destructive">{errors.captain}</p>}
+            {errors.captain && (
+              <p className="text-sm text-destructive">{errors.captain}</p>
+            )}
           </div>
         </div>
 
@@ -156,7 +188,12 @@ export default function AssigneeFormDialog({ open, onOpenChange, assignee, trigg
               Delete
             </Button>
           )}
-          <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={isPending}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setDialogOpen(false)}
+            disabled={isPending}
+          >
             Cancel
           </Button>
           <Button type="submit" disabled={isPending}>
@@ -165,8 +202,10 @@ export default function AssigneeFormDialog({ open, onOpenChange, assignee, trigg
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Saving...
               </>
+            ) : isEdit ? (
+              "Update"
             ) : (
-              isEdit ? 'Update' : 'Create'
+              "Create"
             )}
           </Button>
         </DialogFooter>
@@ -177,19 +216,24 @@ export default function AssigneeFormDialog({ open, onOpenChange, assignee, trigg
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Assignee</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this assignee? This action cannot be undone.
+              Are you sure you want to delete this assignee? This action cannot
+              be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               {isDeleting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Deleting...
                 </>
               ) : (
-                'Delete'
+                "Delete"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -200,9 +244,15 @@ export default function AssigneeFormDialog({ open, onOpenChange, assignee, trigg
 
   if (trigger) {
     return (
-      <Dialog open={dialogOpen} onOpenChange={(newOpen) => !isPending && setDialogOpen(newOpen)}>
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={(newOpen) => !isPending && setDialogOpen(newOpen)}
+      >
         <DialogTrigger asChild>{trigger}</DialogTrigger>
-        <DialogContent onEscapeKeyDown={(e) => isPending && e.preventDefault()} onPointerDownOutside={(e) => isPending && e.preventDefault()}>
+        <DialogContent
+          onEscapeKeyDown={(e) => isPending && e.preventDefault()}
+          onPointerDownOutside={(e) => isPending && e.preventDefault()}
+        >
           {content}
         </DialogContent>
       </Dialog>
@@ -210,8 +260,14 @@ export default function AssigneeFormDialog({ open, onOpenChange, assignee, trigg
   }
 
   return (
-    <Dialog open={dialogOpen} onOpenChange={(newOpen) => !isPending && setDialogOpen(newOpen)}>
-      <DialogContent onEscapeKeyDown={(e) => isPending && e.preventDefault()} onPointerDownOutside={(e) => isPending && e.preventDefault()}>
+    <Dialog
+      open={dialogOpen}
+      onOpenChange={(newOpen) => !isPending && setDialogOpen(newOpen)}
+    >
+      <DialogContent
+        onEscapeKeyDown={(e) => isPending && e.preventDefault()}
+        onPointerDownOutside={(e) => isPending && e.preventDefault()}
+      >
         {content}
       </DialogContent>
     </Dialog>

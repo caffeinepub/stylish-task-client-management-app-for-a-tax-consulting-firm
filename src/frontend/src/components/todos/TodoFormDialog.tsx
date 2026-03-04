@@ -1,14 +1,30 @@
-import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Loader2, Trash2 } from 'lucide-react';
-import { useCreateTodo, useUpdateTodo, useDeleteTodo } from '../../hooks/todos';
-import type { Todo, PartialTodoInput } from '../../backend';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Loader2, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import type { PartialTodoInput, Todo } from "../../backend";
+import { useCreateTodo, useDeleteTodo, useUpdateTodo } from "../../hooks/todos";
 
 interface TodoFormDialogProps {
   open: boolean;
@@ -16,12 +32,16 @@ interface TodoFormDialogProps {
   todo?: Todo;
 }
 
-export default function TodoFormDialog({ open, onOpenChange, todo }: TodoFormDialogProps) {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+export default function TodoFormDialog({
+  open,
+  onOpenChange,
+  todo,
+}: TodoFormDialogProps) {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [completed, setCompleted] = useState(false);
-  const [priority, setPriority] = useState('');
-  const [dueDate, setDueDate] = useState('');
+  const [priority, setPriority] = useState("");
+  const [dueDate, setDueDate] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const { mutate: createTodo, isPending: isCreating } = useCreateTodo();
@@ -34,30 +54,34 @@ export default function TodoFormDialog({ open, onOpenChange, todo }: TodoFormDia
     if (open) {
       if (todo) {
         setTitle(todo.title);
-        setDescription(todo.description || '');
+        setDescription(todo.description || "");
         setCompleted(todo.completed);
-        setPriority(todo.priority ? todo.priority.toString() : '');
-        setDueDate(todo.dueDate ? new Date(Number(todo.dueDate)).toISOString().split('T')[0] : '');
+        setPriority(todo.priority ? todo.priority.toString() : "");
+        setDueDate(
+          todo.dueDate
+            ? new Date(Number(todo.dueDate)).toISOString().split("T")[0]
+            : "",
+        );
       } else {
-        setTitle('');
-        setDescription('');
+        setTitle("");
+        setDescription("");
         setCompleted(false);
-        setPriority('');
-        setDueDate('');
+        setPriority("");
+        setDueDate("");
       }
     }
   }, [open, todo]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!title.trim()) return;
 
     const todoInput: PartialTodoInput = {
       title: title.trim(),
       description: description.trim() || undefined,
       completed,
-      priority: priority ? BigInt(parseInt(priority, 10)) : undefined,
+      priority: priority ? BigInt(Number.parseInt(priority, 10)) : undefined,
       dueDate: dueDate ? BigInt(new Date(dueDate).getTime()) : undefined,
     };
 
@@ -68,7 +92,7 @@ export default function TodoFormDialog({ open, onOpenChange, todo }: TodoFormDia
           onSuccess: () => {
             onOpenChange(false);
           },
-        }
+        },
       );
     } else {
       createTodo(todoInput, {
@@ -81,7 +105,7 @@ export default function TodoFormDialog({ open, onOpenChange, todo }: TodoFormDia
 
   const handleDelete = () => {
     if (!todo) return;
-    
+
     deleteTodo(todo.id, {
       onSuccess: () => {
         setDeleteDialogOpen(false);
@@ -95,9 +119,11 @@ export default function TodoFormDialog({ open, onOpenChange, todo }: TodoFormDia
       <Dialog open={open} onOpenChange={isPending ? undefined : onOpenChange}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>{todo ? 'Edit Todo' : 'Add New Todo'}</DialogTitle>
+            <DialogTitle>{todo ? "Edit Todo" : "Add New Todo"}</DialogTitle>
             <DialogDescription>
-              {todo ? 'Update the todo details below.' : 'Fill in the details to create a new todo.'}
+              {todo
+                ? "Update the todo details below."
+                : "Fill in the details to create a new todo."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit}>
@@ -177,12 +203,17 @@ export default function TodoFormDialog({ open, onOpenChange, todo }: TodoFormDia
                   Delete
                 </Button>
               )}
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isPending}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={isPending || !title.trim()}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isPending ? 'Saving...' : todo ? 'Update' : 'Create'}
+                {isPending ? "Saving..." : todo ? "Update" : "Create"}
               </Button>
             </DialogFooter>
           </form>
@@ -194,14 +225,19 @@ export default function TodoFormDialog({ open, onOpenChange, todo }: TodoFormDia
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Todo</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{todo?.title}"? This action cannot be undone.
+              Are you sure you want to delete "{todo?.title}"? This action
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isDeleting ? 'Deleting...' : 'Delete'}
+              {isDeleting ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -1,13 +1,34 @@
-import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { useCreateClient, useUpdateClient, useDeleteClient } from '../../hooks/clients';
-import { Loader2 } from 'lucide-react';
-import type { Client } from '../../backend';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import type { Client } from "../../backend";
+import {
+  useCreateClient,
+  useDeleteClient,
+  useUpdateClient,
+} from "../../hooks/clients";
 
 interface ClientFormDialogProps {
   open?: boolean;
@@ -16,16 +37,21 @@ interface ClientFormDialogProps {
   trigger?: React.ReactNode;
 }
 
-export default function ClientFormDialog({ open, onOpenChange, client, trigger }: ClientFormDialogProps) {
+export default function ClientFormDialog({
+  open,
+  onOpenChange,
+  client,
+  trigger,
+}: ClientFormDialogProps) {
   const isEdit = !!client;
 
   const [internalOpen, setInternalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  
-  const [name, setName] = useState('');
-  const [gstin, setGstin] = useState('');
-  const [pan, setPan] = useState('');
-  const [notes, setNotes] = useState('');
+
+  const [name, setName] = useState("");
+  const [gstin, setGstin] = useState("");
+  const [pan, setPan] = useState("");
+  const [notes, setNotes] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { mutate: createClient, isPending: isCreating } = useCreateClient();
@@ -36,30 +62,31 @@ export default function ClientFormDialog({ open, onOpenChange, client, trigger }
   const dialogOpen = open !== undefined ? open : internalOpen;
   const setDialogOpen = onOpenChange || setInternalOpen;
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: dialogOpen intentionally resets form when dialog opens/closes
   useEffect(() => {
     if (client) {
       setName(client.name);
-      setGstin(client.gstin || '');
-      setPan(client.pan || '');
-      setNotes(client.notes || '');
+      setGstin(client.gstin || "");
+      setPan(client.pan || "");
+      setNotes(client.notes || "");
     } else {
       resetForm();
     }
   }, [client, dialogOpen]);
 
   const resetForm = () => {
-    setName('');
-    setGstin('');
-    setPan('');
-    setNotes('');
+    setName("");
+    setGstin("");
+    setPan("");
+    setNotes("");
     setErrors({});
   };
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!name.trim()) {
-      newErrors.name = 'Name is required';
+      newErrors.name = "Name is required";
     }
 
     setErrors(newErrors);
@@ -68,7 +95,7 @@ export default function ClientFormDialog({ open, onOpenChange, client, trigger }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validate()) return;
 
     const clientData = {
@@ -89,18 +116,15 @@ export default function ClientFormDialog({ open, onOpenChange, client, trigger }
             setDialogOpen(false);
             resetForm();
           },
-        }
+        },
       );
     } else {
-      createClient(
-        clientData,
-        {
-          onSuccess: () => {
-            setDialogOpen(false);
-            resetForm();
-          },
-        }
-      );
+      createClient(clientData, {
+        onSuccess: () => {
+          setDialogOpen(false);
+          resetForm();
+        },
+      });
     }
   };
 
@@ -119,9 +143,11 @@ export default function ClientFormDialog({ open, onOpenChange, client, trigger }
   const content = (
     <>
       <DialogHeader>
-        <DialogTitle>{isEdit ? 'Edit Client' : 'Add New Client'}</DialogTitle>
+        <DialogTitle>{isEdit ? "Edit Client" : "Add New Client"}</DialogTitle>
         <DialogDescription>
-          {isEdit ? 'Update client information' : 'Enter client details to get started'}
+          {isEdit
+            ? "Update client information"
+            : "Enter client details to get started"}
         </DialogDescription>
       </DialogHeader>
       <form onSubmit={handleSubmit}>
@@ -135,7 +161,9 @@ export default function ClientFormDialog({ open, onOpenChange, client, trigger }
               placeholder="Client name"
               disabled={isPending}
             />
-            {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+            {errors.name && (
+              <p className="text-sm text-destructive">{errors.name}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -184,7 +212,12 @@ export default function ClientFormDialog({ open, onOpenChange, client, trigger }
               Delete
             </Button>
           )}
-          <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={isPending}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setDialogOpen(false)}
+            disabled={isPending}
+          >
             Cancel
           </Button>
           <Button type="submit" disabled={isPending}>
@@ -193,8 +226,10 @@ export default function ClientFormDialog({ open, onOpenChange, client, trigger }
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Saving...
               </>
+            ) : isEdit ? (
+              "Update"
             ) : (
-              isEdit ? 'Update' : 'Create'
+              "Create"
             )}
           </Button>
         </DialogFooter>
@@ -205,19 +240,24 @@ export default function ClientFormDialog({ open, onOpenChange, client, trigger }
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Client</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this client? This action cannot be undone.
+              Are you sure you want to delete this client? This action cannot be
+              undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               {isDeleting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Deleting...
                 </>
               ) : (
-                'Delete'
+                "Delete"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -228,9 +268,15 @@ export default function ClientFormDialog({ open, onOpenChange, client, trigger }
 
   if (trigger) {
     return (
-      <Dialog open={dialogOpen} onOpenChange={(newOpen) => !isPending && setDialogOpen(newOpen)}>
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={(newOpen) => !isPending && setDialogOpen(newOpen)}
+      >
         <DialogTrigger asChild>{trigger}</DialogTrigger>
-        <DialogContent onEscapeKeyDown={(e) => isPending && e.preventDefault()} onPointerDownOutside={(e) => isPending && e.preventDefault()}>
+        <DialogContent
+          onEscapeKeyDown={(e) => isPending && e.preventDefault()}
+          onPointerDownOutside={(e) => isPending && e.preventDefault()}
+        >
           {content}
         </DialogContent>
       </Dialog>
@@ -238,8 +284,14 @@ export default function ClientFormDialog({ open, onOpenChange, client, trigger }
   }
 
   return (
-    <Dialog open={dialogOpen} onOpenChange={(newOpen) => !isPending && setDialogOpen(newOpen)}>
-      <DialogContent onEscapeKeyDown={(e) => isPending && e.preventDefault()} onPointerDownOutside={(e) => isPending && e.preventDefault()}>
+    <Dialog
+      open={dialogOpen}
+      onOpenChange={(newOpen) => !isPending && setDialogOpen(newOpen)}
+    >
+      <DialogContent
+        onEscapeKeyDown={(e) => isPending && e.preventDefault()}
+        onPointerDownOutside={(e) => isPending && e.preventDefault()}
+      >
         {content}
       </DialogContent>
     </Dialog>

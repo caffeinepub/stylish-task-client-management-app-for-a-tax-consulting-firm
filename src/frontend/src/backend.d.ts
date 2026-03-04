@@ -11,6 +11,20 @@ export interface TaskWithCaptain {
     captainName?: string;
     task: Task;
 }
+export interface TaskTypeUpdate {
+    id: TaskTypeId;
+    name?: string;
+    subtypes?: Array<string>;
+}
+export type AssigneeId = bigint;
+export interface AssigneeWithTaskCount {
+    assignee: Assignee;
+    taskCount: bigint;
+}
+export interface TaskTypeInput {
+    name: string;
+    subtypes: Array<string>;
+}
 export interface PartialAssigneeInput {
     name: string;
     captain?: string;
@@ -38,6 +52,11 @@ export interface PartialTodoInput {
     dueDate?: bigint;
     description?: string;
     priority?: bigint;
+}
+export interface TaskType {
+    id: TaskTypeId;
+    name: string;
+    subtypes: Array<string>;
 }
 export type TodoId = bigint;
 export interface PartialClientInput {
@@ -90,7 +109,7 @@ export type ClientId = bigint;
 export interface UserProfile {
     name: string;
 }
-export type AssigneeId = bigint;
+export type TaskTypeId = bigint;
 export enum UserRole {
     admin = "admin",
     user = "user",
@@ -102,13 +121,17 @@ export interface backendInterface {
     createAssignee(assignee: PartialAssigneeInput): Promise<AssigneeId>;
     createClient(client: PartialClientInput): Promise<ClientId>;
     createTask(clientName: string, taskCategory: string, subCategory: string): Promise<TaskId>;
+    createTaskType(input: TaskTypeInput): Promise<TaskTypeId>;
     createTodo(todo: PartialTodoInput): Promise<TodoId>;
     deleteAssignee(assigneeId: AssigneeId): Promise<void>;
     deleteClient(clientId: ClientId): Promise<void>;
     deleteTask(taskId: TaskId): Promise<void>;
+    deleteTaskTypes(taskTypeIds: Array<TaskTypeId>): Promise<void>;
     deleteTodo(todoId: TodoId): Promise<void>;
+    getAggregatedAssignees(searchString: string): Promise<Array<AssigneeWithTaskCount>>;
     getAllAssignees(): Promise<Array<Assignee>>;
     getAllClients(): Promise<Array<Client>>;
+    getAllTaskTypes(): Promise<Array<TaskType>>;
     getAllTasks(): Promise<Array<Task>>;
     getAllTasksWithCaptain(): Promise<Array<TaskWithCaptain>>;
     getAllTodos(): Promise<Array<Todo>>;
@@ -116,7 +139,12 @@ export interface backendInterface {
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getClient(clientId: ClientId): Promise<Client | null>;
+    getDistinctSubtypesForTaskType(parentTaskTypeId: TaskTypeId): Promise<Array<string>>;
+    getDistinctSubtypesForTaskTypeAndPrefix(parentTaskTypeId: TaskTypeId, prefix: string): Promise<Array<string>>;
     getTask(taskId: TaskId): Promise<Task | null>;
+    getTaskType(taskTypeId: TaskTypeId): Promise<TaskType | null>;
+    getTaskTypesByPrefix(prefix: string): Promise<Array<TaskType>>;
+    getTasksByAssignee(assigneeName: string): Promise<Array<Task>>;
     getTodo(todoId: TodoId): Promise<Todo | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
@@ -124,5 +152,6 @@ export interface backendInterface {
     updateAssignee(assigneeId: AssigneeId, assignee: PartialAssigneeInput): Promise<void>;
     updateClient(clientId: ClientId, client: PartialClientInput): Promise<void>;
     updateTask(taskId: TaskId, clientName: string, taskCategory: string, subCategory: string, status: string | null, comment: string | null, assignedName: string | null, dueDate: bigint | null, assignmentDate: bigint | null, completionDate: bigint | null, bill: number | null, advanceReceived: number | null, outstandingAmount: number | null, paymentStatus: string | null): Promise<void>;
+    updateTaskType(update: TaskTypeUpdate): Promise<void>;
     updateTodo(todoId: TodoId, todo: PartialTodoInput): Promise<void>;
 }

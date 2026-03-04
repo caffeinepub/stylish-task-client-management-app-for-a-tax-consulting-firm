@@ -16,6 +16,10 @@ export interface Assignee {
   'captain' : [] | [string],
 }
 export type AssigneeId = bigint;
+export interface AssigneeWithTaskCount {
+  'assignee' : Assignee,
+  'taskCount' : bigint,
+}
 export interface Client {
   'id' : ClientId,
   'pan' : [] | [string],
@@ -76,6 +80,18 @@ export interface Task {
   'assignedName' : [] | [string],
 }
 export type TaskId = bigint;
+export interface TaskType {
+  'id' : TaskTypeId,
+  'name' : string,
+  'subtypes' : Array<string>,
+}
+export type TaskTypeId = bigint;
+export interface TaskTypeInput { 'name' : string, 'subtypes' : Array<string> }
+export interface TaskTypeUpdate {
+  'id' : TaskTypeId,
+  'name' : [] | [string],
+  'subtypes' : [] | [Array<string>],
+}
 export interface TaskWithCaptain {
   'captainName' : [] | [string],
   'task' : Task,
@@ -102,13 +118,20 @@ export interface _SERVICE {
   'createAssignee' : ActorMethod<[PartialAssigneeInput], AssigneeId>,
   'createClient' : ActorMethod<[PartialClientInput], ClientId>,
   'createTask' : ActorMethod<[string, string, string], TaskId>,
+  'createTaskType' : ActorMethod<[TaskTypeInput], TaskTypeId>,
   'createTodo' : ActorMethod<[PartialTodoInput], TodoId>,
   'deleteAssignee' : ActorMethod<[AssigneeId], undefined>,
   'deleteClient' : ActorMethod<[ClientId], undefined>,
   'deleteTask' : ActorMethod<[TaskId], undefined>,
+  'deleteTaskTypes' : ActorMethod<[Array<TaskTypeId>], undefined>,
   'deleteTodo' : ActorMethod<[TodoId], undefined>,
+  'getAggregatedAssignees' : ActorMethod<
+    [string],
+    Array<AssigneeWithTaskCount>
+  >,
   'getAllAssignees' : ActorMethod<[], Array<Assignee>>,
   'getAllClients' : ActorMethod<[], Array<Client>>,
+  'getAllTaskTypes' : ActorMethod<[], Array<TaskType>>,
   'getAllTasks' : ActorMethod<[], Array<Task>>,
   'getAllTasksWithCaptain' : ActorMethod<[], Array<TaskWithCaptain>>,
   'getAllTodos' : ActorMethod<[], Array<Todo>>,
@@ -116,7 +139,15 @@ export interface _SERVICE {
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getClient' : ActorMethod<[ClientId], [] | [Client]>,
+  'getDistinctSubtypesForTaskType' : ActorMethod<[TaskTypeId], Array<string>>,
+  'getDistinctSubtypesForTaskTypeAndPrefix' : ActorMethod<
+    [TaskTypeId, string],
+    Array<string>
+  >,
   'getTask' : ActorMethod<[TaskId], [] | [Task]>,
+  'getTaskType' : ActorMethod<[TaskTypeId], [] | [TaskType]>,
+  'getTaskTypesByPrefix' : ActorMethod<[string], Array<TaskType>>,
+  'getTasksByAssignee' : ActorMethod<[string], Array<Task>>,
   'getTodo' : ActorMethod<[TodoId], [] | [Todo]>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
@@ -142,6 +173,7 @@ export interface _SERVICE {
     ],
     undefined
   >,
+  'updateTaskType' : ActorMethod<[TaskTypeUpdate], undefined>,
   'updateTodo' : ActorMethod<[TodoId, PartialTodoInput], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;

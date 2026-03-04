@@ -1,17 +1,30 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
-import { useBulkUpdateTasks } from '../../hooks/tasks';
-import { useGetAllClients } from '../../hooks/clients';
-import { useGetAllAssignees } from '../../hooks/assignees';
-import { ALLOWED_TASK_STATUSES } from '../../constants/taskStatus';
-import { toast } from 'sonner';
-import type { Task } from '../../backend';
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import type { Task } from "../../backend";
+import { ALLOWED_TASK_STATUSES } from "../../constants/taskStatus";
+import { useGetAllAssignees } from "../../hooks/assignees";
+import { useGetAllClients } from "../../hooks/clients";
+import { useBulkUpdateTasks } from "../../hooks/tasks";
 
 interface TaskBulkEditDialogProps {
   open: boolean;
@@ -20,69 +33,74 @@ interface TaskBulkEditDialogProps {
   onSuccess?: () => void;
 }
 
-const UNCHANGED_SENTINEL = '__unchanged__';
+const UNCHANGED_SENTINEL = "__unchanged__";
 
-export default function TaskBulkEditDialog({ open, onOpenChange, selectedTasks, onSuccess }: TaskBulkEditDialogProps) {
+export default function TaskBulkEditDialog({
+  open,
+  onOpenChange,
+  selectedTasks,
+  onSuccess,
+}: TaskBulkEditDialogProps) {
   const { mutate: bulkUpdateTasks, isPending } = useBulkUpdateTasks();
   const { data: clients } = useGetAllClients();
   const { data: assignees } = useGetAllAssignees();
 
   // Form state - all fields start with unchanged sentinel
   const [clientName, setClientName] = useState<string>(UNCHANGED_SENTINEL);
-  const [taskCategory, setTaskCategory] = useState<string>('');
-  const [subCategory, setSubCategory] = useState<string>('');
+  const [taskCategory, setTaskCategory] = useState<string>("");
+  const [subCategory, setSubCategory] = useState<string>("");
   const [status, setStatus] = useState<string>(UNCHANGED_SENTINEL);
-  const [comment, setComment] = useState<string>('');
+  const [comment, setComment] = useState<string>("");
   const [assignedName, setAssignedName] = useState<string>(UNCHANGED_SENTINEL);
-  const [dueDate, setDueDate] = useState<string>('');
-  const [assignmentDate, setAssignmentDate] = useState<string>('');
-  const [completionDate, setCompletionDate] = useState<string>('');
-  const [bill, setBill] = useState<string>('');
-  const [advanceReceived, setAdvanceReceived] = useState<string>('');
-  const [outstandingAmount, setOutstandingAmount] = useState<string>('');
-  const [paymentStatus, setPaymentStatus] = useState<string>('');
+  const [dueDate, setDueDate] = useState<string>("");
+  const [assignmentDate, setAssignmentDate] = useState<string>("");
+  const [completionDate, setCompletionDate] = useState<string>("");
+  const [bill, setBill] = useState<string>("");
+  const [advanceReceived, setAdvanceReceived] = useState<string>("");
+  const [outstandingAmount, setOutstandingAmount] = useState<string>("");
+  const [paymentStatus, setPaymentStatus] = useState<string>("");
 
   // Get unique categories and subcategories from existing tasks
   const uniqueCategories = useMemo(() => {
     if (!selectedTasks || selectedTasks.length === 0) return [];
-    const categories = new Set(selectedTasks.map(t => t.taskCategory));
+    const categories = new Set(selectedTasks.map((t) => t.taskCategory));
     return Array.from(categories).sort();
   }, [selectedTasks]);
 
   const uniqueSubCategories = useMemo(() => {
     if (!selectedTasks || selectedTasks.length === 0) return [];
-    const subCategories = new Set(selectedTasks.map(t => t.subCategory));
+    const subCategories = new Set(selectedTasks.map((t) => t.subCategory));
     return Array.from(subCategories).sort();
   }, [selectedTasks]);
 
   // Get unique client names
   const uniqueClientNames = useMemo(() => {
     if (!clients) return [];
-    return clients.map(c => c.name).sort();
+    return clients.map((c) => c.name).sort();
   }, [clients]);
 
   // Get unique assignee names
   const uniqueAssigneeNames = useMemo(() => {
     if (!assignees) return [];
-    return assignees.map(a => a.name).sort();
+    return assignees.map((a) => a.name).sort();
   }, [assignees]);
 
   // Reset form when dialog opens/closes
   useEffect(() => {
     if (!open) {
       setClientName(UNCHANGED_SENTINEL);
-      setTaskCategory('');
-      setSubCategory('');
+      setTaskCategory("");
+      setSubCategory("");
       setStatus(UNCHANGED_SENTINEL);
-      setComment('');
+      setComment("");
       setAssignedName(UNCHANGED_SENTINEL);
-      setDueDate('');
-      setAssignmentDate('');
-      setCompletionDate('');
-      setBill('');
-      setAdvanceReceived('');
-      setOutstandingAmount('');
-      setPaymentStatus('');
+      setDueDate("");
+      setAssignmentDate("");
+      setCompletionDate("");
+      setBill("");
+      setAdvanceReceived("");
+      setOutstandingAmount("");
+      setPaymentStatus("");
     }
   }, [open]);
 
@@ -94,57 +112,57 @@ export default function TaskBulkEditDialog({ open, onOpenChange, selectedTasks, 
       const update: any = { id: task.id };
 
       // Only include fields that are not unchanged
-      if (clientName !== UNCHANGED_SENTINEL && clientName.trim() !== '') {
+      if (clientName !== UNCHANGED_SENTINEL && clientName.trim() !== "") {
         update.clientName = clientName.trim();
       }
-      if (taskCategory.trim() !== '') {
+      if (taskCategory.trim() !== "") {
         update.taskCategory = taskCategory.trim();
       }
-      if (subCategory.trim() !== '') {
+      if (subCategory.trim() !== "") {
         update.subCategory = subCategory.trim();
       }
       if (status !== UNCHANGED_SENTINEL) {
         // Explicitly include status field even if empty/null to trigger backend logic
         update.status = status;
       }
-      if (comment.trim() !== '') {
+      if (comment.trim() !== "") {
         update.comment = comment.trim();
       }
       if (assignedName !== UNCHANGED_SENTINEL) {
         update.assignedName = assignedName;
       }
-      if (dueDate.trim() !== '') {
+      if (dueDate.trim() !== "") {
         // Convert date string to nanoseconds timestamp
         const dateObj = new Date(dueDate);
         update.dueDate = BigInt(dateObj.getTime()) * BigInt(1_000_000);
       }
-      if (assignmentDate.trim() !== '') {
+      if (assignmentDate.trim() !== "") {
         const dateObj = new Date(assignmentDate);
         update.assignmentDate = BigInt(dateObj.getTime()) * BigInt(1_000_000);
       }
-      if (completionDate.trim() !== '') {
+      if (completionDate.trim() !== "") {
         const dateObj = new Date(completionDate);
         update.completionDate = BigInt(dateObj.getTime()) * BigInt(1_000_000);
       }
-      if (bill.trim() !== '') {
-        const billNum = parseFloat(bill);
-        if (!isNaN(billNum)) {
+      if (bill.trim() !== "") {
+        const billNum = Number.parseFloat(bill);
+        if (!Number.isNaN(billNum)) {
           update.bill = billNum;
         }
       }
-      if (advanceReceived.trim() !== '') {
-        const advNum = parseFloat(advanceReceived);
-        if (!isNaN(advNum)) {
+      if (advanceReceived.trim() !== "") {
+        const advNum = Number.parseFloat(advanceReceived);
+        if (!Number.isNaN(advNum)) {
           update.advanceReceived = advNum;
         }
       }
-      if (outstandingAmount.trim() !== '') {
-        const outNum = parseFloat(outstandingAmount);
-        if (!isNaN(outNum)) {
+      if (outstandingAmount.trim() !== "") {
+        const outNum = Number.parseFloat(outstandingAmount);
+        if (!Number.isNaN(outNum)) {
           update.outstandingAmount = outNum;
         }
       }
-      if (paymentStatus.trim() !== '') {
+      if (paymentStatus.trim() !== "") {
         update.paymentStatus = paymentStatus.trim();
       }
 
@@ -152,9 +170,9 @@ export default function TaskBulkEditDialog({ open, onOpenChange, selectedTasks, 
     });
 
     // Check if any fields were actually changed
-    const hasChanges = updates.some(update => Object.keys(update).length > 1);
+    const hasChanges = updates.some((update) => Object.keys(update).length > 1);
     if (!hasChanges) {
-      toast.info('No changes to apply');
+      toast.info("No changes to apply");
       onOpenChange(false);
       return;
     }
@@ -166,7 +184,7 @@ export default function TaskBulkEditDialog({ open, onOpenChange, selectedTasks, 
       },
       onError: (error: any) => {
         // Error toast is already handled in the mutation hook
-        console.error('Bulk update error:', error);
+        console.error("Bulk update error:", error);
       },
     });
   };
@@ -177,7 +195,8 @@ export default function TaskBulkEditDialog({ open, onOpenChange, selectedTasks, 
         <DialogHeader>
           <DialogTitle>Bulk Edit Tasks</DialogTitle>
           <DialogDescription>
-            Update {selectedTasks.length} selected task(s). Only fields you change will be updated.
+            Update {selectedTasks.length} selected task(s). Only fields you
+            change will be updated.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -185,12 +204,18 @@ export default function TaskBulkEditDialog({ open, onOpenChange, selectedTasks, 
             {/* Client Name */}
             <div className="space-y-2">
               <Label htmlFor="clientName">Client Name</Label>
-              <Select value={clientName} onValueChange={setClientName} disabled={isPending}>
+              <Select
+                value={clientName}
+                onValueChange={setClientName}
+                disabled={isPending}
+              >
                 <SelectTrigger id="clientName">
                   <SelectValue placeholder="Select client" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={UNCHANGED_SENTINEL}>— No Change —</SelectItem>
+                  <SelectItem value={UNCHANGED_SENTINEL}>
+                    — No Change —
+                  </SelectItem>
                   {uniqueClientNames.map((name) => (
                     <SelectItem key={name} value={name}>
                       {name}
@@ -239,12 +264,18 @@ export default function TaskBulkEditDialog({ open, onOpenChange, selectedTasks, 
             {/* Status */}
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
-              <Select value={status} onValueChange={setStatus} disabled={isPending}>
+              <Select
+                value={status}
+                onValueChange={setStatus}
+                disabled={isPending}
+              >
                 <SelectTrigger id="status">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={UNCHANGED_SENTINEL}>— No Change —</SelectItem>
+                  <SelectItem value={UNCHANGED_SENTINEL}>
+                    — No Change —
+                  </SelectItem>
                   {ALLOWED_TASK_STATUSES.map((s) => (
                     <SelectItem key={s} value={s}>
                       {s}
@@ -257,12 +288,18 @@ export default function TaskBulkEditDialog({ open, onOpenChange, selectedTasks, 
             {/* Assigned Name */}
             <div className="space-y-2">
               <Label htmlFor="assignedName">Assigned To</Label>
-              <Select value={assignedName} onValueChange={setAssignedName} disabled={isPending}>
+              <Select
+                value={assignedName}
+                onValueChange={setAssignedName}
+                disabled={isPending}
+              >
                 <SelectTrigger id="assignedName">
                   <SelectValue placeholder="Select assignee" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={UNCHANGED_SENTINEL}>— No Change —</SelectItem>
+                  <SelectItem value={UNCHANGED_SENTINEL}>
+                    — No Change —
+                  </SelectItem>
                   {uniqueAssigneeNames.map((name) => (
                     <SelectItem key={name} value={name}>
                       {name}
@@ -377,7 +414,12 @@ export default function TaskBulkEditDialog({ open, onOpenChange, selectedTasks, 
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isPending}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isPending}>
@@ -387,7 +429,7 @@ export default function TaskBulkEditDialog({ open, onOpenChange, selectedTasks, 
                   Updating...
                 </>
               ) : (
-                'Update Tasks'
+                "Update Tasks"
               )}
             </Button>
           </DialogFooter>

@@ -1,13 +1,23 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useUpdateTask } from '../../hooks/tasks';
-import { ALLOWED_TASK_STATUSES, coerceStatusForSelect, getStatusDisplayLabel } from '../../constants/taskStatus';
-import type { Task } from '../../backend';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { Task } from "../../backend";
+import {
+  ALLOWED_TASK_STATUSES,
+  coerceStatusForSelect,
+  getStatusDisplayLabel,
+} from "../../constants/taskStatus";
+import { useUpdateTask } from "../../hooks/tasks";
 
 interface TaskQuickStatusProps {
   task: Task;
 }
 
-const STATUS_NONE_SENTINEL = '__none__';
+const STATUS_NONE_SENTINEL = "__none__";
 
 export default function TaskQuickStatus({ task }: TaskQuickStatusProps) {
   const { mutate: updateTask, isPending } = useUpdateTask();
@@ -35,10 +45,17 @@ export default function TaskQuickStatus({ task }: TaskQuickStatusProps) {
   };
 
   // Use coerceStatusForSelect to safely handle null/empty/invalid status values
-  const currentStatus = coerceStatusForSelect(task.status, STATUS_NONE_SENTINEL);
+  const currentStatus = coerceStatusForSelect(
+    task.status,
+    STATUS_NONE_SENTINEL,
+  );
 
   return (
-    <Select value={currentStatus} onValueChange={handleStatusChange} disabled={isPending}>
+    <Select
+      value={currentStatus}
+      onValueChange={handleStatusChange}
+      disabled={isPending}
+    >
       <SelectTrigger className="w-[180px]">
         <SelectValue placeholder="Select status" />
       </SelectTrigger>

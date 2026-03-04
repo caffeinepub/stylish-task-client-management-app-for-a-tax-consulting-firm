@@ -1,23 +1,58 @@
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Upload, Download, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { useCreateTask } from '../../hooks/tasks';
-import { downloadTaskCsvTemplate, parseCsvFile, type ExtendedTaskInput } from '../../utils/taskCsv';
-import { formatTaskDate, formatCurrency, formatOptionalText } from '../../utils/taskDisplay';
-import { getStatusDisplayLabel } from '../../constants/taskStatus';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Download,
+  Loader2,
+  Upload,
+} from "lucide-react";
+import { useState } from "react";
+import { getStatusDisplayLabel } from "../../constants/taskStatus";
+import { useCreateTask } from "../../hooks/tasks";
+import {
+  type ExtendedTaskInput,
+  downloadTaskCsvTemplate,
+  parseCsvFile,
+} from "../../utils/taskCsv";
+import {
+  formatCurrency,
+  formatOptionalText,
+  formatTaskDate,
+} from "../../utils/taskDisplay";
 
 interface TaskBulkUploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export default function TaskBulkUploadDialog({ open, onOpenChange }: TaskBulkUploadDialogProps) {
-  const [parsedData, setParsedData] = useState<{ tasks: ExtendedTaskInput[]; errors: any[] } | null>(null);
-  const [fileName, setFileName] = useState<string>('');
+export default function TaskBulkUploadDialog({
+  open,
+  onOpenChange,
+}: TaskBulkUploadDialogProps) {
+  const [parsedData, setParsedData] = useState<{
+    tasks: ExtendedTaskInput[];
+    errors: any[];
+  } | null>(null);
+  const [fileName, setFileName] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -61,20 +96,21 @@ export default function TaskBulkUploadDialog({ open, onOpenChange }: TaskBulkUpl
       setTimeout(() => {
         onOpenChange(false);
         setParsedData(null);
-        setFileName('');
+        setFileName("");
         setUploadSuccess(false);
       }, 1500);
     } catch (error: any) {
-      setUploadError(error.message || 'Failed to create tasks');
+      setUploadError(error.message || "Failed to create tasks");
     } finally {
       setIsUploading(false);
     }
   };
 
-  const validTasks = parsedData?.tasks.filter((_, index) => {
-    const rowErrors = parsedData.errors.filter(e => e.row === index + 2);
-    return rowErrors.length === 0;
-  }) || [];
+  const validTasks =
+    parsedData?.tasks.filter((_, index) => {
+      const rowErrors = parsedData.errors.filter((e) => e.row === index + 2);
+      return rowErrors.length === 0;
+    }) || [];
 
   const hasErrors = parsedData ? parsedData.errors.length > 0 : false;
 
@@ -90,7 +126,8 @@ export default function TaskBulkUploadDialog({ open, onOpenChange }: TaskBulkUpl
         <DialogHeader>
           <DialogTitle>Bulk Upload Tasks</DialogTitle>
           <DialogDescription>
-            Upload a CSV file to create multiple tasks at once. Only Client Name, Task Category, and Sub Category will be imported.
+            Upload a CSV file to create multiple tasks at once. Only Client
+            Name, Task Category, and Sub Category will be imported.
           </DialogDescription>
         </DialogHeader>
 
@@ -103,7 +140,11 @@ export default function TaskBulkUploadDialog({ open, onOpenChange }: TaskBulkUpl
                 Start with our template to ensure correct formatting
               </p>
             </div>
-            <Button variant="outline" size="sm" onClick={downloadTaskCsvTemplate}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={downloadTaskCsvTemplate}
+            >
               <Download className="h-4 w-4 mr-2" />
               Download
             </Button>
@@ -134,7 +175,8 @@ export default function TaskBulkUploadDialog({ open, onOpenChange }: TaskBulkUpl
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium">
-                  Preview ({validTasks.length} valid, {parsedData.errors.length} errors)
+                  Preview ({validTasks.length} valid, {parsedData.errors.length}{" "}
+                  errors)
                 </p>
               </div>
 
@@ -142,7 +184,8 @@ export default function TaskBulkUploadDialog({ open, onOpenChange }: TaskBulkUpl
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    {parsedData.errors.length} validation error(s) found. Please fix them before uploading.
+                    {parsedData.errors.length} validation error(s) found. Please
+                    fix them before uploading.
                   </AlertDescription>
                 </Alert>
               )}
@@ -165,10 +208,16 @@ export default function TaskBulkUploadDialog({ open, onOpenChange }: TaskBulkUpl
                   </TableHeader>
                   <TableBody>
                     {parsedData.tasks.map((task, index) => {
-                      const rowErrors = parsedData.errors.filter(e => e.row === index + 2);
+                      const rowErrors = parsedData.errors.filter(
+                        (e) => e.row === index + 2,
+                      );
                       const isValid = rowErrors.length === 0;
+                      const rowKey = `${task.clientName || "row"}-${task.taskCategory || ""}-${index}`;
                       return (
-                        <TableRow key={index} className={!isValid ? 'bg-destructive/10' : ''}>
+                        <TableRow
+                          key={rowKey}
+                          className={!isValid ? "bg-destructive/10" : ""}
+                        >
                           <TableCell>
                             {isValid ? (
                               <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -176,18 +225,30 @@ export default function TaskBulkUploadDialog({ open, onOpenChange }: TaskBulkUpl
                               <AlertCircle className="h-4 w-4 text-destructive" />
                             )}
                           </TableCell>
-                          <TableCell className="font-medium">{task.clientName}</TableCell>
+                          <TableCell className="font-medium">
+                            {task.clientName}
+                          </TableCell>
                           <TableCell>{task.taskCategory}</TableCell>
                           <TableCell>{task.subCategory}</TableCell>
-                          <TableCell>{task.status ? getStatusDisplayLabel(task.status) : '—'}</TableCell>
-                          <TableCell className="max-w-[200px] truncate">{formatOptionalText(task.comment)}</TableCell>
-                          <TableCell>{formatOptionalText(task.assignedName)}</TableCell>
+                          <TableCell>
+                            {task.status
+                              ? getStatusDisplayLabel(task.status)
+                              : "—"}
+                          </TableCell>
+                          <TableCell className="max-w-[200px] truncate">
+                            {formatOptionalText(task.comment)}
+                          </TableCell>
+                          <TableCell>
+                            {formatOptionalText(task.assignedName)}
+                          </TableCell>
                           <TableCell>{formatTaskDate(task.dueDate)}</TableCell>
                           <TableCell>{formatCurrency(task.bill)}</TableCell>
                           <TableCell>
                             {rowErrors.length > 0 && (
                               <span className="text-xs text-destructive">
-                                {rowErrors.map(e => `${e.column}: ${e.message}`).join('; ')}
+                                {rowErrors
+                                  .map((e) => `${e.column}: ${e.message}`)
+                                  .join("; ")}
                               </span>
                             )}
                           </TableCell>
@@ -219,15 +280,23 @@ export default function TaskBulkUploadDialog({ open, onOpenChange }: TaskBulkUpl
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isUploading}>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isUploading}
+          >
             Cancel
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={isUploading || !parsedData || validTasks.length === 0 || hasErrors}
+            disabled={
+              isUploading || !parsedData || validTasks.length === 0 || hasErrors
+            }
           >
             {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isUploading ? 'Creating...' : `Create ${validTasks.length} Task(s)`}
+            {isUploading
+              ? "Creating..."
+              : `Create ${validTasks.length} Task(s)`}
           </Button>
         </DialogFooter>
       </DialogContent>

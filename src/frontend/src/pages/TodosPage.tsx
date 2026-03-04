@@ -1,43 +1,85 @@
-import { useState, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, Search, AlertCircle, CheckSquare, Upload, Trash2 } from 'lucide-react';
-import { useGetAllTodos, useBulkDeleteTodos } from '../hooks/todos';
-import TodoFormDialog from '../components/todos/TodoFormDialog';
-import TodoBulkUploadDialog from '../components/todos/TodoBulkUploadDialog';
-import type { Todo } from '../backend';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  AlertCircle,
+  CheckSquare,
+  Plus,
+  Search,
+  Trash2,
+  Upload,
+} from "lucide-react";
+import { useMemo, useState } from "react";
+import type { Todo } from "../backend";
+import TodoBulkUploadDialog from "../components/todos/TodoBulkUploadDialog";
+import TodoFormDialog from "../components/todos/TodoFormDialog";
+import { useBulkDeleteTodos, useGetAllTodos } from "../hooks/todos";
 
 export default function TodosPage() {
-  const { data: todos, isLoading: todosLoading, error: todosError } = useGetAllTodos();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [completionFilter, setCompletionFilter] = useState<string>('all');
+  const {
+    data: todos,
+    isLoading: todosLoading,
+    error: todosError,
+  } = useGetAllTodos();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [completionFilter, setCompletionFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | undefined>(undefined);
-  const [selectedTodoIds, setSelectedTodoIds] = useState<Set<string>>(new Set());
+  const [selectedTodoIds, setSelectedTodoIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  const { mutate: bulkDeleteTodos, isPending: isDeleting } = useBulkDeleteTodos();
+  const { mutate: bulkDeleteTodos, isPending: isDeleting } =
+    useBulkDeleteTodos();
 
   const filteredTodos = useMemo(() => {
     if (!todos) return [];
-    
+
     return todos.filter((todo) => {
-      const matchesSearch = 
+      const matchesSearch =
         todo.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (todo.description && todo.description.toLowerCase().includes(searchQuery.toLowerCase()));
-      
+        todo.description?.toLowerCase().includes(searchQuery.toLowerCase());
+
       let matchesCompletion = true;
-      if (completionFilter === 'completed') {
+      if (completionFilter === "completed") {
         matchesCompletion = todo.completed;
-      } else if (completionFilter === 'active') {
+      } else if (completionFilter === "active") {
         matchesCompletion = !todo.completed;
       }
 
@@ -55,13 +97,15 @@ export default function TodosPage() {
     });
   }, [filteredTodos]);
 
-  const selectedTodos = useMemo(() => {
-    return sortedTodos.filter(todo => selectedTodoIds.has(todo.id.toString()));
+  const _selectedTodos = useMemo(() => {
+    return sortedTodos.filter((todo) =>
+      selectedTodoIds.has(todo.id.toString()),
+    );
   }, [sortedTodos, selectedTodoIds]);
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      const allIds = new Set(sortedTodos.map(todo => todo.id.toString()));
+      const allIds = new Set(sortedTodos.map((todo) => todo.id.toString()));
       setSelectedTodoIds(allIds);
     } else {
       setSelectedTodoIds(new Set());
@@ -89,7 +133,7 @@ export default function TodosPage() {
   };
 
   const handleBulkDelete = () => {
-    const todoIds = Array.from(selectedTodoIds).map(id => BigInt(id));
+    const todoIds = Array.from(selectedTodoIds).map((id) => BigInt(id));
     bulkDeleteTodos(todoIds, {
       onSuccess: () => {
         setSelectedTodoIds(new Set());
@@ -120,7 +164,9 @@ export default function TodosPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Todos</h1>
-          <p className="text-muted-foreground">Manage your personal todo list</p>
+          <p className="text-muted-foreground">
+            Manage your personal todo list
+          </p>
         </div>
         <div className="flex gap-2">
           <TodoBulkUploadDialog />
@@ -135,7 +181,7 @@ export default function TodosPage() {
         <CardHeader>
           <CardTitle>Todo List</CardTitle>
           <CardDescription>
-            {todosLoading ? 'Loading...' : `${sortedTodos.length} todo(s)`}
+            {todosLoading ? "Loading..." : `${sortedTodos.length} todo(s)`}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -151,7 +197,10 @@ export default function TodosPage() {
                   className="pl-9"
                 />
               </div>
-              <Select value={completionFilter} onValueChange={setCompletionFilter}>
+              <Select
+                value={completionFilter}
+                onValueChange={setCompletionFilter}
+              >
                 <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
@@ -185,6 +234,7 @@ export default function TodosPage() {
             {todosLoading ? (
               <div className="space-y-2">
                 {[...Array(5)].map((_, i) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton items have no stable id
                   <Skeleton key={i} className="h-12 w-full" />
                 ))}
               </div>
@@ -192,9 +242,9 @@ export default function TodosPage() {
               <div className="text-center py-12">
                 <CheckSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">
-                  {searchQuery || completionFilter !== 'all'
-                    ? 'No todos match your filters'
-                    : 'No todos yet. Create your first todo to get started!'}
+                  {searchQuery || completionFilter !== "all"
+                    ? "No todos match your filters"
+                    : "No todos yet. Create your first todo to get started!"}
                 </p>
               </div>
             ) : (
@@ -204,7 +254,10 @@ export default function TodosPage() {
                     <TableRow>
                       <TableHead className="w-[50px]">
                         <Checkbox
-                          checked={selectedTodoIds.size === sortedTodos.length && sortedTodos.length > 0}
+                          checked={
+                            selectedTodoIds.size === sortedTodos.length &&
+                            sortedTodos.length > 0
+                          }
                           onCheckedChange={handleSelectAll}
                         />
                       </TableHead>
@@ -227,45 +280,64 @@ export default function TodosPage() {
                           <Checkbox
                             checked={selectedTodoIds.has(todo.id.toString())}
                             onCheckedChange={(checked) =>
-                              handleSelectTodo(todo.id.toString(), checked === true)
+                              handleSelectTodo(
+                                todo.id.toString(),
+                                checked === true,
+                              )
                             }
                           />
                         </TableCell>
                         <TableCell className="font-medium">
-                          <span className={todo.completed ? 'line-through text-muted-foreground' : ''}>
+                          <span
+                            className={
+                              todo.completed
+                                ? "line-through text-muted-foreground"
+                                : ""
+                            }
+                          >
                             {todo.title}
                           </span>
                         </TableCell>
                         <TableCell className="max-w-[300px] truncate text-muted-foreground">
-                          {todo.description || '—'}
+                          {todo.description || "—"}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={todo.completed ? 'secondary' : 'default'}>
-                            {todo.completed ? 'Completed' : 'Active'}
+                          <Badge
+                            variant={todo.completed ? "secondary" : "default"}
+                          >
+                            {todo.completed ? "Completed" : "Active"}
                           </Badge>
                         </TableCell>
                         <TableCell>
                           {todo.priority !== undefined ? (
-                            <Badge variant="outline">{todo.priority.toString()}</Badge>
+                            <Badge variant="outline">
+                              {todo.priority.toString()}
+                            </Badge>
                           ) : (
-                            '—'
+                            "—"
                           )}
                         </TableCell>
                         <TableCell>
                           {todo.dueDate
-                            ? new Date(Number(todo.dueDate)).toLocaleDateString('en-IN', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric',
-                              })
-                            : '—'}
+                            ? new Date(Number(todo.dueDate)).toLocaleDateString(
+                                "en-IN",
+                                {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                },
+                              )
+                            : "—"}
                         </TableCell>
                         <TableCell className="text-muted-foreground">
-                          {new Date(Number(todo.createdAt)).toLocaleDateString('en-IN', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                          })}
+                          {new Date(Number(todo.createdAt)).toLocaleDateString(
+                            "en-IN",
+                            {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            },
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -277,14 +349,19 @@ export default function TodosPage() {
         </CardContent>
       </Card>
 
-      <TodoFormDialog open={dialogOpen} onOpenChange={setDialogOpen} todo={editingTodo} />
+      <TodoFormDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        todo={editingTodo}
+      />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Todos</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete {selectedTodoIds.size} todo(s)? This action cannot be undone.
+              Are you sure you want to delete {selectedTodoIds.size} todo(s)?
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -294,7 +371,7 @@ export default function TodosPage() {
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? 'Deleting...' : 'Delete'}
+              {isDeleting ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

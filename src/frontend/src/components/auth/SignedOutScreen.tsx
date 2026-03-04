@@ -1,17 +1,37 @@
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useInternetIdentity } from '../../hooks/useInternetIdentity';
-import { FileText, Users, CheckSquare, Sparkles, TrendingUp, Shield } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useNavigate } from "@tanstack/react-router";
+import {
+  CheckSquare,
+  FileText,
+  Search,
+  Shield,
+  Sparkles,
+  TrendingUp,
+  Users,
+} from "lucide-react";
+import { useInternetIdentity } from "../../hooks/useInternetIdentity";
 
 export default function SignedOutScreen() {
   const { login, isLoggingIn, isLoginError } = useInternetIdentity();
+  const navigate = useNavigate();
 
   const handleLogin = async () => {
     try {
       await login();
     } catch (error) {
-      console.error('❌ [SignedOutScreen] Login failed:', error);
+      console.error("❌ [SignedOutScreen] Login failed:", error);
     }
+  };
+
+  const handlePublicSearch = () => {
+    navigate({ to: "/public-search" });
   };
 
   return (
@@ -26,9 +46,9 @@ export default function SignedOutScreen() {
         <div className="text-center mb-12">
           <div className="relative inline-block mb-6">
             <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-2xl" />
-            <img 
-              src="/assets/generated/cswa-logo-new.dim_800x200.png" 
-              alt="CSWA Group of Companies Logo" 
+            <img
+              src="/assets/generated/cswa-logo-new.dim_800x200.png"
+              alt="CSWA Group of Companies"
               className="h-28 mx-auto relative"
             />
           </div>
@@ -36,12 +56,13 @@ export default function SignedOutScreen() {
             CSWA Group of Companies
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Transform your client relationships and task workflows with our powerful management platform
+            Transform your client relationships and task workflows with our
+            powerful management platform
           </p>
         </div>
 
         {/* Sign In Card */}
-        <Card className="mb-12 border-2 border-primary/20 shadow-glow-primary overflow-hidden">
+        <Card className="mb-8 border-2 border-primary/20 shadow-glow-primary overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
           <CardHeader className="text-center relative">
             <div className="flex justify-center mb-4">
@@ -50,11 +71,13 @@ export default function SignedOutScreen() {
               </div>
             </div>
             <CardTitle className="text-3xl font-bold">Welcome Back</CardTitle>
-            <CardDescription className="text-base">Sign in to access your workspace and start managing</CardDescription>
+            <CardDescription className="text-base">
+              Sign in to access your workspace and start managing
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4 relative">
-            <Button 
-              onClick={handleLogin} 
+            <Button
+              onClick={handleLogin}
               disabled={isLoggingIn}
               size="lg"
               className="w-full max-w-md h-12 text-base font-semibold bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground shadow-glow-primary transition-all duration-300"
@@ -65,7 +88,7 @@ export default function SignedOutScreen() {
                   Signing in...
                 </span>
               ) : (
-                'Sign in to Continue'
+                "Sign in to Continue"
               )}
             </Button>
             {isLoginError && (
@@ -73,6 +96,35 @@ export default function SignedOutScreen() {
                 Sign in failed. Please try again.
               </p>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Public Search Card */}
+        <Card className="mb-12 border-2 border-accent/20 shadow-glow-accent overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 rounded-full blur-3xl" />
+          <CardHeader className="text-center relative">
+            <div className="flex justify-center mb-4">
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-accent/20 to-highlight/20">
+                <Search className="h-8 w-8 text-accent" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl font-bold">
+              Search Assignees
+            </CardTitle>
+            <CardDescription className="text-base">
+              View assignee tasks without signing in
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center gap-4 relative">
+            <Button
+              onClick={handlePublicSearch}
+              size="lg"
+              variant="outline"
+              className="w-full max-w-md h-12 text-base font-semibold border-2 border-accent/40 hover:bg-accent/10 hover:border-accent transition-all duration-300"
+            >
+              <Search className="h-4 w-4 mr-2" />
+              Search Assignees
+            </Button>
           </CardContent>
         </Card>
 
@@ -84,11 +136,14 @@ export default function SignedOutScreen() {
               <div className="p-3 rounded-xl bg-primary/10 w-fit mb-3 group-hover:bg-primary/20 transition-colors">
                 <Users className="h-8 w-8 text-primary" />
               </div>
-              <CardTitle className="text-xl font-bold">Client Management</CardTitle>
+              <CardTitle className="text-xl font-bold">
+                Client Management
+              </CardTitle>
             </CardHeader>
             <CardContent className="relative">
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Organize client information, contact details, and tax year projects in one centralized platform
+                Organize client information, contact details, and tax year
+                projects in one centralized platform
               </p>
             </CardContent>
           </Card>
@@ -103,7 +158,8 @@ export default function SignedOutScreen() {
             </CardHeader>
             <CardContent className="relative">
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Monitor progress, assign responsibilities, and ensure timely completion of all client deliverables
+                Monitor progress, assign responsibilities, and ensure timely
+                completion of all client deliverables
               </p>
             </CardContent>
           </Card>
@@ -114,11 +170,14 @@ export default function SignedOutScreen() {
               <div className="p-3 rounded-xl bg-highlight/10 w-fit mb-3 group-hover:bg-highlight/20 transition-colors">
                 <TrendingUp className="h-8 w-8 text-highlight" />
               </div>
-              <CardTitle className="text-xl font-bold">Analytics & Insights</CardTitle>
+              <CardTitle className="text-xl font-bold">
+                Analytics & Insights
+              </CardTitle>
             </CardHeader>
             <CardContent className="relative">
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Gain valuable insights into team performance, revenue tracking, and operational efficiency
+                Gain valuable insights into team performance, revenue tracking,
+                and operational efficiency
               </p>
             </CardContent>
           </Card>
@@ -126,13 +185,29 @@ export default function SignedOutScreen() {
 
         {/* Security Badge */}
         <div className="text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50 backdrop-blur border border-border/50">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-background/50 backdrop-blur-sm border border-border">
             <Shield className="h-4 w-4 text-primary" />
             <span className="text-sm text-muted-foreground">
-              Secured by Internet Identity
+              Secured with Internet Identity
             </span>
           </div>
         </div>
+
+        {/* Footer */}
+        <footer className="mt-16 text-center text-sm text-muted-foreground">
+          <p>
+            © {new Date().getFullYear()} CSWA Group of Companies. Built with ❤️
+            using{" "}
+            <a
+              href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              caffeine.ai
+            </a>
+          </p>
+        </footer>
       </div>
     </div>
   );

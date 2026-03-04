@@ -1,9 +1,7 @@
-import React, { useState, useMemo } from 'react';
-import { useClients, useBulkDeleteClients } from '../hooks/clients';
-import { useInternetIdentity } from '../hooks/useInternetIdentity';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -11,14 +9,16 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import ClientFormDialog from '../components/clients/ClientFormDialog';
-import ClientBulkUploadDialog from '../components/clients/ClientBulkUploadDialog';
-import { Search, Plus, Upload, Trash2, Download } from 'lucide-react';
-import type { Client, ClientId } from '../backend';
-import { exportClientsToExcel } from '../utils/clientExcel';
-import { toast } from 'sonner';
+} from "@/components/ui/table";
+import { Download, Plus, Search, Trash2, Upload } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { toast } from "sonner";
+import type { Client, ClientId } from "../backend";
+import ClientBulkUploadDialog from "../components/clients/ClientBulkUploadDialog";
+import ClientFormDialog from "../components/clients/ClientFormDialog";
+import { useBulkDeleteClients, useClients } from "../hooks/clients";
+import { useInternetIdentity } from "../hooks/useInternetIdentity";
+import { exportClientsToExcel } from "../utils/clientExcel";
 
 export default function ClientsPage() {
   const { identity } = useInternetIdentity();
@@ -26,11 +26,15 @@ export default function ClientsPage() {
 
   const { data: clients = [], isLoading } = useClients();
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedClients, setSelectedClients] = useState<Set<ClientId>>(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedClients, setSelectedClients] = useState<Set<ClientId>>(
+    new Set(),
+  );
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
-  const [editingClient, setEditingClient] = useState<Client | undefined>(undefined);
+  const [editingClient, setEditingClient] = useState<Client | undefined>(
+    undefined,
+  );
 
   const bulkDeleteMutation = useBulkDeleteClients();
 
@@ -42,7 +46,7 @@ export default function ClientsPage() {
       (client) =>
         client.name.toLowerCase().includes(query) ||
         client.gstin?.toLowerCase().includes(query) ||
-        client.pan?.toLowerCase().includes(query)
+        client.pan?.toLowerCase().includes(query),
     );
   }, [clients, searchQuery]);
 
@@ -75,14 +79,17 @@ export default function ClientsPage() {
   const handleExport = async () => {
     try {
       await exportClientsToExcel(filteredClients);
-      toast.success('Clients exported successfully');
-    } catch (error) {
-      toast.error('Failed to export clients');
+      toast.success("Clients exported successfully");
+    } catch (_error) {
+      toast.error("Failed to export clients");
     }
   };
 
-  const allSelected = filteredClients.length > 0 && selectedClients.size === filteredClients.length;
-  const someSelected = selectedClients.size > 0 && selectedClients.size < filteredClients.length;
+  const allSelected =
+    filteredClients.length > 0 &&
+    selectedClients.size === filteredClients.length;
+  const someSelected =
+    selectedClients.size > 0 && selectedClients.size < filteredClients.length;
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -125,7 +132,11 @@ export default function ClientsPage() {
                 {selectedClients.size} client(s) selected
               </span>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => setIsUploadDialogOpen(true)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsUploadDialogOpen(true)}
+                >
                   <Upload className="h-4 w-4 mr-2" />
                   Bulk Upload
                 </Button>
@@ -154,10 +165,14 @@ export default function ClientsPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-8 text-muted-foreground">Loading clients...</div>
+            <div className="text-center py-8 text-muted-foreground">
+              Loading clients...
+            </div>
           ) : filteredClients.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {searchQuery ? 'No clients found matching your search.' : 'No clients yet.'}
+              {searchQuery
+                ? "No clients found matching your search."
+                : "No clients yet."}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -170,14 +185,22 @@ export default function ClientsPage() {
                           checked={allSelected}
                           onCheckedChange={handleSelectAll}
                           aria-label="Select all"
-                          className={someSelected ? 'data-[state=checked]:bg-primary/50' : ''}
+                          className={
+                            someSelected
+                              ? "data-[state=checked]:bg-primary/50"
+                              : ""
+                          }
                         />
                       </TableHead>
                     )}
                     <TableHead>Client Name</TableHead>
-                    <TableHead className="hidden md:table-cell">GSTIN</TableHead>
+                    <TableHead className="hidden md:table-cell">
+                      GSTIN
+                    </TableHead>
                     <TableHead className="hidden lg:table-cell">PAN</TableHead>
-                    {isAuthenticated && <TableHead className="text-right">Actions</TableHead>}
+                    {isAuthenticated && (
+                      <TableHead className="text-right">Actions</TableHead>
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -194,9 +217,15 @@ export default function ClientsPage() {
                           />
                         </TableCell>
                       )}
-                      <TableCell className="font-medium">{client.name}</TableCell>
-                      <TableCell className="hidden md:table-cell">{client.gstin || '-'}</TableCell>
-                      <TableCell className="hidden lg:table-cell">{client.pan || '-'}</TableCell>
+                      <TableCell className="font-medium">
+                        {client.name}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {client.gstin || "-"}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        {client.pan || "-"}
+                      </TableCell>
                       {isAuthenticated && (
                         <TableCell className="text-right">
                           <Button

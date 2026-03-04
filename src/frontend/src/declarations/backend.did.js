@@ -42,6 +42,11 @@ export const PartialClientInput = IDL.Record({
   'notes' : IDL.Opt(IDL.Text),
 });
 export const ClientId = IDL.Nat;
+export const TaskTypeInput = IDL.Record({
+  'name' : IDL.Text,
+  'subtypes' : IDL.Vec(IDL.Text),
+});
+export const TaskTypeId = IDL.Nat;
 export const PartialTodoInput = IDL.Record({
   'title' : IDL.Text,
   'completed' : IDL.Bool,
@@ -55,6 +60,10 @@ export const Assignee = IDL.Record({
   'name' : IDL.Text,
   'captain' : IDL.Opt(IDL.Text),
 });
+export const AssigneeWithTaskCount = IDL.Record({
+  'assignee' : Assignee,
+  'taskCount' : IDL.Nat,
+});
 export const Client = IDL.Record({
   'id' : ClientId,
   'pan' : IDL.Opt(IDL.Text),
@@ -62,6 +71,11 @@ export const Client = IDL.Record({
   'gstin' : IDL.Opt(IDL.Text),
   'notes' : IDL.Opt(IDL.Text),
   'timestamp' : IDL.Int,
+});
+export const TaskType = IDL.Record({
+  'id' : TaskTypeId,
+  'name' : IDL.Text,
+  'subtypes' : IDL.Vec(IDL.Text),
 });
 export const Task = IDL.Record({
   'id' : TaskId,
@@ -95,6 +109,11 @@ export const Todo = IDL.Record({
   'priority' : IDL.Opt(IDL.Nat),
 });
 export const UserProfile = IDL.Record({ 'name' : IDL.Text });
+export const TaskTypeUpdate = IDL.Record({
+  'id' : TaskTypeId,
+  'name' : IDL.Opt(IDL.Text),
+  'subtypes' : IDL.Opt(IDL.Vec(IDL.Text)),
+});
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -103,13 +122,21 @@ export const idlService = IDL.Service({
   'createAssignee' : IDL.Func([PartialAssigneeInput], [AssigneeId], []),
   'createClient' : IDL.Func([PartialClientInput], [ClientId], []),
   'createTask' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [TaskId], []),
+  'createTaskType' : IDL.Func([TaskTypeInput], [TaskTypeId], []),
   'createTodo' : IDL.Func([PartialTodoInput], [TodoId], []),
   'deleteAssignee' : IDL.Func([AssigneeId], [], []),
   'deleteClient' : IDL.Func([ClientId], [], []),
   'deleteTask' : IDL.Func([TaskId], [], []),
+  'deleteTaskTypes' : IDL.Func([IDL.Vec(TaskTypeId)], [], []),
   'deleteTodo' : IDL.Func([TodoId], [], []),
+  'getAggregatedAssignees' : IDL.Func(
+      [IDL.Text],
+      [IDL.Vec(AssigneeWithTaskCount)],
+      ['query'],
+    ),
   'getAllAssignees' : IDL.Func([], [IDL.Vec(Assignee)], ['query']),
   'getAllClients' : IDL.Func([], [IDL.Vec(Client)], ['query']),
+  'getAllTaskTypes' : IDL.Func([], [IDL.Vec(TaskType)], ['query']),
   'getAllTasks' : IDL.Func([], [IDL.Vec(Task)], ['query']),
   'getAllTasksWithCaptain' : IDL.Func(
       [],
@@ -121,7 +148,20 @@ export const idlService = IDL.Service({
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getClient' : IDL.Func([ClientId], [IDL.Opt(Client)], ['query']),
+  'getDistinctSubtypesForTaskType' : IDL.Func(
+      [TaskTypeId],
+      [IDL.Vec(IDL.Text)],
+      ['query'],
+    ),
+  'getDistinctSubtypesForTaskTypeAndPrefix' : IDL.Func(
+      [TaskTypeId, IDL.Text],
+      [IDL.Vec(IDL.Text)],
+      ['query'],
+    ),
   'getTask' : IDL.Func([TaskId], [IDL.Opt(Task)], ['query']),
+  'getTaskType' : IDL.Func([TaskTypeId], [IDL.Opt(TaskType)], ['query']),
+  'getTaskTypesByPrefix' : IDL.Func([IDL.Text], [IDL.Vec(TaskType)], ['query']),
+  'getTasksByAssignee' : IDL.Func([IDL.Text], [IDL.Vec(Task)], ['query']),
   'getTodo' : IDL.Func([TodoId], [IDL.Opt(Todo)], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
@@ -152,6 +192,7 @@ export const idlService = IDL.Service({
       [],
       [],
     ),
+  'updateTaskType' : IDL.Func([TaskTypeUpdate], [], []),
   'updateTodo' : IDL.Func([TodoId, PartialTodoInput], [], []),
 });
 
@@ -192,6 +233,11 @@ export const idlFactory = ({ IDL }) => {
     'notes' : IDL.Opt(IDL.Text),
   });
   const ClientId = IDL.Nat;
+  const TaskTypeInput = IDL.Record({
+    'name' : IDL.Text,
+    'subtypes' : IDL.Vec(IDL.Text),
+  });
+  const TaskTypeId = IDL.Nat;
   const PartialTodoInput = IDL.Record({
     'title' : IDL.Text,
     'completed' : IDL.Bool,
@@ -205,6 +251,10 @@ export const idlFactory = ({ IDL }) => {
     'name' : IDL.Text,
     'captain' : IDL.Opt(IDL.Text),
   });
+  const AssigneeWithTaskCount = IDL.Record({
+    'assignee' : Assignee,
+    'taskCount' : IDL.Nat,
+  });
   const Client = IDL.Record({
     'id' : ClientId,
     'pan' : IDL.Opt(IDL.Text),
@@ -212,6 +262,11 @@ export const idlFactory = ({ IDL }) => {
     'gstin' : IDL.Opt(IDL.Text),
     'notes' : IDL.Opt(IDL.Text),
     'timestamp' : IDL.Int,
+  });
+  const TaskType = IDL.Record({
+    'id' : TaskTypeId,
+    'name' : IDL.Text,
+    'subtypes' : IDL.Vec(IDL.Text),
   });
   const Task = IDL.Record({
     'id' : TaskId,
@@ -245,6 +300,11 @@ export const idlFactory = ({ IDL }) => {
     'priority' : IDL.Opt(IDL.Nat),
   });
   const UserProfile = IDL.Record({ 'name' : IDL.Text });
+  const TaskTypeUpdate = IDL.Record({
+    'id' : TaskTypeId,
+    'name' : IDL.Opt(IDL.Text),
+    'subtypes' : IDL.Opt(IDL.Vec(IDL.Text)),
+  });
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
@@ -253,13 +313,21 @@ export const idlFactory = ({ IDL }) => {
     'createAssignee' : IDL.Func([PartialAssigneeInput], [AssigneeId], []),
     'createClient' : IDL.Func([PartialClientInput], [ClientId], []),
     'createTask' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [TaskId], []),
+    'createTaskType' : IDL.Func([TaskTypeInput], [TaskTypeId], []),
     'createTodo' : IDL.Func([PartialTodoInput], [TodoId], []),
     'deleteAssignee' : IDL.Func([AssigneeId], [], []),
     'deleteClient' : IDL.Func([ClientId], [], []),
     'deleteTask' : IDL.Func([TaskId], [], []),
+    'deleteTaskTypes' : IDL.Func([IDL.Vec(TaskTypeId)], [], []),
     'deleteTodo' : IDL.Func([TodoId], [], []),
+    'getAggregatedAssignees' : IDL.Func(
+        [IDL.Text],
+        [IDL.Vec(AssigneeWithTaskCount)],
+        ['query'],
+      ),
     'getAllAssignees' : IDL.Func([], [IDL.Vec(Assignee)], ['query']),
     'getAllClients' : IDL.Func([], [IDL.Vec(Client)], ['query']),
+    'getAllTaskTypes' : IDL.Func([], [IDL.Vec(TaskType)], ['query']),
     'getAllTasks' : IDL.Func([], [IDL.Vec(Task)], ['query']),
     'getAllTasksWithCaptain' : IDL.Func(
         [],
@@ -271,7 +339,24 @@ export const idlFactory = ({ IDL }) => {
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getClient' : IDL.Func([ClientId], [IDL.Opt(Client)], ['query']),
+    'getDistinctSubtypesForTaskType' : IDL.Func(
+        [TaskTypeId],
+        [IDL.Vec(IDL.Text)],
+        ['query'],
+      ),
+    'getDistinctSubtypesForTaskTypeAndPrefix' : IDL.Func(
+        [TaskTypeId, IDL.Text],
+        [IDL.Vec(IDL.Text)],
+        ['query'],
+      ),
     'getTask' : IDL.Func([TaskId], [IDL.Opt(Task)], ['query']),
+    'getTaskType' : IDL.Func([TaskTypeId], [IDL.Opt(TaskType)], ['query']),
+    'getTaskTypesByPrefix' : IDL.Func(
+        [IDL.Text],
+        [IDL.Vec(TaskType)],
+        ['query'],
+      ),
+    'getTasksByAssignee' : IDL.Func([IDL.Text], [IDL.Vec(Task)], ['query']),
     'getTodo' : IDL.Func([TodoId], [IDL.Opt(Todo)], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
@@ -302,6 +387,7 @@ export const idlFactory = ({ IDL }) => {
         [],
         [],
       ),
+    'updateTaskType' : IDL.Func([TaskTypeUpdate], [], []),
     'updateTodo' : IDL.Func([TodoId, PartialTodoInput], [], []),
   });
 };

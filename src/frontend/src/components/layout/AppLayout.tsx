@@ -1,13 +1,30 @@
-import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Menu, LayoutDashboard, Users, CheckSquare, UserCircle, LogOut, ListTodo, UserCog } from 'lucide-react';
-import { useInternetIdentity } from '../../hooks/useInternetIdentity';
-import { useGetCallerUserProfile } from '../../hooks/useCurrentUserProfile';
-import { useQueryClient } from '@tanstack/react-query';
-import { SiX, SiFacebook, SiLinkedin } from 'react-icons/si';
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useQueryClient } from "@tanstack/react-query";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import {
+  CheckSquare,
+  FolderKanban,
+  LayoutDashboard,
+  ListTodo,
+  LogOut,
+  Menu,
+  UserCircle,
+  UserCog,
+  Users,
+} from "lucide-react";
+import { SiFacebook, SiLinkedin, SiX } from "react-icons/si";
+import { useGetCallerUserProfile } from "../../hooks/useCurrentUserProfile";
+import { useInternetIdentity } from "../../hooks/useInternetIdentity";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -20,15 +37,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const handleLogout = async () => {
     await clear();
     queryClient.clear();
-    navigate({ to: '/' });
+    navigate({ to: "/" });
   };
 
   const navItems = [
-    { to: '/' as const, label: 'Dashboard', icon: LayoutDashboard },
-    { to: '/clients' as const, label: 'Clients', icon: Users },
-    { to: '/tasks' as const, label: 'Tasks', icon: CheckSquare },
-    { to: '/assignees' as const, label: 'Assignees', icon: UserCog },
-    { to: '/todos' as const, label: 'Todos', icon: ListTodo },
+    { to: "/" as const, label: "Dashboard", icon: LayoutDashboard },
+    { to: "/clients" as const, label: "Clients", icon: Users },
+    { to: "/tasks" as const, label: "Tasks", icon: CheckSquare },
+    { to: "/task-types" as const, label: "Task Types", icon: FolderKanban },
+    { to: "/assignees" as const, label: "Assignees", icon: UserCog },
+    { to: "/todos" as const, label: "Todos", icon: ListTodo },
   ];
 
   const isActive = (path: string) => currentPath === path;
@@ -43,9 +61,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Link to="/" className="flex items-center gap-3 group">
               <div className="relative">
                 <div className="absolute inset-0 bg-primary/20 rounded-xl blur-lg group-hover:bg-primary/30 transition-colors" />
-                <img 
-                  src="/assets/generated/cswa-logo-new.dim_800x200.png" 
-                  alt="CSWA Logo" 
+                <img
+                  src="/assets/generated/cswa-logo-new.dim_800x200.png"
+                  alt="CSWA Group of Companies"
                   className="h-10 relative"
                 />
               </div>
@@ -62,8 +80,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     to={item.to}
                     className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
                       active
-                        ? 'bg-primary text-primary-foreground shadow-glow-primary'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                        ? "bg-primary text-primary-foreground shadow-glow-primary"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
                     }`}
                   >
                     <Icon className="h-4 w-4" />
@@ -78,10 +96,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full ring-2 ring-primary/20 hover:ring-primary/40 transition-all">
+                <Button
+                  variant="ghost"
+                  className="relative h-10 w-10 rounded-full ring-2 ring-primary/20 hover:ring-primary/40 transition-all"
+                >
                   <Avatar className="h-10 w-10">
                     <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground font-bold">
-                      {userProfile?.name?.charAt(0).toUpperCase() || 'U'}
+                      {userProfile?.name?.charAt(0).toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -89,12 +110,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <DropdownMenuContent align="end" className="w-56 border-2">
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-semibold leading-none">{userProfile?.name || 'User'}</p>
-                    <p className="text-xs leading-none text-muted-foreground">Manage your account</p>
+                    <p className="text-sm font-semibold leading-none">
+                      {userProfile?.name || "User"}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      Manage your account
+                    </p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:text-destructive">
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="cursor-pointer text-destructive focus:text-destructive"
+                >
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>
@@ -119,8 +147,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         to={item.to}
                         className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
                           active
-                            ? 'bg-primary text-primary-foreground shadow-glow-primary'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                            ? "bg-primary text-primary-foreground shadow-glow-primary"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
                         }`}
                       >
                         <Icon className="h-5 w-5" />
@@ -136,9 +164,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        {children}
-      </main>
+      <main className="container mx-auto px-4 py-8">{children}</main>
 
       {/* Footer */}
       <footer className="border-t border-border/40 bg-card/50 backdrop-blur mt-16">
@@ -158,15 +184,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </a>
             </div>
             <div className="flex items-center gap-4">
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+              <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer">
                 <SiX className="h-4 w-4" />
-              </a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+              </span>
+              <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer">
                 <SiFacebook className="h-4 w-4" />
-              </a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+              </span>
+              <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer">
                 <SiLinkedin className="h-4 w-4" />
-              </a>
+              </span>
             </div>
           </div>
         </div>
