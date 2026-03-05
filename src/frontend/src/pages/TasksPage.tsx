@@ -21,6 +21,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useSearch } from "@tanstack/react-router";
 import {
   ArrowUpDown,
+  Calendar,
   ChevronLeft,
   ChevronRight,
   Download,
@@ -135,6 +136,8 @@ export default function TasksPage() {
   const [filterStatus, setFilterStatus] = useState(
     urlStatus || FILTER_ALL_SENTINEL,
   );
+  const [filterAssignmentDateFrom, setFilterAssignmentDateFrom] = useState("");
+  const [filterAssignmentDateTo, setFilterAssignmentDateTo] = useState("");
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<TaskId>>(
     new Set(),
   );
@@ -235,6 +238,28 @@ export default function TasksPage() {
       result = result.filter((t) => t.task.status === filterStatus);
     }
 
+    if (filterAssignmentDateFrom) {
+      const fromDate = new Date(filterAssignmentDateFrom);
+      fromDate.setHours(0, 0, 0, 0);
+      result = result.filter((t) => {
+        if (!t.task.assignmentDate) return false;
+        // assignmentDate is a bigint in nanoseconds — convert to ms
+        const taskDate = new Date(Number(t.task.assignmentDate) / 1_000_000);
+        return taskDate >= fromDate;
+      });
+    }
+
+    if (filterAssignmentDateTo) {
+      const toDate = new Date(filterAssignmentDateTo);
+      toDate.setHours(23, 59, 59, 999);
+      result = result.filter((t) => {
+        if (!t.task.assignmentDate) return false;
+        // assignmentDate is a bigint in nanoseconds — convert to ms
+        const taskDate = new Date(Number(t.task.assignmentDate) / 1_000_000);
+        return taskDate <= toDate;
+      });
+    }
+
     const tasks = result.map((t) => t.task);
     const sortedTasks = sortTasks(tasks, sortField, sortDirection);
 
@@ -250,6 +275,8 @@ export default function TasksPage() {
     filterSubCategory,
     filterAssignedName,
     filterStatus,
+    filterAssignmentDateFrom,
+    filterAssignmentDateTo,
     sortField,
     sortDirection,
   ]);
@@ -268,6 +295,8 @@ export default function TasksPage() {
     filterSubCategory,
     filterAssignedName,
     filterStatus,
+    filterAssignmentDateFrom,
+    filterAssignmentDateTo,
   ]);
 
   // Get selected tasks as Task objects
@@ -496,6 +525,56 @@ export default function TasksPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Assignment Date Range Filter */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-1">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground shrink-0">
+                <Calendar className="h-4 w-4" />
+                <span>Assignment Date:</span>
+              </div>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    From
+                  </span>
+                  <Input
+                    type="date"
+                    value={filterAssignmentDateFrom}
+                    onChange={(e) =>
+                      setFilterAssignmentDateFrom(e.target.value)
+                    }
+                    className="w-40 text-sm"
+                    data-ocid="tasks.assignment_date_from.input"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    To
+                  </span>
+                  <Input
+                    type="date"
+                    value={filterAssignmentDateTo}
+                    onChange={(e) => setFilterAssignmentDateTo(e.target.value)}
+                    className="w-40 text-sm"
+                    data-ocid="tasks.assignment_date_to.input"
+                  />
+                </div>
+                {(filterAssignmentDateFrom || filterAssignmentDateTo) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setFilterAssignmentDateFrom("");
+                      setFilterAssignmentDateTo("");
+                    }}
+                    className="text-muted-foreground hover:text-foreground text-xs h-8 px-2"
+                    data-ocid="tasks.clear_date_filter.button"
+                  >
+                    Clear dates
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -578,7 +657,9 @@ export default function TasksPage() {
               filterTaskCategory !== FILTER_ALL_SENTINEL ||
               filterSubCategory !== FILTER_ALL_SENTINEL ||
               filterAssignedName !== FILTER_ALL_SENTINEL ||
-              filterStatus !== FILTER_ALL_SENTINEL
+              filterStatus !== FILTER_ALL_SENTINEL ||
+              filterAssignmentDateFrom ||
+              filterAssignmentDateTo
                 ? "No tasks found matching your filters."
                 : "No tasks yet."}
             </div>

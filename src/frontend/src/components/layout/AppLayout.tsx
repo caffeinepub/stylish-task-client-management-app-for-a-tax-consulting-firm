@@ -62,9 +62,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <div className="relative">
                 <div className="absolute inset-0 bg-primary/20 rounded-xl blur-lg group-hover:bg-primary/30 transition-colors" />
                 <img
-                  src="/assets/generated/cswa-logo-new.dim_800x200.png"
+                  src="/assets/uploads/WhatsApp-Image-2026-01-25-at-8.23.55-AM-3-1.jpeg"
                   alt="CSWA Group of Companies"
-                  className="h-10 relative"
+                  className="h-10 relative object-contain"
                 />
               </div>
             </Link>

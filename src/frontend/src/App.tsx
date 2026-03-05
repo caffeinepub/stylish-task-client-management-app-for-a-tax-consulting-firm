@@ -66,9 +66,10 @@ function RootComponent() {
   const [showTimeoutError, setShowTimeoutError] = useState(false);
 
   useEffect(() => {
+    // Use 20s timeout (down from 30s) to surface errors faster
     const timeoutId = setTimeout(() => {
       const elapsed = Date.now() - loadingStartTime;
-      if (elapsed > 30000 && !timeoutTriggered && !actor && isAuthenticated) {
+      if (elapsed > 20000 && !timeoutTriggered && !actor && isAuthenticated) {
         setTimeoutTriggered(true);
 
         console.error(
@@ -179,7 +180,7 @@ function RootComponent() {
         // Show error screen after timeout
         setShowTimeoutError(true);
       }
-    }, 30000);
+    }, 20000);
 
     return () => clearTimeout(timeoutId);
   }, [
