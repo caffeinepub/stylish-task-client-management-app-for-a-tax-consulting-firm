@@ -9,10 +9,9 @@ import {
 import { useNavigate } from "@tanstack/react-router";
 import {
   CheckSquare,
-  FileText,
+  Loader2,
   Search,
   Shield,
-  Sparkles,
   TrendingUp,
   Users,
 } from "lucide-react";
@@ -35,166 +34,171 @@ export default function SignedOutScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/10 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Decorative background elements */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-highlight/5 rounded-full blur-3xl" />
-
-      <div className="w-full max-w-5xl relative z-10">
-        {/* Hero Section */}
+    <div className="min-h-screen bg-texture-diagonal flex flex-col items-center justify-start py-12 px-4">
+      <div className="w-full max-w-4xl">
+        {/* ── Hero ──────────────────────────────────────────── */}
         <div className="text-center mb-12">
-          <div className="relative inline-block mb-6">
-            <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-2xl" />
+          <div className="mb-7">
             <img
-              src="/assets/generated/cswa-logo-new.dim_800x200.png"
+              src="/assets/uploads/WhatsApp-Image-2026-01-25-at-8.23.55-AM-3-1.jpeg"
               alt="CSWA Group of Companies"
-              className="h-28 mx-auto relative"
+              className="h-20 mx-auto object-contain"
             />
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-primary via-accent to-highlight bg-clip-text text-transparent mb-4">
+          <h1 className="font-display text-4xl md:text-5xl font-bold text-foreground tracking-tight mb-3">
             CSWA Group of Companies
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Transform your client relationships and task workflows with our
-            powerful management platform
+          <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
+            Professional tax consulting — client &amp; task management,
+            simplified.
           </p>
         </div>
 
-        {/* Sign In Card */}
-        <Card className="mb-8 border-2 border-primary/20 shadow-glow-primary overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
-          <CardHeader className="text-center relative">
-            <div className="flex justify-center mb-4">
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20">
-                <Sparkles className="h-8 w-8 text-primary" />
+        {/* ── Auth Cards row ────────────────────────────────── */}
+        <div className="grid md:grid-cols-2 gap-5 mb-10">
+          {/* Sign In */}
+          <Card
+            className="border border-border/60 shadow-elevated rounded-2xl"
+            data-ocid="auth.login.card"
+          >
+            <CardHeader className="text-center pb-4 pt-7">
+              <div className="flex justify-center mb-4">
+                <div className="p-3 rounded-xl bg-primary/10">
+                  <Shield className="h-6 w-6 text-primary" />
+                </div>
               </div>
-            </div>
-            <CardTitle className="text-3xl font-bold">Welcome Back</CardTitle>
-            <CardDescription className="text-base">
-              Sign in to access your workspace and start managing
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center gap-4 relative">
-            <Button
-              onClick={handleLogin}
-              disabled={isLoggingIn}
-              size="lg"
-              className="w-full max-w-md h-12 text-base font-semibold bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground shadow-glow-primary transition-all duration-300"
-            >
-              {isLoggingIn ? (
-                <span className="flex items-center gap-2">
-                  <div className="h-4 w-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                  Signing in...
-                </span>
-              ) : (
-                "Sign in to Continue"
+              <CardTitle className="font-display text-2xl font-bold text-foreground">
+                Welcome Back
+              </CardTitle>
+              <CardDescription className="text-sm">
+                Sign in to access your workspace and manage tasks
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center gap-3 px-7 pb-7">
+              <Button
+                onClick={handleLogin}
+                disabled={isLoggingIn}
+                size="lg"
+                data-ocid="auth.login.primary_button"
+                className="w-full h-11 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-glow-primary transition-all duration-200"
+              >
+                {isLoggingIn ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Signing in…
+                  </span>
+                ) : (
+                  "Sign in to Continue"
+                )}
+              </Button>
+              {isLoginError && (
+                <p
+                  className="text-sm text-destructive"
+                  data-ocid="auth.login.error_state"
+                >
+                  Sign in failed. Please try again.
+                </p>
               )}
-            </Button>
-            {isLoginError && (
-              <p className="text-sm text-destructive">
-                Sign in failed. Please try again.
-              </p>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Public Search Card */}
-        <Card className="mb-12 border-2 border-accent/20 shadow-glow-accent overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 rounded-full blur-3xl" />
-          <CardHeader className="text-center relative">
-            <div className="flex justify-center mb-4">
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-accent/20 to-highlight/20">
-                <Search className="h-8 w-8 text-accent" />
+          {/* Public Search */}
+          <Card
+            className="border border-border/60 shadow-card rounded-2xl"
+            data-ocid="auth.public_search.card"
+          >
+            <CardHeader className="text-center pb-4 pt-7">
+              <div className="flex justify-center mb-4">
+                <div className="p-3 rounded-xl bg-accent/10">
+                  <Search className="h-6 w-6 text-accent" />
+                </div>
               </div>
-            </div>
-            <CardTitle className="text-2xl font-bold">
-              Search Assignees
-            </CardTitle>
-            <CardDescription className="text-base">
-              View assignee tasks without signing in
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center gap-4 relative">
-            <Button
-              onClick={handlePublicSearch}
-              size="lg"
-              variant="outline"
-              className="w-full max-w-md h-12 text-base font-semibold border-2 border-accent/40 hover:bg-accent/10 hover:border-accent transition-all duration-300"
-            >
-              <Search className="h-4 w-4 mr-2" />
-              Search Assignees
-            </Button>
-          </CardContent>
-        </Card>
+              <CardTitle className="font-display text-2xl font-bold text-foreground">
+                Search Assignees
+              </CardTitle>
+              <CardDescription className="text-sm">
+                View assignee tasks without signing in
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center gap-3 px-7 pb-7">
+              <Button
+                onClick={handlePublicSearch}
+                size="lg"
+                variant="outline"
+                data-ocid="auth.public_search.button"
+                className="w-full h-11 text-sm font-semibold border-accent/50 text-accent hover:bg-accent/8 hover:border-accent transition-all duration-200"
+              >
+                <Search className="h-4 w-4 mr-2" />
+                Search Assignees
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
 
-        {/* Feature Cards */}
-        <div className="grid md:grid-cols-3 gap-6 mb-12">
-          <Card className="border-2 border-primary/20 hover:border-primary/40 transition-all duration-300 hover:shadow-glow-primary group overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl group-hover:bg-primary/20 transition-colors" />
-            <CardHeader className="relative">
-              <div className="p-3 rounded-xl bg-primary/10 w-fit mb-3 group-hover:bg-primary/20 transition-colors">
-                <Users className="h-8 w-8 text-primary" />
+        {/* ── Feature Cards ─────────────────────────────────── */}
+        <div className="grid md:grid-cols-3 gap-4 mb-10">
+          <Card className="border border-border/60 shadow-card rounded-xl hover:shadow-elevated transition-shadow duration-200 group">
+            <CardHeader className="pb-3 pt-5 px-5">
+              <div className="p-2.5 rounded-lg bg-primary/10 w-fit mb-3 group-hover:bg-primary/15 transition-colors">
+                <Users className="h-5 w-5 text-primary" />
               </div>
-              <CardTitle className="text-xl font-bold">
+              <CardTitle className="font-display text-base font-bold text-foreground">
                 Client Management
               </CardTitle>
             </CardHeader>
-            <CardContent className="relative">
+            <CardContent className="px-5 pb-5">
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Organize client information, contact details, and tax year
-                projects in one centralized platform
+                projects in one centralized platform.
               </p>
             </CardContent>
           </Card>
 
-          <Card className="border-2 border-accent/20 hover:border-accent/40 transition-all duration-300 hover:shadow-glow-accent group overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-full blur-2xl group-hover:bg-accent/20 transition-colors" />
-            <CardHeader className="relative">
-              <div className="p-3 rounded-xl bg-accent/10 w-fit mb-3 group-hover:bg-accent/20 transition-colors">
-                <CheckSquare className="h-8 w-8 text-accent" />
+          <Card className="border border-border/60 shadow-card rounded-xl hover:shadow-elevated transition-shadow duration-200 group">
+            <CardHeader className="pb-3 pt-5 px-5">
+              <div className="p-2.5 rounded-lg bg-accent/10 w-fit mb-3 group-hover:bg-accent/15 transition-colors">
+                <CheckSquare className="h-5 w-5 text-accent" />
               </div>
-              <CardTitle className="text-xl font-bold">Task Tracking</CardTitle>
-            </CardHeader>
-            <CardContent className="relative">
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Monitor progress, assign responsibilities, and ensure timely
-                completion of all client deliverables
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-2 border-highlight/20 hover:border-highlight/40 transition-all duration-300 hover:shadow-glow-highlight group overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-highlight/10 rounded-full blur-2xl group-hover:bg-highlight/20 transition-colors" />
-            <CardHeader className="relative">
-              <div className="p-3 rounded-xl bg-highlight/10 w-fit mb-3 group-hover:bg-highlight/20 transition-colors">
-                <TrendingUp className="h-8 w-8 text-highlight" />
-              </div>
-              <CardTitle className="text-xl font-bold">
-                Analytics & Insights
+              <CardTitle className="font-display text-base font-bold text-foreground">
+                Task Tracking
               </CardTitle>
             </CardHeader>
-            <CardContent className="relative">
+            <CardContent className="px-5 pb-5">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Monitor progress, assign responsibilities, and ensure timely
+                completion of all client deliverables.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-border/60 shadow-card rounded-xl hover:shadow-elevated transition-shadow duration-200 group">
+            <CardHeader className="pb-3 pt-5 px-5">
+              <div className="p-2.5 rounded-lg bg-highlight/10 w-fit mb-3 group-hover:bg-highlight/15 transition-colors">
+                <TrendingUp className="h-5 w-5 text-highlight" />
+              </div>
+              <CardTitle className="font-display text-base font-bold text-foreground">
+                Analytics &amp; Insights
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-5 pb-5">
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Gain valuable insights into team performance, revenue tracking,
-                and operational efficiency
+                and operational efficiency.
               </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Security Badge */}
-        <div className="text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-background/50 backdrop-blur-sm border border-border">
-            <Shield className="h-4 w-4 text-primary" />
-            <span className="text-sm text-muted-foreground">
-              Secured with Internet Identity
-            </span>
+        {/* ── Security Badge ────────────────────────────────── */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-2 bg-muted/50 rounded-full px-4 py-1.5 text-sm text-muted-foreground">
+            <Shield className="h-3.5 w-3.5 text-primary shrink-0" />
+            Secured with Internet Identity
           </div>
         </div>
 
-        {/* Footer */}
-        <footer className="mt-16 text-center text-sm text-muted-foreground">
+        {/* ── Footer ───────────────────────────────────────── */}
+        <footer className="text-center text-sm text-muted-foreground">
           <p>
             © {new Date().getFullYear()} CSWA Group of Companies. Built with ❤️
             using{" "}
@@ -202,7 +206,7 @@ export default function SignedOutScreen() {
               href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-primary hover:underline"
+              className="text-primary hover:underline font-medium"
             >
               caffeine.ai
             </a>

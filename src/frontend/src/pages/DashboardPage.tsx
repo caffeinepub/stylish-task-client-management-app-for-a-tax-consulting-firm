@@ -14,12 +14,10 @@ import {
   ArrowUpRight,
   FileText,
   Loader2,
-  Sparkles,
   TrendingUp,
   UserCheck,
   Users,
 } from "lucide-react";
-import { ALLOWED_TASK_STATUSES } from "../constants/taskStatus";
 import { useGetAllClients } from "../hooks/clients";
 import { useGetAllTasks } from "../hooks/tasks";
 import {
@@ -41,6 +39,28 @@ const ASSIGNEE_STATUS_COLUMNS = [
   "Payment Pending",
 ] as const;
 
+/** Returns Tailwind classes for a given status badge */
+function statusBadgeClass(status: string): string {
+  switch (status) {
+    case "Completed":
+      return "bg-success/15 text-success border-success/30";
+    case "Hold":
+      return "bg-destructive/10 text-destructive border-destructive/20";
+    case "In Progress":
+      return "bg-primary/10 text-primary border-primary/20";
+    case "Pending":
+      return "bg-accent/10 text-accent border-accent/20";
+    case "Docs Pending":
+      return "bg-warning/10 text-warning-foreground border-warning/20";
+    case "Checking":
+      return "bg-highlight/10 text-highlight border-highlight/20";
+    case "Payment Pending":
+      return "bg-destructive/8 text-destructive border-destructive/15";
+    default:
+      return "bg-muted text-muted-foreground";
+  }
+}
+
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { data: tasksWithCaptain = [], isLoading: tasksLoading } =
@@ -48,7 +68,6 @@ export default function DashboardPage() {
   const { data: clients = [], isLoading: clientsLoading } = useGetAllClients();
 
   const tasks = tasksWithCaptain.map((twc) => twc.task);
-
   const isLoading = tasksLoading || clientsLoading;
 
   // Aggregate data
@@ -58,7 +77,7 @@ export default function DashboardPage() {
   const combinedAggregates = aggregateByCategoryAndSubCategory(tasks);
   const assigneeAggregates = aggregateTasksByAssignee(tasksWithCaptain);
 
-  // Calculate summary metrics
+  // Summary metrics
   const totalTasks = tasks.length;
   const totalClients = clients.length;
   const totalRevenue = tasks.reduce((sum, task) => sum + (task.bill || 0), 0);
@@ -66,132 +85,125 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div
+        className="flex items-center justify-center min-h-[400px]"
+        data-ocid="dashboard.loading_state"
+      >
+        <Loader2 className="h-7 w-7 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 pb-8">
-      {/* Header with gradient background */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-accent/5 to-highlight/10 p-8 border border-primary/20">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-accent/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
-        <div className="relative">
-          <div className="flex items-center gap-3 mb-2">
-            <Sparkles className="h-8 w-8 text-primary" />
-            <h1 className="text-4xl font-bold tracking-tight text-foreground">
-              Dashboard
-            </h1>
-          </div>
-          <p className="text-lg text-muted-foreground">
-            Real-time insights into your business performance
+    <div className="space-y-8 pb-8" data-ocid="dashboard.page">
+      {/* ── Page Header ───────────────────────────────────── */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-3xl font-bold text-foreground tracking-tight">
+            Dashboard
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Real-time insights into business performance
           </p>
         </div>
+        <Badge
+          variant="outline"
+          className="shrink-0 text-xs font-medium border-border text-muted-foreground mt-1"
+        >
+          {totalTasks} tasks total
+        </Badge>
       </div>
 
-      {/* Summary Cards with modern styling */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="relative overflow-hidden border-2 border-primary/20 hover:border-primary/40 transition-all duration-300 hover:shadow-glow-primary group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl group-hover:bg-primary/20 transition-colors" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative">
-            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+      {/* ── Summary Cards ─────────────────────────────────── */}
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+        {/* Total Tasks */}
+        <Card className="border border-border shadow-card rounded-xl border-l-4 border-l-primary hover:shadow-elevated transition-shadow duration-200 group">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-5 px-5">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Total Tasks
             </CardTitle>
-            <div className="p-2 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
-              <FileText className="h-5 w-5 text-primary" />
+            <div className="p-2.5 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors">
+              <FileText className="h-4 w-4 text-primary" />
             </div>
           </CardHeader>
-          <CardContent className="relative">
-            <div className="text-4xl font-bold text-foreground mb-2">
+          <CardContent className="px-5 pb-5">
+            <div className="font-display text-3xl font-bold text-foreground mb-1.5">
               {totalTasks}
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-xs font-medium">
-                {pendingTasks} pending
-              </Badge>
-            </div>
+            <p className="text-xs text-muted-foreground">
+              {pendingTasks} pending review
+            </p>
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden border-2 border-accent/20 hover:border-accent/40 transition-all duration-300 hover:shadow-glow-accent group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-full blur-2xl group-hover:bg-accent/20 transition-colors" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative">
-            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+        {/* Total Clients */}
+        <Card className="border border-border shadow-card rounded-xl border-l-4 border-l-accent hover:shadow-elevated transition-shadow duration-200 group">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-5 px-5">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Total Clients
             </CardTitle>
-            <div className="p-2 rounded-xl bg-accent/10 group-hover:bg-accent/20 transition-colors">
-              <Users className="h-5 w-5 text-accent" />
+            <div className="p-2.5 rounded-lg bg-accent/10 group-hover:bg-accent/15 transition-colors">
+              <Users className="h-4 w-4 text-accent" />
             </div>
           </CardHeader>
-          <CardContent className="relative">
-            <div className="text-4xl font-bold text-foreground mb-2">
+          <CardContent className="px-5 pb-5">
+            <div className="font-display text-3xl font-bold text-foreground mb-1.5">
               {totalClients}
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-xs font-medium">
-                Active accounts
-              </Badge>
-            </div>
+            <p className="text-xs text-muted-foreground">Active accounts</p>
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden border-2 border-highlight/20 hover:border-highlight/40 transition-all duration-300 hover:shadow-glow-highlight group bg-gradient-to-br from-highlight/5 to-transparent">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-highlight/10 rounded-full blur-2xl group-hover:bg-highlight/20 transition-colors" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative">
-            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+        {/* Total Revenue */}
+        <Card className="border border-border shadow-card rounded-xl border-l-4 border-l-highlight hover:shadow-elevated transition-shadow duration-200 group">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-5 px-5">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Total Revenue
             </CardTitle>
-            <div className="p-2 rounded-xl bg-highlight/10 group-hover:bg-highlight/20 transition-colors">
-              <TrendingUp className="h-5 w-5 text-highlight" />
+            <div className="p-2.5 rounded-lg bg-highlight/10 group-hover:bg-highlight/15 transition-colors">
+              <TrendingUp className="h-4 w-4 text-highlight" />
             </div>
           </CardHeader>
-          <CardContent className="relative">
-            <div className="text-4xl font-bold text-foreground mb-2">
+          <CardContent className="px-5 pb-5">
+            <div className="font-display text-3xl font-bold text-foreground mb-1.5">
               ₹{totalRevenue.toLocaleString("en-IN")}
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-xs font-medium">
-                Across all tasks
-              </Badge>
-            </div>
+            <p className="text-xs text-muted-foreground">Across all tasks</p>
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden border-2 border-primary/20 hover:border-primary/40 transition-all duration-300 hover:shadow-glow-primary group bg-gradient-to-br from-primary/5 to-transparent">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl group-hover:bg-primary/20 transition-colors" />
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 relative">
-            <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+        {/* Pending Tasks */}
+        <Card className="border border-border shadow-card rounded-xl border-l-4 border-l-destructive hover:shadow-elevated transition-shadow duration-200 group">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-5 px-5">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Pending Tasks
             </CardTitle>
-            <div className="p-2 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
-              <AlertCircle className="h-5 w-5 text-primary" />
+            <div className="p-2.5 rounded-lg bg-destructive/8 group-hover:bg-destructive/12 transition-colors">
+              <AlertCircle className="h-4 w-4 text-destructive" />
             </div>
           </CardHeader>
-          <CardContent className="relative">
-            <div className="text-4xl font-bold text-foreground mb-2">
+          <CardContent className="px-5 pb-5">
+            <div className="font-display text-3xl font-bold text-foreground mb-1.5">
               {pendingTasks}
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-xs font-medium">
-                Require attention
-              </Badge>
-            </div>
+            <p className="text-xs text-muted-foreground">Require attention</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Tasks by Assignee */}
-      <Card className="border-2 border-border hover:border-accent/30 transition-colors overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-accent/8 via-primary/5 to-transparent border-b">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-2xl font-bold flex items-center gap-2">
-              <div className="w-1 h-8 bg-gradient-to-b from-accent to-primary rounded-full" />
-              <UserCheck className="h-5 w-5 text-accent" />
+      {/* ── Tasks by Assignee ─────────────────────────────── */}
+      <Card
+        className="border border-border shadow-card rounded-xl overflow-hidden"
+        data-ocid="dashboard.assignee.table"
+      >
+        <CardHeader className="px-6 py-5 border-b border-border bg-muted/30">
+          <div className="flex items-center justify-between gap-4">
+            <CardTitle className="font-display text-xl font-bold text-foreground flex items-center gap-3">
+              <span className="w-0.5 h-6 rounded-full bg-accent inline-block" />
+              <UserCheck className="h-5 w-5 text-accent shrink-0" />
               Tasks by Assignee
             </CardTitle>
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-xs shrink-0">
               {
                 assigneeAggregates.filter(
                   (a) => a.assigneeName !== "Unassigned",
@@ -203,39 +215,43 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent className="p-0">
           {assigneeAggregates.length === 0 ? (
-            <div className="py-12 text-center text-muted-foreground">
+            <div
+              className="py-12 text-center text-muted-foreground text-sm"
+              data-ocid="dashboard.assignee.empty_state"
+            >
               No tasks assigned yet.
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/30 hover:bg-muted/50">
-                    <TableHead className="font-bold text-foreground min-w-[160px]">
+                  <TableRow className="bg-muted/20 hover:bg-muted/20">
+                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wide min-w-[160px] pl-6">
                       Assignee
                     </TableHead>
-                    <TableHead className="font-bold text-foreground min-w-[120px]">
+                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wide min-w-[120px]">
                       Captain
                     </TableHead>
                     {ASSIGNEE_STATUS_COLUMNS.map((status) => (
                       <TableHead
                         key={status}
-                        className="text-center font-bold text-foreground whitespace-nowrap px-3"
+                        className="text-center font-semibold text-foreground text-xs uppercase tracking-wide whitespace-nowrap px-3"
                       >
                         {status}
                       </TableHead>
                     ))}
-                    <TableHead className="text-center font-bold text-foreground">
+                    <TableHead className="text-center font-semibold text-foreground text-xs uppercase tracking-wide">
                       Total
                     </TableHead>
-                    <TableHead className="w-10" />
+                    <TableHead className="w-10 pr-4" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {assigneeAggregates.map((agg) => (
+                  {assigneeAggregates.map((agg, idx) => (
                     <TableRow
                       key={agg.assigneeName}
-                      className="cursor-pointer hover:bg-accent/5 transition-all duration-200 group border-l-4 border-l-transparent hover:border-l-accent"
+                      data-ocid={`dashboard.assignee.row.${idx + 1}`}
+                      className="cursor-pointer hover:bg-muted/40 transition-colors duration-150 group border-l-4 border-l-transparent hover:border-l-accent"
                       onClick={() => {
                         if (agg.assigneeName !== "Unassigned") {
                           navigate({
@@ -251,15 +267,17 @@ export default function DashboardPage() {
                         }
                       }}
                     >
-                      <TableCell className="font-semibold">
+                      <TableCell className="font-semibold pl-6">
                         <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-accent flex-shrink-0" />
-                          <span>{agg.assigneeName}</span>
+                          <div className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
+                          <span className="truncate max-w-[140px]">
+                            {agg.assigneeName}
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground text-sm">
                         {agg.captainName || (
-                          <span className="text-muted-foreground/50">—</span>
+                          <span className="text-muted-foreground/40">—</span>
                         )}
                       </TableCell>
                       {ASSIGNEE_STATUS_COLUMNS.map((status) => {
@@ -267,23 +285,9 @@ export default function DashboardPage() {
                         return (
                           <TableCell key={status} className="text-center px-3">
                             {count > 0 ? (
-                              <Badge
-                                variant={
-                                  status === "Completed"
-                                    ? "default"
-                                    : "secondary"
-                                }
-                                className={`font-mono text-xs min-w-[28px] justify-center cursor-pointer transition-opacity hover:opacity-80 ${
-                                  status === "Completed"
-                                    ? "bg-success/20 text-success border-success/30 hover:bg-success/30"
-                                    : status === "Hold"
-                                      ? "bg-destructive/10 text-destructive border-destructive/20"
-                                      : status === "In Progress"
-                                        ? "bg-primary/10 text-primary border-primary/20"
-                                        : status === "Pending"
-                                          ? "bg-accent/10 text-accent border-accent/20"
-                                          : ""
-                                }`}
+                              <button
+                                type="button"
+                                className={`inline-flex items-center justify-center min-w-[26px] px-2 py-0.5 rounded text-xs font-mono font-semibold border transition-opacity hover:opacity-75 ${statusBadgeClass(status)}`}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   if (agg.assigneeName !== "Unassigned") {
@@ -301,7 +305,7 @@ export default function DashboardPage() {
                                 }}
                               >
                                 {count}
-                              </Badge>
+                              </button>
                             ) : (
                               <span className="text-muted-foreground/40 text-xs">
                                 —
@@ -311,16 +315,13 @@ export default function DashboardPage() {
                         );
                       })}
                       <TableCell className="text-center">
-                        <Badge
-                          variant="outline"
-                          className="font-mono font-bold text-foreground"
-                        >
+                        <span className="inline-flex items-center justify-center min-w-[28px] px-2 py-0.5 rounded border border-border font-mono text-xs font-bold text-foreground">
                           {agg.total}
-                        </Badge>
+                        </span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="pr-4">
                         {agg.assigneeName !== "Unassigned" && (
-                          <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors" />
+                          <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-accent transition-colors" />
                         )}
                       </TableCell>
                     </TableRow>
@@ -332,298 +333,364 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Tasks by Category */}
-      <Card className="border-2 border-border hover:border-primary/30 transition-colors overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-2xl font-bold flex items-center gap-2">
-              <div className="w-1 h-8 bg-primary rounded-full" />
+      {/* ── Tasks by Category ────────────────────────────── */}
+      <Card
+        className="border border-border shadow-card rounded-xl overflow-hidden"
+        data-ocid="dashboard.category.table"
+      >
+        <CardHeader className="px-6 py-5 border-b border-border bg-muted/30">
+          <div className="flex items-center justify-between gap-4">
+            <CardTitle className="font-display text-xl font-bold text-foreground flex items-center gap-3">
+              <span className="w-0.5 h-6 rounded-full bg-primary inline-block" />
               Tasks by Category
             </CardTitle>
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-xs shrink-0">
               {categoryAggregates.length} categories
             </Badge>
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/30 hover:bg-muted/50">
-                  <TableHead className="font-bold text-foreground">
-                    Category
-                  </TableHead>
-                  <TableHead className="text-right font-bold text-foreground">
-                    Count
-                  </TableHead>
-                  <TableHead className="text-right font-bold text-foreground">
-                    Revenue
-                  </TableHead>
-                  <TableHead className="w-12" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {categoryAggregates.map((agg) => (
-                  <TableRow
-                    key={agg.category}
-                    className="cursor-pointer hover:bg-primary/5 transition-all duration-200 group border-l-4 border-l-transparent hover:border-l-primary"
-                    onClick={() =>
-                      navigate({
-                        to: "/tasks",
-                        search: {
-                          clientName: undefined,
-                          taskCategory: agg.category,
-                          subCategory: undefined,
-                          assignedName: undefined,
-                          status: undefined,
-                        },
-                      })
-                    }
-                  >
-                    <TableCell className="font-semibold">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-primary" />
-                        {agg.category}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Badge variant="secondary" className="font-mono">
-                        {agg.count}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">
-                      ₹{agg.revenue.toLocaleString("en-IN")}
-                    </TableCell>
-                    <TableCell>
-                      <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                    </TableCell>
+          {categoryAggregates.length === 0 ? (
+            <div
+              className="py-12 text-center text-muted-foreground text-sm"
+              data-ocid="dashboard.category.empty_state"
+            >
+              No tasks available.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/20 hover:bg-muted/20">
+                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wide pl-6">
+                      Category
+                    </TableHead>
+                    <TableHead className="text-right font-semibold text-foreground text-xs uppercase tracking-wide">
+                      Tasks
+                    </TableHead>
+                    <TableHead className="text-right font-semibold text-foreground text-xs uppercase tracking-wide pr-6">
+                      Revenue
+                    </TableHead>
+                    <TableHead className="w-10" />
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {categoryAggregates.map((agg, idx) => (
+                    <TableRow
+                      key={agg.category}
+                      data-ocid={`dashboard.category.row.${idx + 1}`}
+                      className="cursor-pointer hover:bg-muted/40 transition-colors duration-150 group border-l-4 border-l-transparent hover:border-l-primary"
+                      onClick={() =>
+                        navigate({
+                          to: "/tasks",
+                          search: {
+                            clientName: undefined,
+                            taskCategory: agg.category,
+                            subCategory: undefined,
+                            assignedName: undefined,
+                            status: undefined,
+                          },
+                        })
+                      }
+                    >
+                      <TableCell className="font-medium pl-6">
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                          {agg.category}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Badge
+                          variant="secondary"
+                          className="font-mono text-xs"
+                        >
+                          {agg.count}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-semibold pr-6">
+                        ₹{agg.revenue.toLocaleString("en-IN")}
+                      </TableCell>
+                      <TableCell>
+                        <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Tasks by Sub Category */}
-      <Card className="border-2 border-border hover:border-accent/30 transition-colors overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-accent/5 to-transparent border-b">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-2xl font-bold flex items-center gap-2">
-              <div className="w-1 h-8 bg-accent rounded-full" />
+      {/* ── Tasks by Sub Category ─────────────────────────── */}
+      <Card
+        className="border border-border shadow-card rounded-xl overflow-hidden"
+        data-ocid="dashboard.subcategory.table"
+      >
+        <CardHeader className="px-6 py-5 border-b border-border bg-muted/30">
+          <div className="flex items-center justify-between gap-4">
+            <CardTitle className="font-display text-xl font-bold text-foreground flex items-center gap-3">
+              <span className="w-0.5 h-6 rounded-full bg-accent inline-block" />
               Tasks by Sub Category
             </CardTitle>
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-xs shrink-0">
               {subCategoryAggregates.length} sub-categories
             </Badge>
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/30 hover:bg-muted/50">
-                  <TableHead className="font-bold text-foreground">
-                    Sub Category
-                  </TableHead>
-                  <TableHead className="text-right font-bold text-foreground">
-                    Count
-                  </TableHead>
-                  <TableHead className="text-right font-bold text-foreground">
-                    Revenue
-                  </TableHead>
-                  <TableHead className="w-12" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {subCategoryAggregates.map((agg) => (
-                  <TableRow
-                    key={agg.subCategory}
-                    className="cursor-pointer hover:bg-accent/5 transition-all duration-200 group border-l-4 border-l-transparent hover:border-l-accent"
-                    onClick={() =>
-                      navigate({
-                        to: "/tasks",
-                        search: {
-                          clientName: undefined,
-                          taskCategory: undefined,
-                          subCategory: agg.subCategory,
-                          assignedName: undefined,
-                          status: undefined,
-                        },
-                      })
-                    }
-                  >
-                    <TableCell className="font-semibold">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-accent" />
-                        {agg.subCategory}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Badge variant="secondary" className="font-mono">
-                        {agg.count}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">
-                      ₹{agg.revenue.toLocaleString("en-IN")}
-                    </TableCell>
-                    <TableCell>
-                      <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors" />
-                    </TableCell>
+          {subCategoryAggregates.length === 0 ? (
+            <div
+              className="py-12 text-center text-muted-foreground text-sm"
+              data-ocid="dashboard.subcategory.empty_state"
+            >
+              No sub-category data available.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/20 hover:bg-muted/20">
+                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wide pl-6">
+                      Sub Category
+                    </TableHead>
+                    <TableHead className="text-right font-semibold text-foreground text-xs uppercase tracking-wide">
+                      Tasks
+                    </TableHead>
+                    <TableHead className="text-right font-semibold text-foreground text-xs uppercase tracking-wide pr-6">
+                      Revenue
+                    </TableHead>
+                    <TableHead className="w-10" />
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {subCategoryAggregates.map((agg, idx) => (
+                    <TableRow
+                      key={agg.subCategory}
+                      data-ocid={`dashboard.subcategory.row.${idx + 1}`}
+                      className="cursor-pointer hover:bg-muted/40 transition-colors duration-150 group border-l-4 border-l-transparent hover:border-l-accent"
+                      onClick={() =>
+                        navigate({
+                          to: "/tasks",
+                          search: {
+                            clientName: undefined,
+                            taskCategory: undefined,
+                            subCategory: agg.subCategory,
+                            assignedName: undefined,
+                            status: undefined,
+                          },
+                        })
+                      }
+                    >
+                      <TableCell className="font-medium pl-6">
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
+                          {agg.subCategory}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Badge
+                          variant="secondary"
+                          className="font-mono text-xs"
+                        >
+                          {agg.count}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-semibold pr-6">
+                        ₹{agg.revenue.toLocaleString("en-IN")}
+                      </TableCell>
+                      <TableCell>
+                        <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-accent transition-colors" />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Tasks by Status */}
-      <Card className="border-2 border-border hover:border-highlight/30 transition-colors overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-highlight/5 to-transparent border-b">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-2xl font-bold flex items-center gap-2">
-              <div className="w-1 h-8 bg-highlight rounded-full" />
+      {/* ── Tasks by Status ───────────────────────────────── */}
+      <Card
+        className="border border-border shadow-card rounded-xl overflow-hidden"
+        data-ocid="dashboard.status.table"
+      >
+        <CardHeader className="px-6 py-5 border-b border-border bg-muted/30">
+          <div className="flex items-center justify-between gap-4">
+            <CardTitle className="font-display text-xl font-bold text-foreground flex items-center gap-3">
+              <span className="w-0.5 h-6 rounded-full bg-highlight inline-block" />
               Tasks by Status
             </CardTitle>
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-xs shrink-0">
               {statusAggregates.length} statuses
             </Badge>
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/30 hover:bg-muted/50">
-                  <TableHead className="font-bold text-foreground">
-                    Status
-                  </TableHead>
-                  <TableHead className="text-right font-bold text-foreground">
-                    Count
-                  </TableHead>
-                  <TableHead className="w-12" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {statusAggregates.map((agg) => (
-                  <TableRow
-                    key={agg.status}
-                    className="cursor-pointer hover:bg-highlight/5 transition-all duration-200 group border-l-4 border-l-transparent hover:border-l-highlight"
-                    onClick={() =>
-                      navigate({
-                        to: "/tasks",
-                        search: {
-                          clientName: undefined,
-                          taskCategory: undefined,
-                          subCategory: undefined,
-                          assignedName: undefined,
-                          status: agg.status,
-                        },
-                      })
-                    }
-                  >
-                    <TableCell className="font-semibold">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-highlight" />
-                        {agg.status}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Badge variant="secondary" className="font-mono">
-                        {agg.count}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-highlight transition-colors" />
-                    </TableCell>
+          {statusAggregates.length === 0 ? (
+            <div
+              className="py-12 text-center text-muted-foreground text-sm"
+              data-ocid="dashboard.status.empty_state"
+            >
+              No status data available.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/20 hover:bg-muted/20">
+                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wide pl-6">
+                      Status
+                    </TableHead>
+                    <TableHead className="text-right font-semibold text-foreground text-xs uppercase tracking-wide pr-6">
+                      Count
+                    </TableHead>
+                    <TableHead className="w-10" />
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {statusAggregates.map((agg, idx) => (
+                    <TableRow
+                      key={agg.status}
+                      data-ocid={`dashboard.status.row.${idx + 1}`}
+                      className="cursor-pointer hover:bg-muted/40 transition-colors duration-150 group border-l-4 border-l-transparent hover:border-l-highlight"
+                      onClick={() =>
+                        navigate({
+                          to: "/tasks",
+                          search: {
+                            clientName: undefined,
+                            taskCategory: undefined,
+                            subCategory: undefined,
+                            assignedName: undefined,
+                            status: agg.status,
+                          },
+                        })
+                      }
+                    >
+                      <TableCell className="pl-6">
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${statusBadgeClass(agg.status)}`}
+                          >
+                            {agg.status}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right pr-6">
+                        <span className="font-mono text-sm font-bold text-foreground">
+                          {agg.count}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-highlight transition-colors" />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Combined Category + Sub Category */}
-      <Card className="border-2 border-border hover:border-primary/30 transition-colors overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-primary/5 via-accent/5 to-highlight/5 border-b">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-2xl font-bold flex items-center gap-2">
-              <div className="w-1 h-8 bg-gradient-to-b from-primary via-accent to-highlight rounded-full" />
-              Tasks by Category & Sub Category
+      {/* ── Category + Sub Category Combined ─────────────── */}
+      <Card
+        className="border border-border shadow-card rounded-xl overflow-hidden"
+        data-ocid="dashboard.combined.table"
+      >
+        <CardHeader className="px-6 py-5 border-b border-border bg-muted/30">
+          <div className="flex items-center justify-between gap-4">
+            <CardTitle className="font-display text-xl font-bold text-foreground flex items-center gap-3">
+              <span className="w-0.5 h-6 rounded-full bg-primary inline-block" />
+              Tasks by Category &amp; Sub Category
             </CardTitle>
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-xs shrink-0">
               {combinedAggregates.length} combinations
             </Badge>
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/30 hover:bg-muted/50">
-                  <TableHead className="font-bold text-foreground">
-                    Category
-                  </TableHead>
-                  <TableHead className="font-bold text-foreground">
-                    Sub Category
-                  </TableHead>
-                  <TableHead className="text-right font-bold text-foreground">
-                    Count
-                  </TableHead>
-                  <TableHead className="text-right font-bold text-foreground">
-                    Revenue
-                  </TableHead>
-                  <TableHead className="w-12" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {combinedAggregates.map((agg) => (
-                  <TableRow
-                    key={`${agg.taskCategory}-${agg.subCategory}`}
-                    className="cursor-pointer hover:bg-gradient-to-r hover:from-primary/5 hover:to-accent/5 transition-all duration-200 group border-l-4 border-l-transparent hover:border-l-primary"
-                    onClick={() =>
-                      navigate({
-                        to: "/tasks",
-                        search: {
-                          clientName: undefined,
-                          taskCategory: agg.taskCategory,
-                          subCategory: agg.subCategory,
-                          assignedName: undefined,
-                          status: undefined,
-                        },
-                      })
-                    }
-                  >
-                    <TableCell className="font-semibold">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-primary" />
-                        {agg.taskCategory}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-accent" />
-                        {agg.subCategory}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Badge variant="secondary" className="font-mono">
-                        {agg.count}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">
-                      ₹{agg.revenue.toLocaleString("en-IN")}
-                    </TableCell>
-                    <TableCell>
-                      <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                    </TableCell>
+          {combinedAggregates.length === 0 ? (
+            <div
+              className="py-12 text-center text-muted-foreground text-sm"
+              data-ocid="dashboard.combined.empty_state"
+            >
+              No data available.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/20 hover:bg-muted/20">
+                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wide pl-6">
+                      Category
+                    </TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase tracking-wide">
+                      Sub Category
+                    </TableHead>
+                    <TableHead className="text-right font-semibold text-foreground text-xs uppercase tracking-wide">
+                      Tasks
+                    </TableHead>
+                    <TableHead className="text-right font-semibold text-foreground text-xs uppercase tracking-wide pr-6">
+                      Revenue
+                    </TableHead>
+                    <TableHead className="w-10" />
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {combinedAggregates.map((agg, idx) => (
+                    <TableRow
+                      key={`${agg.taskCategory}-${agg.subCategory}`}
+                      data-ocid={`dashboard.combined.row.${idx + 1}`}
+                      className="cursor-pointer hover:bg-muted/40 transition-colors duration-150 group border-l-4 border-l-transparent hover:border-l-primary"
+                      onClick={() =>
+                        navigate({
+                          to: "/tasks",
+                          search: {
+                            clientName: undefined,
+                            taskCategory: agg.taskCategory,
+                            subCategory: agg.subCategory,
+                            assignedName: undefined,
+                            status: undefined,
+                          },
+                        })
+                      }
+                    >
+                      <TableCell className="font-medium pl-6">
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                          {agg.taskCategory}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
+                          <span className="text-muted-foreground">
+                            {agg.subCategory}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Badge
+                          variant="secondary"
+                          className="font-mono text-xs"
+                        >
+                          {agg.count}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-semibold pr-6">
+                        ₹{agg.revenue.toLocaleString("en-IN")}
+                      </TableCell>
+                      <TableCell>
+                        <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

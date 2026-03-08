@@ -17,17 +17,19 @@ export default {
         extend: {
             fontFamily: {
                 sans: [
-                    'Inter',
+                    'Plus Jakarta Sans',
                     'system-ui',
                     '-apple-system',
-                    'BlinkMacSystemFont',
-                    'Segoe UI',
-                    'Roboto',
+                    'sans-serif'
+                ],
+                body: [
+                    'Plus Jakarta Sans',
+                    'system-ui',
                     'sans-serif'
                 ],
                 serif: ['Georgia', 'Cambria', 'Times New Roman', 'Times', 'serif'],
                 display: [
-                    'Inter',
+                    'Cabinet Grotesk',
                     'system-ui',
                     'sans-serif'
                 ]
@@ -62,9 +64,23 @@ export default {
                     DEFAULT: 'oklch(var(--success) / <alpha-value>)',
                     foreground: 'oklch(var(--success-foreground))'
                 },
+                warning: {
+                    DEFAULT: 'oklch(var(--warning) / <alpha-value>)',
+                    foreground: 'oklch(var(--warning-foreground))'
+                },
                 highlight: {
                     DEFAULT: 'oklch(var(--highlight) / <alpha-value>)',
                     foreground: 'oklch(var(--highlight-foreground))'
+                },
+                sidebar: {
+                    DEFAULT: 'oklch(var(--sidebar))',
+                    foreground: 'oklch(var(--sidebar-foreground))',
+                    primary: 'oklch(var(--sidebar-primary))',
+                    'primary-foreground': 'oklch(var(--sidebar-primary-foreground))',
+                    accent: 'oklch(var(--sidebar-accent))',
+                    'accent-foreground': 'oklch(var(--sidebar-accent-foreground))',
+                    border: 'oklch(var(--sidebar-border))',
+                    ring: 'oklch(var(--sidebar-ring))',
                 },
                 popover: {
                     DEFAULT: 'oklch(var(--popover))',
@@ -91,11 +107,14 @@ export default {
             },
             boxShadow: {
                 xs: '0 1px 2px 0 rgba(0,0,0,0.05)',
-                soft: '0 2px 8px -2px rgba(0,0,0,0.08)',
+                soft: '0 2px 8px -2px rgba(0,0,0,0.10)',
+                card: '0 1px 3px 0 rgba(0,0,0,0.07), 0 4px 12px -2px rgba(0,0,0,0.05)',
+                elevated: '0 4px 16px -4px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06)',
                 glow: '0 0 20px -5px rgba(0,0,0,0.15)',
-                'glow-primary': '0 0 30px -8px oklch(var(--primary) / 0.4)',
-                'glow-accent': '0 0 30px -8px oklch(var(--accent) / 0.4)',
-                'glow-highlight': '0 0 30px -8px oklch(var(--highlight) / 0.4)'
+                'glow-primary': '0 0 24px -6px oklch(0.28 0.09 255 / 0.35)',
+                'glow-accent': '0 0 24px -6px oklch(0.72 0.14 75 / 0.45)',
+                'glow-highlight': '0 0 24px -6px oklch(0.60 0.12 195 / 0.35)',
+                'inner-top': 'inset 0 1px 0 0 rgba(255,255,255,0.08)'
             },
             keyframes: {
                 'accordion-down': {
