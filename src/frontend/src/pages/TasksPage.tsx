@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -56,6 +57,48 @@ import {
 } from "../utils/taskSort";
 
 const FILTER_ALL_SENTINEL = "all";
+
+function PaymentStatusBadge({ status }: { status?: string | null }) {
+  if (!status) return <span className="text-muted-foreground">—</span>;
+
+  const normalized = status.trim().toLowerCase();
+
+  if (normalized === "paid") {
+    return (
+      <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-100 font-medium">
+        Paid
+      </Badge>
+    );
+  }
+  if (normalized === "partial paid") {
+    return (
+      <Badge className="bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100 font-medium">
+        Partial Paid
+      </Badge>
+    );
+  }
+  if (normalized === "advance received") {
+    return (
+      <Badge className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100 font-medium">
+        Advance Received
+      </Badge>
+    );
+  }
+  if (normalized === "payment pending") {
+    return (
+      <Badge className="bg-red-100 text-red-800 border-red-200 hover:bg-red-100 font-medium">
+        Payment Pending
+      </Badge>
+    );
+  }
+
+  // fallback for any other value
+  return (
+    <Badge variant="outline" className="font-medium">
+      {status}
+    </Badge>
+  );
+}
 
 export default function TasksPage() {
   const { identity } = useInternetIdentity();
@@ -831,7 +874,7 @@ export default function TasksPage() {
                         <TableCell>
                           {formatTaskDate(twc.task.completionDate)}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="font-medium">
                           {twc.task.bill !== null && twc.task.bill !== undefined
                             ? `₹${twc.task.bill.toLocaleString()}`
                             : "—"}
@@ -848,7 +891,9 @@ export default function TasksPage() {
                             ? `₹${twc.task.outstandingAmount.toLocaleString()}`
                             : "—"}
                         </TableCell>
-                        <TableCell>{twc.task.paymentStatus || "—"}</TableCell>
+                        <TableCell>
+                          <PaymentStatusBadge status={twc.task.paymentStatus} />
+                        </TableCell>
                         {isAuthenticated && (
                           <TableCell>
                             <Button

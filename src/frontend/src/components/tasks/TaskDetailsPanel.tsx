@@ -6,13 +6,53 @@ import { getStatusDisplayLabel } from "../../constants/taskStatus";
 import {
   formatAssigneeWithCaptain,
   formatCurrency,
-  formatOptionalText,
   formatTaskDate,
 } from "../../utils/taskDisplay";
 
 interface TaskDetailsPanelProps {
   task: Task;
   captainName?: string;
+}
+
+function PaymentStatusBadge({ status }: { status?: string | null }) {
+  if (!status) return <span className="text-sm text-muted-foreground">—</span>;
+
+  const normalized = status.trim().toLowerCase();
+
+  if (normalized === "paid") {
+    return (
+      <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-100 font-medium">
+        Paid
+      </Badge>
+    );
+  }
+  if (normalized === "partial paid") {
+    return (
+      <Badge className="bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100 font-medium">
+        Partial Paid
+      </Badge>
+    );
+  }
+  if (normalized === "advance received") {
+    return (
+      <Badge className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100 font-medium">
+        Advance Received
+      </Badge>
+    );
+  }
+  if (normalized === "payment pending") {
+    return (
+      <Badge className="bg-red-100 text-red-800 border-red-200 hover:bg-red-100 font-medium">
+        Payment Pending
+      </Badge>
+    );
+  }
+
+  return (
+    <Badge variant="outline" className="font-medium">
+      {status}
+    </Badge>
+  );
 }
 
 export default function TaskDetailsPanel({
@@ -107,12 +147,10 @@ export default function TaskDetailsPanel({
         <Separator />
 
         <div>
-          <p className="text-sm font-medium text-muted-foreground">
+          <p className="text-sm font-medium text-muted-foreground mb-2">
             Payment Status
           </p>
-          <p className="text-sm mt-1">
-            {formatOptionalText(task.paymentStatus)}
-          </p>
+          <PaymentStatusBadge status={task.paymentStatus} />
         </div>
 
         {task.comment && (

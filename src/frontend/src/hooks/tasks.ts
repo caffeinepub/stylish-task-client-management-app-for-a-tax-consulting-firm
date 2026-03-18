@@ -9,94 +9,30 @@ import type {
 } from "../backend";
 import { useActor } from "./useActor";
 
+// Single shared query key for all task data
+export const TASKS_QUERY_KEY = ["tasks"] as const;
+
 export function useGetAllTasks() {
   const { actor, isFetching } = useActor();
 
   return useQuery<TaskWithCaptain[]>({
-    queryKey: ["tasks"],
+    queryKey: TASKS_QUERY_KEY,
     queryFn: async () => {
-      console.log("[useGetAllTasks] Query initiated", {
-        timestamp: new Date().toISOString(),
-        actorAvailable: !!actor,
-        actorFetching: isFetching,
-      });
-
-      if (!actor) {
-        console.warn(
-          "[useGetAllTasks] Actor not available, returning empty array",
-        );
-        return [];
-      }
-
-      const startTime = performance.now();
-      const result = await actor.getAllTasksWithCaptain();
-      const endTime = performance.now();
-
-      console.log("[useGetAllTasks] Query completed", {
-        timestamp: new Date().toISOString(),
-        duration: `${(endTime - startTime).toFixed(2)}ms`,
-        resultCount: result.length,
-      });
-
-      return result;
+      if (!actor) return [];
+      return actor.getAllTasksWithCaptain();
     },
     enabled: !!actor && !isFetching,
-    staleTime: 30000, // 30 seconds - avoid immediate refetch
-    gcTime: 300000, // 5 minutes - keep in cache
-    refetchOnWindowFocus: false, // Prevent excessive refetches
+    staleTime: 30000,
+    gcTime: 300000,
+    refetchOnWindowFocus: false,
   });
 }
 
+// Alias — same cache entry, no duplicate backend call
 export function useTasksWithCaptain() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<TaskWithCaptain[]>({
-    queryKey: ["tasksWithCaptain"],
-    queryFn: async () => {
-      console.log("[useTasksWithCaptain] Query initiated", {
-        timestamp: new Date().toISOString(),
-        actorAvailable: !!actor,
-        actorFetching: isFetching,
-      });
-
-      if (!actor) {
-        console.warn(
-          "[useTasksWithCaptain] Actor not available, returning empty array",
-        );
-        return [];
-      }
-
-      const startTime = performance.now();
-      try {
-        const result = await actor.getAllTasksWithCaptain();
-        const endTime = performance.now();
-
-        console.log("[useTasksWithCaptain] Query completed successfully", {
-          timestamp: new Date().toISOString(),
-          duration: `${(endTime - startTime).toFixed(2)}ms`,
-          resultCount: result.length,
-        });
-
-        return result;
-      } catch (error) {
-        const endTime = performance.now();
-        console.error("[useTasksWithCaptain] Query failed", {
-          timestamp: new Date().toISOString(),
-          duration: `${(endTime - startTime).toFixed(2)}ms`,
-          error: error instanceof Error ? error.message : String(error),
-          errorStack: error instanceof Error ? error.stack : undefined,
-        });
-        throw error;
-      }
-    },
-    enabled: !!actor && !isFetching,
-    staleTime: 30000, // 30 seconds - avoid immediate refetch
-    gcTime: 300000, // 5 minutes - keep in cache
-    refetchOnWindowFocus: false, // Prevent excessive refetches
-  });
+  return useGetAllTasks();
 }
 
-// Pagination hook for tasks
 export function usePaginatedTasks(tasks: TaskWithCaptain[], pageSize = 20) {
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -127,31 +63,17 @@ export function usePaginatedTasks(tasks: TaskWithCaptain[], pageSize = 20) {
   };
 
   const nextPage = () => {
-    if (paginatedData.hasNextPage) {
-      setCurrentPage((prev) => prev + 1);
-    }
+    if (paginatedData.hasNextPage) setCurrentPage((prev) => prev + 1);
   };
 
   const previousPage = () => {
-    if (paginatedData.hasPreviousPage) {
-      setCurrentPage((prev) => prev - 1);
-    }
+    if (paginatedData.hasPreviousPage) setCurrentPage((prev) => prev - 1);
   };
 
-  const resetPage = () => {
-    setCurrentPage(1);
-  };
+  const resetPage = () => setCurrentPage(1);
 
-  return {
-    ...paginatedData,
-    goToPage,
-    nextPage,
-    previousPage,
-    resetPage,
-  };
+  return { ...paginatedData, goToPage, nextPage, previousPage, resetPage };
 }
-
-// Removed usePublicTasks and usePublicTasksWithCaptain - backend requires authentication for all data access
 
 export function useTask(taskId: TaskId | null) {
   const { actor, isFetching } = useActor();
@@ -180,8 +102,7 @@ export function useCreateTask() {
       return actor.createTask(clientName, taskCategory, subCategory);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["tasksWithCaptain"] });
+      queryClient.invalidateQueries({ queryKey: TASKS_QUERY_KEY });
       toast.success("Task created successfully");
     },
     onError: (error: Error) => {
@@ -245,8 +166,7 @@ export function useUpdateTask() {
       );
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["tasksWithCaptain"] });
+      queryClient.invalidateQueries({ queryKey: TASKS_QUERY_KEY });
       queryClient.invalidateQueries({
         queryKey: ["task", variables.taskId.toString()],
       });
@@ -289,8 +209,7 @@ export function useUpdateTaskComment() {
       );
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["tasksWithCaptain"] });
+      queryClient.invalidateQueries({ queryKey: TASKS_QUERY_KEY });
       queryClient.invalidateQueries({
         queryKey: ["task", variables.taskId.toString()],
       });
@@ -312,8 +231,7 @@ export function useBulkUpdateTasks() {
       return actor.bulkUpdateTasks(updates);
     },
     onSuccess: (_data, updates) => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["tasksWithCaptain"] });
+      queryClient.invalidateQueries({ queryKey: TASKS_QUERY_KEY });
       for (const update of updates) {
         queryClient.invalidateQueries({
           queryKey: ["task", update.id.toString()],
@@ -337,8 +255,7 @@ export function useDeleteTask() {
       return actor.deleteTask(taskId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["tasksWithCaptain"] });
+      queryClient.invalidateQueries({ queryKey: TASKS_QUERY_KEY });
       toast.success("Task deleted successfully");
     },
     onError: (error: Error) => {
@@ -357,8 +274,7 @@ export function useBulkDeleteTasks() {
       await Promise.all(taskIds.map((id) => actor.deleteTask(id)));
     },
     onSuccess: (_data, taskIds) => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["tasksWithCaptain"] });
+      queryClient.invalidateQueries({ queryKey: TASKS_QUERY_KEY });
       toast.success(`${taskIds.length} task(s) deleted successfully`);
     },
     onError: (error: Error) => {
@@ -380,7 +296,7 @@ export function useBulkCreateTasks() {
       }>,
     ) => {
       if (!actor) throw new Error("Actor not available");
-      const results = await Promise.all(
+      return Promise.all(
         tasks.map((task) =>
           actor.createTask(
             task.clientName,
@@ -389,11 +305,9 @@ export function useBulkCreateTasks() {
           ),
         ),
       );
-      return results;
     },
     onSuccess: (_data, tasks) => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["tasksWithCaptain"] });
+      queryClient.invalidateQueries({ queryKey: TASKS_QUERY_KEY });
       toast.success(`${tasks.length} task(s) created successfully`);
     },
     onError: (error: Error) => {

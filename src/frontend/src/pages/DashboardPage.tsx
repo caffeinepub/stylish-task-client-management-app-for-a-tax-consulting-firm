@@ -15,6 +15,7 @@ import {
   BarChart3,
   BookOpen,
   FileText,
+  IndianRupee,
   Layers,
   Loader2,
   TrendingUp,
@@ -41,6 +42,59 @@ const ASSIGNEE_STATUS_COLUMNS = [
   "Payment Pending",
 ] as const;
 
+const PAYMENT_STATUSES = [
+  "Payment Pending",
+  "Advance Received",
+  "Partial Paid",
+  "Paid",
+  "Not Set",
+] as const;
+
+function paymentStatusStyle(ps: string): {
+  badge: string;
+  bar: string;
+  dot: string;
+  accent: string;
+} {
+  switch (ps) {
+    case "Paid":
+      return {
+        badge: "bg-success/15 text-success border-success/30",
+        bar: "oklch(0.56 0.17 150)",
+        dot: "bg-success",
+        accent: "border-t-success",
+      };
+    case "Partial Paid":
+      return {
+        badge: "bg-primary/10 text-primary border-primary/20",
+        bar: "oklch(0.5 0.14 255)",
+        dot: "bg-primary",
+        accent: "border-t-primary",
+      };
+    case "Advance Received":
+      return {
+        badge: "bg-warning/15 text-warning-foreground border-warning/30",
+        bar: "oklch(0.72 0.14 75)",
+        dot: "bg-warning",
+        accent: "border-t-warning",
+      };
+    case "Payment Pending":
+      return {
+        badge: "bg-destructive/10 text-destructive border-destructive/20",
+        bar: "oklch(0.55 0.22 25)",
+        dot: "bg-destructive",
+        accent: "border-t-destructive",
+      };
+    default:
+      return {
+        badge: "bg-muted text-muted-foreground border-border",
+        bar: "oklch(0.7 0.02 255)",
+        dot: "bg-muted-foreground",
+        accent: "border-t-muted-foreground",
+      };
+  }
+}
+
 function statusBadgeClass(status: string): string {
   switch (status) {
     case "Completed":
@@ -62,7 +116,6 @@ function statusBadgeClass(status: string): string {
   }
 }
 
-/** Hex-like inline style colors for the status bar chart (uses CSS vars via inline style) */
 function statusBarColor(status: string): string {
   switch (status) {
     case "Completed":
@@ -132,12 +185,36 @@ export default function DashboardPage() {
   const totalTasks = tasks.length;
   const totalClients = clients.length;
   const totalRevenue = tasks.reduce((sum, task) => sum + (task.bill || 0), 0);
+  const totalAdvanceReceived = tasks.reduce(
+    (sum, t) => sum + (t.advanceReceived || 0),
+    0,
+  );
+  const totalOutstanding = tasks.reduce(
+    (sum, t) => sum + (t.outstandingAmount || 0),
+    0,
+  );
   const pendingTasks = tasks.filter((t) => t.status !== "Completed").length;
   const completedTasks = tasks.filter((t) => t.status === "Completed").length;
 
   const completionRate =
     totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
   const pendingRate = totalTasks > 0 ? (pendingTasks / totalTasks) * 100 : 0;
+
+  // Payment status breakdown
+  const paymentStatusCounts = tasks.reduce(
+    (acc, t) => {
+      const ps = (t.paymentStatus as string) || "Not Set";
+      acc[ps] = (acc[ps] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+
+  // Ordered list for display
+  const paymentStatusBreakdown = PAYMENT_STATUSES.map((ps) => ({
+    label: ps,
+    count: paymentStatusCounts[ps] || 0,
+  })).filter((ps) => ps.count > 0);
 
   if (isLoading) {
     return (
@@ -246,27 +323,44 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Total Revenue */}
+        {/* Total Revenue — enhanced with advance + outstanding */}
         <div
           className="group relative rounded-2xl border border-border bg-card shadow-card overflow-hidden cursor-default
             hover:-translate-y-0.5 hover:shadow-elevated transition-all duration-200"
         >
           <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-highlight/60 via-highlight to-highlight/60" />
           <div className="p-5">
-            <div className="flex items-start justify-between mb-4">
+            <div className="flex items-start justify-between mb-3">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Total Revenue
+                Total Bill
               </p>
               <div className="w-10 h-10 rounded-xl bg-highlight/10 flex items-center justify-center shrink-0 group-hover:bg-highlight/15 transition-colors">
                 <TrendingUp className="h-5 w-5 text-highlight" />
               </div>
             </div>
-            <div className="font-display text-3xl font-bold text-foreground mb-1 leading-tight">
+            <div className="font-display text-3xl font-bold text-foreground mb-2 leading-tight">
               ₹{totalRevenue.toLocaleString("en-IN")}
             </div>
-            <p className="text-xs text-muted-foreground mb-3">
-              Across all tasks
-            </p>
+            <div className="space-y-1 mb-3">
+              <div className="flex items-center gap-1.5">
+                <span className="inline-block w-2 h-2 rounded-full bg-warning shrink-0" />
+                <span className="text-xs text-muted-foreground">
+                  ₹{totalAdvanceReceived.toLocaleString("en-IN")}{" "}
+                  <span className="text-warning-foreground font-medium">
+                    advance received
+                  </span>
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="inline-block w-2 h-2 rounded-full bg-destructive shrink-0" />
+                <span className="text-xs text-muted-foreground">
+                  ₹{totalOutstanding.toLocaleString("en-IN")}{" "}
+                  <span className="text-destructive font-medium">
+                    outstanding
+                  </span>
+                </span>
+              </div>
+            </div>
             <div className="space-y-1">
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Billed</span>
@@ -318,6 +412,139 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Payment Status Breakdown ────────────────────────── */}
+      <Card
+        className="border border-border shadow-card rounded-2xl overflow-hidden border-t-2 border-t-highlight"
+        data-ocid="dashboard.payment.section"
+      >
+        <CardHeader className="px-6 py-4 bg-muted/40 border-b border-border">
+          <div className="flex items-center justify-between">
+            <CardTitle className="font-display text-lg font-bold text-foreground flex items-center gap-2.5">
+              <IndianRupee className="h-5 w-5 text-highlight" />
+              Payment Status Breakdown
+            </CardTitle>
+            <span className="text-xs text-muted-foreground">
+              {totalTasks} total tasks
+            </span>
+          </div>
+        </CardHeader>
+        <CardContent className="px-6 py-5">
+          {paymentStatusBreakdown.length === 0 ? (
+            <div
+              className="py-8 text-center text-muted-foreground text-sm"
+              data-ocid="dashboard.payment.empty_state"
+            >
+              <IndianRupee className="h-8 w-8 mx-auto mb-2 opacity-30" />
+              No payment status data yet.
+            </div>
+          ) : (
+            <>
+              {/* Pills row */}
+              <div className="flex flex-wrap gap-3 mb-5">
+                {PAYMENT_STATUSES.map((ps) => {
+                  const count = paymentStatusCounts[ps] || 0;
+                  if (count === 0) return null;
+                  const style = paymentStatusStyle(ps);
+                  const pct =
+                    totalTasks > 0 ? Math.round((count / totalTasks) * 100) : 0;
+                  return (
+                    <div
+                      key={ps}
+                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-semibold ${style.badge}`}
+                      data-ocid="dashboard.payment.card"
+                    >
+                      <span
+                        className={`w-2 h-2 rounded-full shrink-0 ${style.dot}`}
+                      />
+                      <span>{ps}</span>
+                      <span className="font-mono font-bold text-base ml-1">
+                        {count}
+                      </span>
+                      <span className="font-normal opacity-70 text-xs">
+                        ({pct}%)
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Stacked bar */}
+              {totalTasks > 0 && (
+                <div className="space-y-2">
+                  <div className="flex h-3 rounded-full overflow-hidden gap-px">
+                    {PAYMENT_STATUSES.map((ps) => {
+                      const count = paymentStatusCounts[ps] || 0;
+                      if (count === 0) return null;
+                      const style = paymentStatusStyle(ps);
+                      return (
+                        <div
+                          key={ps}
+                          title={`${ps}: ${count}`}
+                          style={{
+                            width: `${(count / totalTasks) * 100}%`,
+                            backgroundColor: style.bar,
+                            minWidth: count > 0 ? "4px" : "0",
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1">
+                    {PAYMENT_STATUSES.map((ps) => {
+                      const count = paymentStatusCounts[ps] || 0;
+                      if (count === 0) return null;
+                      const style = paymentStatusStyle(ps);
+                      return (
+                        <div key={ps} className="flex items-center gap-1.5">
+                          <div
+                            className="w-2.5 h-2.5 rounded-sm shrink-0"
+                            style={{ backgroundColor: style.bar }}
+                          />
+                          <span className="text-xs text-muted-foreground">
+                            {ps}{" "}
+                            <span className="font-mono font-semibold text-foreground">
+                              {Math.round((count / totalTasks) * 100)}%
+                            </span>
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Financial summary row */}
+              <div className="mt-5 grid grid-cols-3 gap-4 pt-4 border-t border-border">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Total Bill
+                  </p>
+                  <p className="font-display text-lg font-bold text-foreground">
+                    ₹{totalRevenue.toLocaleString("en-IN")}
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Advance Received
+                  </p>
+                  <p className="font-display text-lg font-bold text-warning-foreground">
+                    ₹{totalAdvanceReceived.toLocaleString("en-IN")}
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Outstanding
+                  </p>
+                  <p className="font-display text-lg font-bold text-destructive">
+                    ₹{totalOutstanding.toLocaleString("en-IN")}
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       {/* ── Status Overview Band ────────────────────────────── */}
       {statusAggregates.length > 0 && (
