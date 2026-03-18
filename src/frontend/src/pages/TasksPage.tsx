@@ -179,6 +179,8 @@ export default function TasksPage() {
   const [filterStatus, setFilterStatus] = useState(
     urlStatus || FILTER_ALL_SENTINEL,
   );
+  const [filterPaymentStatus, setFilterPaymentStatus] =
+    useState(FILTER_ALL_SENTINEL);
   const [filterAssignmentDateFrom, setFilterAssignmentDateFrom] = useState("");
   const [filterAssignmentDateTo, setFilterAssignmentDateTo] = useState("");
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<TaskId>>(
@@ -281,6 +283,12 @@ export default function TasksPage() {
       result = result.filter((t) => t.task.status === filterStatus);
     }
 
+    if (filterPaymentStatus && filterPaymentStatus !== FILTER_ALL_SENTINEL) {
+      result = result.filter(
+        (t) => t.task.paymentStatus === filterPaymentStatus,
+      );
+    }
+
     if (filterAssignmentDateFrom) {
       const fromDate = new Date(filterAssignmentDateFrom);
       fromDate.setHours(0, 0, 0, 0);
@@ -318,6 +326,7 @@ export default function TasksPage() {
     filterSubCategory,
     filterAssignedName,
     filterStatus,
+    filterPaymentStatus,
     filterAssignmentDateFrom,
     filterAssignmentDateTo,
     sortField,
@@ -338,6 +347,7 @@ export default function TasksPage() {
     filterSubCategory,
     filterAssignedName,
     filterStatus,
+    filterPaymentStatus,
     filterAssignmentDateFrom,
     filterAssignmentDateTo,
   ]);
@@ -469,7 +479,7 @@ export default function TasksPage() {
                 className="pl-10"
               />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
               <Select
                 value={filterClientName}
                 onValueChange={setFilterClientName}
@@ -565,6 +575,29 @@ export default function TasksPage() {
                       {status as string}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={filterPaymentStatus}
+                onValueChange={setFilterPaymentStatus}
+                data-ocid="tasks.payment_status.select"
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Payment Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={FILTER_ALL_SENTINEL}>
+                    All Payment Statuses
+                  </SelectItem>
+                  <SelectItem value="Payment Pending">
+                    Payment Pending
+                  </SelectItem>
+                  <SelectItem value="Advance Received">
+                    Advance Received
+                  </SelectItem>
+                  <SelectItem value="Partial Paid">Partial Paid</SelectItem>
+                  <SelectItem value="Paid">Paid</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -701,6 +734,7 @@ export default function TasksPage() {
               filterSubCategory !== FILTER_ALL_SENTINEL ||
               filterAssignedName !== FILTER_ALL_SENTINEL ||
               filterStatus !== FILTER_ALL_SENTINEL ||
+              filterPaymentStatus !== FILTER_ALL_SENTINEL ||
               filterAssignmentDateFrom ||
               filterAssignmentDateTo
                 ? "No tasks found matching your filters."
