@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Check, Edit2, X } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Check, Edit2, MessageSquarePlus, X } from "lucide-react";
 import { useState } from "react";
 import type { Task } from "../../backend";
 import { useUpdateTaskComment } from "../../hooks/tasks";
@@ -17,6 +17,8 @@ export default function InlineCommentEditor({
   const [error, setError] = useState<string | null>(null);
 
   const { mutate: updateComment, isPending } = useUpdateTaskComment();
+
+  const hasComment = !!task.comment?.trim();
 
   const handleStartEdit = () => {
     setEditedComment(task.comment || "");
@@ -47,60 +49,79 @@ export default function InlineCommentEditor({
     );
   };
 
-  if (!isEditing) {
+  if (isEditing) {
     return (
-      <div className="flex items-center gap-2 group">
-        <span className="text-sm flex-1 truncate">{task.comment || "—"}</span>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={handleStartEdit}
-        >
-          <Edit2 className="h-3 w-3" />
-        </Button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center gap-1">
-        <Input
+      <div className="space-y-1 min-w-[180px]">
+        <Textarea
           value={editedComment}
           onChange={(e) => setEditedComment(e.target.value)}
           placeholder="Enter comment..."
-          className="h-8 text-sm"
+          className="text-sm resize-none min-h-[60px]"
           disabled={isPending}
           autoFocus
           onKeyDown={(e) => {
-            if (e.key === "Enter") {
+            if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
               handleSave();
             } else if (e.key === "Escape") {
               handleCancel();
             }
           }}
         />
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950"
-          onClick={handleSave}
-          disabled={isPending}
-        >
-          <Check className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
-          onClick={handleCancel}
-          disabled={isPending}
-        >
-          <X className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="default"
+            size="sm"
+            className="h-7 px-2 text-xs"
+            onClick={handleSave}
+            disabled={isPending}
+          >
+            <Check className="h-3 w-3 mr-1" />
+            Save
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs text-muted-foreground"
+            onClick={handleCancel}
+            disabled={isPending}
+          >
+            <X className="h-3 w-3 mr-1" />
+            Cancel
+          </Button>
+        </div>
+        {error && <p className="text-xs text-destructive">{error}</p>}
       </div>
-      {error && <p className="text-xs text-destructive">{error}</p>}
+    );
+  }
+
+  if (!hasComment) {
+    return (
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+        onClick={handleStartEdit}
+      >
+        <MessageSquarePlus className="h-3.5 w-3.5" />
+        Add comment
+      </Button>
+    );
+  }
+
+  return (
+    <div className="flex items-start gap-2 group max-w-xs">
+      <span className="text-sm flex-1 line-clamp-2 leading-snug">
+        {task.comment}
+      </span>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-6 w-6 p-0 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity mt-0.5"
+        onClick={handleStartEdit}
+        title="Edit comment"
+      >
+        <Edit2 className="h-3 w-3" />
+      </Button>
     </div>
   );
 }

@@ -18,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle,
   CheckCircle2,
@@ -27,7 +28,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { getStatusDisplayLabel } from "../../constants/taskStatus";
-import { useCreateTask } from "../../hooks/tasks";
+import { TASKS_QUERY_KEY } from "../../hooks/tasks";
+import { useActor } from "../../hooks/useActor";
 import {
   type ExtendedTaskInput,
   downloadTaskCsvTemplate,
@@ -56,8 +58,13 @@ export default function TaskBulkUploadDialog({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<{
+    current: number;
+    total: number;
+  } | null>(null);
 
-  const { mutateAsync: createTask } = useCreateTask();
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -66,6 +73,7 @@ export default function TaskBulkUploadDialog({
     setFileName(file.name);
     setUploadSuccess(false);
     setUploadError(null);
+    setUploadProgress(null);
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -77,22 +85,63 @@ export default function TaskBulkUploadDialog({
   };
 
   const handleSubmit = async () => {
-    if (!parsedData || parsedData.tasks.length === 0) return;
+    if (!parsedData || parsedData.tasks.length === 0 || !actor) return;
 
+    const tasksToCreate = validTasks;
     setIsUploading(true);
     setUploadError(null);
+    setUploadProgress({ current: 0, total: tasksToCreate.length });
 
     try {
-      // Create tasks sequentially to avoid overwhelming the backend
-      for (const task of parsedData.tasks) {
-        await createTask({
-          clientName: task.clientName,
-          taskCategory: task.taskCategory,
-          subCategory: task.subCategory,
-        });
+      for (let i = 0; i < tasksToCreate.length; i++) {
+        const task = tasksToCreate[i];
+        setUploadProgress({ current: i + 1, total: tasksToCreate.length });
+
+        // Step 1: create the task (required fields only)
+        const taskId = await actor.createTask(
+          task.clientName,
+          task.taskCategory,
+          task.subCategory,
+        );
+
+        // Step 2: if any optional fields are provided, update immediately
+        const hasOptionalFields =
+          task.status ||
+          task.comment ||
+          task.assignedName ||
+          task.dueDate !== undefined ||
+          task.assignmentDate !== undefined ||
+          task.completionDate !== undefined ||
+          task.bill !== undefined ||
+          task.advanceReceived !== undefined ||
+          task.outstandingAmount !== undefined ||
+          task.paymentStatus;
+
+        if (hasOptionalFields) {
+          await actor.updateTask(
+            taskId,
+            task.clientName,
+            task.taskCategory,
+            task.subCategory,
+            task.status ?? null,
+            task.comment ?? null,
+            task.assignedName ?? null,
+            task.dueDate ?? null,
+            task.assignmentDate ?? null,
+            task.completionDate ?? null,
+            task.bill ?? null,
+            task.advanceReceived ?? null,
+            task.outstandingAmount ?? null,
+            task.paymentStatus ?? null,
+          );
+        }
       }
 
+      // Refresh task list
+      queryClient.invalidateQueries({ queryKey: TASKS_QUERY_KEY });
+
       setUploadSuccess(true);
+      setUploadProgress(null);
       setTimeout(() => {
         onOpenChange(false);
         setParsedData(null);
@@ -101,6 +150,7 @@ export default function TaskBulkUploadDialog({
       }, 1500);
     } catch (error: any) {
       setUploadError(error.message || "Failed to create tasks");
+      setUploadProgress(null);
     } finally {
       setIsUploading(false);
     }
@@ -126,8 +176,9 @@ export default function TaskBulkUploadDialog({
         <DialogHeader>
           <DialogTitle>Bulk Upload Tasks</DialogTitle>
           <DialogDescription>
-            Upload a CSV file to create multiple tasks at once. Only Client
-            Name, Task Category, and Sub Category will be imported.
+            Upload a CSV file to create multiple tasks at once. All columns in
+            the template are supported — Client Name, Task Category, and Sub
+            Category are required; all other fields are optional.
           </DialogDescription>
         </DialogHeader>
 
@@ -137,7 +188,8 @@ export default function TaskBulkUploadDialog({
             <div>
               <p className="font-medium">Download CSV Template</p>
               <p className="text-sm text-muted-foreground">
-                Start with our template to ensure correct formatting
+                Template includes all fields. The second row explains valid
+                values — delete it before uploading your data.
               </p>
             </div>
             <Button
@@ -190,19 +242,22 @@ export default function TaskBulkUploadDialog({
                 </Alert>
               )}
 
-              <ScrollArea className="h-[400px] border rounded-md">
+              <ScrollArea className="h-[350px] border rounded-md">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[50px]">Status</TableHead>
+                      <TableHead className="w-[40px]" />
                       <TableHead>Client Name</TableHead>
                       <TableHead>Task Category</TableHead>
                       <TableHead>Sub Category</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Comment</TableHead>
-                      <TableHead>Assigned Name</TableHead>
+                      <TableHead>Assigned</TableHead>
                       <TableHead>Due Date</TableHead>
+                      <TableHead>Assign Date</TableHead>
                       <TableHead>Bill</TableHead>
+                      <TableHead>Advance</TableHead>
+                      <TableHead>Payment Status</TableHead>
+                      <TableHead>Comment</TableHead>
                       <TableHead>Errors</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -235,14 +290,23 @@ export default function TaskBulkUploadDialog({
                               ? getStatusDisplayLabel(task.status)
                               : "—"}
                           </TableCell>
-                          <TableCell className="max-w-[200px] truncate">
-                            {formatOptionalText(task.comment)}
-                          </TableCell>
                           <TableCell>
                             {formatOptionalText(task.assignedName)}
                           </TableCell>
                           <TableCell>{formatTaskDate(task.dueDate)}</TableCell>
+                          <TableCell>
+                            {formatTaskDate(task.assignmentDate)}
+                          </TableCell>
                           <TableCell>{formatCurrency(task.bill)}</TableCell>
+                          <TableCell>
+                            {formatCurrency(task.advanceReceived)}
+                          </TableCell>
+                          <TableCell>
+                            {formatOptionalText(task.paymentStatus)}
+                          </TableCell>
+                          <TableCell className="max-w-[150px] truncate">
+                            {formatOptionalText(task.comment)}
+                          </TableCell>
                           <TableCell>
                             {rowErrors.length > 0 && (
                               <span className="text-xs text-destructive">
@@ -261,12 +325,33 @@ export default function TaskBulkUploadDialog({
             </div>
           )}
 
+          {/* Upload Progress */}
+          {uploadProgress && (
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">
+                Uploading {uploadProgress.current} of {uploadProgress.total}{" "}
+                tasks...
+              </p>
+              <div className="w-full bg-muted rounded-full h-2">
+                <div
+                  className="bg-primary rounded-full h-2 transition-all"
+                  style={{
+                    width: `${
+                      (uploadProgress.current / uploadProgress.total) * 100
+                    }%`,
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Status Messages */}
           {uploadSuccess && (
             <Alert className="border-green-600 bg-green-50 dark:bg-green-950">
               <CheckCircle2 className="h-4 w-4 text-green-600" />
               <AlertDescription className="text-green-800 dark:text-green-200">
-                Successfully created {validTasks.length} task(s)!
+                Successfully created {validTasks.length} task(s) with all
+                fields!
               </AlertDescription>
             </Alert>
           )}
@@ -295,8 +380,8 @@ export default function TaskBulkUploadDialog({
           >
             {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isUploading
-              ? "Creating..."
-              : `Create ${validTasks.length} Task(s)`}
+              ? `Uploading ${uploadProgress?.current ?? 0}/${uploadProgress?.total ?? validTasks.length}...`
+              : `Upload ${validTasks.length} Task(s)`}
           </Button>
         </DialogFooter>
       </DialogContent>

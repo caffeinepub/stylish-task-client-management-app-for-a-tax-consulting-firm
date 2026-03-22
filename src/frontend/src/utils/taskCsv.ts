@@ -30,6 +30,14 @@ export interface ParsedCsvData {
   errors: ValidationError[];
 }
 
+// Valid payment status values
+export const VALID_PAYMENT_STATUSES = [
+  "Payment Pending",
+  "Advance Received",
+  "Partial Paid",
+  "Paid",
+];
+
 /**
  * Generate CSV template for task bulk upload with all supported fields
  */
@@ -50,12 +58,30 @@ export function generateTaskCsvTemplate(): string {
     "Payment Status",
   ];
 
+  // Valid Status values: Pending, Docs Pending, In Progress, Checking, Payment Pending, Completed, Hold
+  // Valid Payment Status values: Payment Pending, Advance Received, Partial Paid, Paid
+  const noteRow = [
+    "[Required]",
+    "[Required]",
+    "[Required]",
+    "[Pending/Docs Pending/In Progress/Checking/Payment Pending/Completed/Hold]",
+    "[Optional text]",
+    "[Optional assignee name]",
+    "[YYYY-MM-DD]",
+    "[YYYY-MM-DD]",
+    "[YYYY-MM-DD]",
+    "[Number only]",
+    "[Number only]",
+    "[Number only]",
+    "[Payment Pending/Advance Received/Partial Paid/Paid]",
+  ];
+
   const exampleRow = [
     "ABC Corp",
     "GST Return",
     "GSTR-1",
-    "Pending",
-    '"Up to Dec Sales, purchase and Bank Completed"',
+    "In Progress",
+    "Documents received and under review",
     "John Doe",
     "2026-03-15",
     "2026-02-01",
@@ -63,10 +89,17 @@ export function generateTaskCsvTemplate(): string {
     "5000",
     "2000",
     "3000",
-    "Partial",
+    "Advance Received",
   ];
 
-  return [headers.join(","), exampleRow.join(",")].join("\n");
+  // Wrap fields that may contain commas in quotes
+  const escapeField = (val: string) => (val.includes(",") ? `"${val}"` : val);
+
+  return [
+    headers.join(","),
+    noteRow.map(escapeField).join(","),
+    exampleRow.map(escapeField).join(","),
+  ].join("\n");
 }
 
 /**
@@ -169,12 +202,17 @@ export function parseCsvFile(csvContent: string): ParsedCsvData {
   const outstandingAmountIdx = headers.indexOf("Outstanding Amount");
   const paymentStatusIdx = headers.indexOf("Payment Status");
 
-  // Parse data rows
+  // Parse data rows (skip note row if it starts with "[Required]")
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i].trim();
     if (!line) continue;
 
     const values = parseCsvLine(line).map((v) => v.trim());
+
+    // Skip the notes/instructions row
+    const firstVal = values[clientNameIdx] || "";
+    if (firstVal.startsWith("[")) continue;
+
     const rowNumber = i + 1;
 
     // Extract required fields
@@ -207,7 +245,7 @@ export function parseCsvFile(csvContent: string): ParsedCsvData {
       });
     }
 
-    // Extract and validate optional fields
+    // Extract optional fields
     const status = statusIdx >= 0 ? values[statusIdx] || "" : "";
     const comment = commentIdx >= 0 ? values[commentIdx] || "" : "";
     const assignedName =
@@ -230,7 +268,16 @@ export function parseCsvFile(csvContent: string): ParsedCsvData {
       errors.push({
         row: rowNumber,
         column: "Status",
-        message: `Invalid status: "${status}"`,
+        message: `Invalid status: "${status}". Use: Pending, Docs Pending, In Progress, Checking, Payment Pending, Completed, Hold`,
+      });
+    }
+
+    // Validate payment status if provided
+    if (paymentStatus && !VALID_PAYMENT_STATUSES.includes(paymentStatus)) {
+      errors.push({
+        row: rowNumber,
+        column: "Payment Status",
+        message: `Invalid payment status: "${paymentStatus}". Use: Payment Pending, Advance Received, Partial Paid, Paid`,
       });
     }
 
@@ -272,7 +319,7 @@ export function parseCsvFile(csvContent: string): ParsedCsvData {
       errors.push({
         row: rowNumber,
         column: "Bill",
-        message: "Invalid number format",
+        message: "Invalid number format — use digits only (e.g. 5000)",
       });
     }
 
@@ -280,7 +327,7 @@ export function parseCsvFile(csvContent: string): ParsedCsvData {
       errors.push({
         row: rowNumber,
         column: "Advance Received",
-        message: "Invalid number format",
+        message: "Invalid number format — use digits only (e.g. 2000)",
       });
     }
 
@@ -288,7 +335,7 @@ export function parseCsvFile(csvContent: string): ParsedCsvData {
       errors.push({
         row: rowNumber,
         column: "Outstanding Amount",
-        message: "Invalid number format",
+        message: "Invalid number format — use digits only (e.g. 3000)",
       });
     }
 
@@ -309,7 +356,8 @@ export function parseCsvFile(csvContent: string): ParsedCsvData {
     if (bill !== null) task.bill = bill;
     if (advanceReceived !== null) task.advanceReceived = advanceReceived;
     if (outstandingAmount !== null) task.outstandingAmount = outstandingAmount;
-    if (paymentStatus) task.paymentStatus = paymentStatus;
+    if (paymentStatus && VALID_PAYMENT_STATUSES.includes(paymentStatus))
+      task.paymentStatus = paymentStatus;
 
     tasks.push(task);
   }
