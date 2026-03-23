@@ -449,9 +449,19 @@ export default function DashboardPage() {
                   const pct =
                     totalTasks > 0 ? Math.round((count / totalTasks) * 100) : 0;
                   return (
-                    <div
+                    <button
                       key={ps}
-                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-semibold ${style.badge}`}
+                      type="button"
+                      onClick={() =>
+                        navigate({
+                          to: "/tasks",
+                          search: {
+                            paymentStatus:
+                              ps === "Not Set" ? "__NOT_SET__" : ps,
+                          },
+                        })
+                      }
+                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-semibold cursor-pointer hover:scale-105 hover:shadow-md transition-all ${style.badge}`}
                       data-ocid="dashboard.payment.card"
                     >
                       <span
@@ -464,7 +474,7 @@ export default function DashboardPage() {
                       <span className="font-normal opacity-70 text-xs">
                         ({pct}%)
                       </span>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -478,14 +488,25 @@ export default function DashboardPage() {
                       if (count === 0) return null;
                       const style = paymentStatusStyle(ps);
                       return (
-                        <div
+                        <button
                           key={ps}
+                          type="button"
                           title={`${ps}: ${count}`}
+                          onClick={() =>
+                            navigate({
+                              to: "/tasks",
+                              search: {
+                                paymentStatus:
+                                  ps === "Not Set" ? "__NOT_SET__" : ps,
+                              },
+                            })
+                          }
                           style={{
                             width: `${(count / totalTasks) * 100}%`,
                             backgroundColor: style.bar,
                             minWidth: count > 0 ? "4px" : "0",
                           }}
+                          className="cursor-pointer hover:opacity-80 transition-opacity border-0 p-0"
                         />
                       );
                     })}

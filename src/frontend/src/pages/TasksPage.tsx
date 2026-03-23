@@ -114,6 +114,7 @@ export default function TasksPage() {
   const urlSubCategory = searchParams.subCategory;
   const urlStatus = searchParams.status;
   const urlAssignedName = searchParams.assignedName;
+  const urlPaymentStatus = searchParams.paymentStatus;
 
   // Enhanced logging for task queries
   const tasksQuery = useTasksWithCaptain();
@@ -179,8 +180,9 @@ export default function TasksPage() {
   const [filterStatus, setFilterStatus] = useState(
     urlStatus || FILTER_ALL_SENTINEL,
   );
-  const [filterPaymentStatus, setFilterPaymentStatus] =
-    useState(FILTER_ALL_SENTINEL);
+  const [filterPaymentStatus, setFilterPaymentStatus] = useState(
+    urlPaymentStatus || FILTER_ALL_SENTINEL,
+  );
   const [filterAssignmentDateFrom, setFilterAssignmentDateFrom] = useState("");
   const [filterAssignmentDateTo, setFilterAssignmentDateTo] = useState("");
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<TaskId>>(
@@ -284,9 +286,12 @@ export default function TasksPage() {
     }
 
     if (filterPaymentStatus && filterPaymentStatus !== FILTER_ALL_SENTINEL) {
-      result = result.filter(
-        (t) => t.task.paymentStatus === filterPaymentStatus,
-      );
+      result = result.filter((t) => {
+        if (filterPaymentStatus === "__NOT_SET__") {
+          return !t.task.paymentStatus || t.task.paymentStatus === "";
+        }
+        return t.task.paymentStatus === filterPaymentStatus;
+      });
     }
 
     if (filterAssignmentDateFrom) {
