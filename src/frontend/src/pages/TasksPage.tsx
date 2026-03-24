@@ -115,6 +115,7 @@ export default function TasksPage() {
   const urlStatus = searchParams.status;
   const urlAssignedName = searchParams.assignedName;
   const urlPaymentStatus = searchParams.paymentStatus;
+  const urlAmountFilter = searchParams.amountFilter;
 
   // Enhanced logging for task queries
   const tasksQuery = useTasksWithCaptain();
@@ -182,6 +183,9 @@ export default function TasksPage() {
   );
   const [filterPaymentStatus, setFilterPaymentStatus] = useState(
     urlPaymentStatus || FILTER_ALL_SENTINEL,
+  );
+  const [filterAmountType, setFilterAmountType] = useState(
+    urlAmountFilter || FILTER_ALL_SENTINEL,
   );
   const [filterAssignmentDateFrom, setFilterAssignmentDateFrom] = useState("");
   const [filterAssignmentDateTo, setFilterAssignmentDateTo] = useState("");
@@ -294,6 +298,21 @@ export default function TasksPage() {
       });
     }
 
+    if (filterAmountType && filterAmountType !== FILTER_ALL_SENTINEL) {
+      if (filterAmountType === "hasBill") {
+        result = result.filter((t) => t.task.bill != null && t.task.bill > 0);
+      } else if (filterAmountType === "hasAdvance") {
+        result = result.filter(
+          (t) => t.task.advanceReceived != null && t.task.advanceReceived > 0,
+        );
+      } else if (filterAmountType === "hasOutstanding") {
+        result = result.filter(
+          (t) =>
+            t.task.outstandingAmount != null && t.task.outstandingAmount > 0,
+        );
+      }
+    }
+
     if (filterAssignmentDateFrom) {
       const fromDate = new Date(filterAssignmentDateFrom);
       fromDate.setHours(0, 0, 0, 0);
@@ -332,6 +351,7 @@ export default function TasksPage() {
     filterAssignedName,
     filterStatus,
     filterPaymentStatus,
+    filterAmountType,
     filterAssignmentDateFrom,
     filterAssignmentDateTo,
     sortField,
@@ -353,6 +373,7 @@ export default function TasksPage() {
     filterAssignedName,
     filterStatus,
     filterPaymentStatus,
+    filterAmountType,
     filterAssignmentDateFrom,
     filterAssignmentDateTo,
   ]);
@@ -657,6 +678,28 @@ export default function TasksPage() {
               </div>
             </div>
           </div>
+          {filterAmountType && filterAmountType !== FILTER_ALL_SENTINEL && (
+            <div className="px-6 pb-4">
+              <div className="flex items-center gap-2 text-sm bg-highlight/10 text-highlight border border-highlight/30 rounded-lg px-3 py-2">
+                <span className="font-medium">
+                  Showing:{" "}
+                  {filterAmountType === "hasBill"
+                    ? "Tasks with Bill"
+                    : filterAmountType === "hasAdvance"
+                      ? "Tasks with Advance Received"
+                      : "Tasks with Outstanding Amount"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setFilterAmountType(FILTER_ALL_SENTINEL)}
+                  className="ml-auto text-highlight/70 hover:text-highlight font-bold leading-none"
+                  data-ocid="tasks.clear_amount_filter.button"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -740,6 +783,7 @@ export default function TasksPage() {
               filterAssignedName !== FILTER_ALL_SENTINEL ||
               filterStatus !== FILTER_ALL_SENTINEL ||
               filterPaymentStatus !== FILTER_ALL_SENTINEL ||
+              filterAmountType !== FILTER_ALL_SENTINEL ||
               filterAssignmentDateFrom ||
               filterAssignmentDateTo
                 ? "No tasks found matching your filters."

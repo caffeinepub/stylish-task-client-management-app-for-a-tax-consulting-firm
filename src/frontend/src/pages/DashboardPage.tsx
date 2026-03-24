@@ -331,35 +331,71 @@ export default function DashboardPage() {
           <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-highlight/60 via-highlight to-highlight/60" />
           <div className="p-5">
             <div className="flex items-start justify-between mb-3">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Total Bill
-              </p>
+              <button
+                type="button"
+                className="text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-highlight transition-colors"
+                onClick={() =>
+                  navigate({
+                    to: "/tasks",
+                    search: { amountFilter: "hasBill" },
+                  })
+                }
+                data-ocid="dashboard.total_bill.button"
+              >
+                Total Bill ↗
+              </button>
               <div className="w-10 h-10 rounded-xl bg-highlight/10 flex items-center justify-center shrink-0 group-hover:bg-highlight/15 transition-colors">
                 <TrendingUp className="h-5 w-5 text-highlight" />
               </div>
             </div>
-            <div className="font-display text-3xl font-bold text-foreground mb-2 leading-tight">
+            <button
+              type="button"
+              className="font-display text-3xl font-bold text-foreground mb-2 leading-tight cursor-pointer hover:text-highlight transition-colors block"
+              onClick={() =>
+                navigate({ to: "/tasks", search: { amountFilter: "hasBill" } })
+              }
+            >
               ₹{totalRevenue.toLocaleString("en-IN")}
-            </div>
+            </button>
             <div className="space-y-1 mb-3">
-              <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                className="flex items-center gap-1.5 w-full cursor-pointer hover:opacity-80 transition-opacity group/adv"
+                onClick={() =>
+                  navigate({
+                    to: "/tasks",
+                    search: { amountFilter: "hasAdvance" },
+                  })
+                }
+                data-ocid="dashboard.advance_received.button"
+              >
                 <span className="inline-block w-2 h-2 rounded-full bg-warning shrink-0" />
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-muted-foreground group-hover/adv:text-foreground transition-colors">
                   ₹{totalAdvanceReceived.toLocaleString("en-IN")}{" "}
                   <span className="text-warning-foreground font-medium">
                     advance received
                   </span>
                 </span>
-              </div>
-              <div className="flex items-center gap-1.5">
+              </button>
+              <button
+                type="button"
+                className="flex items-center gap-1.5 w-full cursor-pointer hover:opacity-80 transition-opacity group/out"
+                onClick={() =>
+                  navigate({
+                    to: "/tasks",
+                    search: { amountFilter: "hasOutstanding" },
+                  })
+                }
+                data-ocid="dashboard.outstanding.button"
+              >
                 <span className="inline-block w-2 h-2 rounded-full bg-destructive shrink-0" />
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-muted-foreground group-hover/out:text-foreground transition-colors">
                   ₹{totalOutstanding.toLocaleString("en-IN")}{" "}
                   <span className="text-destructive font-medium">
                     outstanding
                   </span>
                 </span>
-              </div>
+              </button>
             </div>
             <div className="space-y-1">
               <div className="flex justify-between text-xs text-muted-foreground">
@@ -537,30 +573,57 @@ export default function DashboardPage() {
 
               {/* Financial summary row */}
               <div className="mt-5 grid grid-cols-3 gap-4 pt-4 border-t border-border">
-                <div className="text-center">
+                <button
+                  type="button"
+                  className="text-center cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() =>
+                    navigate({
+                      to: "/tasks",
+                      search: { amountFilter: "hasBill" },
+                    })
+                  }
+                >
                   <p className="text-xs text-muted-foreground mb-1">
-                    Total Bill
+                    Total Bill ↗
                   </p>
                   <p className="font-display text-lg font-bold text-foreground">
                     ₹{totalRevenue.toLocaleString("en-IN")}
                   </p>
-                </div>
-                <div className="text-center">
+                </button>
+                <button
+                  type="button"
+                  className="text-center cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() =>
+                    navigate({
+                      to: "/tasks",
+                      search: { amountFilter: "hasAdvance" },
+                    })
+                  }
+                >
                   <p className="text-xs text-muted-foreground mb-1">
-                    Advance Received
+                    Advance Received ↗
                   </p>
                   <p className="font-display text-lg font-bold text-warning-foreground">
                     ₹{totalAdvanceReceived.toLocaleString("en-IN")}
                   </p>
-                </div>
-                <div className="text-center">
+                </button>
+                <button
+                  type="button"
+                  className="text-center cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() =>
+                    navigate({
+                      to: "/tasks",
+                      search: { amountFilter: "hasOutstanding" },
+                    })
+                  }
+                >
                   <p className="text-xs text-muted-foreground mb-1">
-                    Outstanding
+                    Outstanding ↗
                   </p>
                   <p className="font-display text-lg font-bold text-destructive">
                     ₹{totalOutstanding.toLocaleString("en-IN")}
                   </p>
-                </div>
+                </button>
               </div>
             </>
           )}
