@@ -18,12 +18,16 @@ import {
   ListTodo,
   LogOut,
   Menu,
+  Settings,
   UserCog,
   Users,
 } from "lucide-react";
+import { useState } from "react";
 import { SiFacebook, SiLinkedin, SiX } from "react-icons/si";
 import { useGetCallerUserProfile } from "../../hooks/useCurrentUserProfile";
+import { useFirmSettings } from "../../hooks/useFirmSettings";
 import { useInternetIdentity } from "../../hooks/useInternetIdentity";
+import FirmSettingsDialog from "../settings/FirmSettingsDialog";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -32,6 +36,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: userProfile } = useGetCallerUserProfile();
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
+  const { settings } = useFirmSettings();
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const handleLogout = async () => {
     await clear();
@@ -52,18 +58,25 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const userInitial = userProfile?.name?.charAt(0).toUpperCase() || "U";
 
+  const logoSrc =
+    settings.logoDataUrl ||
+    "/assets/uploads/WhatsApp-Image-2026-01-25-at-8.23.55-AM-3-1.jpeg";
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* ── Header ─────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 w-full border-b border-border bg-card shadow-soft">
         <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-4 md:px-6">
-          {/* Logo */}
+          {/* Logo + Name */}
           <Link to="/" className="flex items-center gap-3 shrink-0">
             <img
-              src="/assets/uploads/WhatsApp-Image-2026-01-25-at-8.23.55-AM-3-1.jpeg"
-              alt="CSWA Group of Companies"
+              src={logoSrc}
+              alt={settings.firmName}
               className="h-9 object-contain"
             />
+            <span className="hidden sm:block font-display font-semibold text-foreground text-sm leading-tight max-w-[200px] truncate">
+              {settings.firmName}
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -123,6 +136,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
+                  onClick={() => setSettingsOpen(true)}
+                  data-ocid="nav.firm_settings.button"
+                  className="cursor-pointer"
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Firm Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
                   onClick={handleLogout}
                   data-ocid="nav.logout.button"
                   className="cursor-pointer text-destructive focus:text-destructive"
@@ -147,12 +169,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-64">
-                <div className="mb-6 mt-2">
+                <div className="mb-6 mt-2 flex items-center gap-2">
                   <img
-                    src="/assets/uploads/WhatsApp-Image-2026-01-25-at-8.23.55-AM-3-1.jpeg"
-                    alt="CSWA Group of Companies"
+                    src={logoSrc}
+                    alt={settings.firmName}
                     className="h-8 object-contain"
                   />
+                  <span className="font-display font-semibold text-sm truncate">
+                    {settings.firmName}
+                  </span>
                 </div>
                 <nav className="flex flex-col gap-1">
                   {navItems.map((item) => {
@@ -177,8 +202,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   })}
                 </nav>
 
-                {/* Mobile logout */}
-                <div className="mt-auto pt-6 border-t border-border mt-8">
+                {/* Mobile settings + logout */}
+                <div className="mt-auto pt-6 border-t border-border mt-8 flex flex-col gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setSettingsOpen(true)}
+                    className="flex items-center gap-3 w-full px-3.5 py-2.5 rounded-lg text-sm font-medium text-foreground hover:bg-muted/60 transition-colors"
+                  >
+                    <Settings className="h-4 w-4 shrink-0" />
+                    Firm Settings
+                  </button>
                   <button
                     type="button"
                     onClick={handleLogout}
@@ -204,7 +237,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} CSWA Group of Companies. Built with ❤️
+              © {new Date().getFullYear()} {settings.firmName}. Built with ❤️
               using{" "}
               <a
                 href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
@@ -229,6 +262,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </footer>
+
+      {/* ── Firm Settings Dialog ─────────────────────────────── */}
+      <FirmSettingsDialog
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+      />
     </div>
   );
 }

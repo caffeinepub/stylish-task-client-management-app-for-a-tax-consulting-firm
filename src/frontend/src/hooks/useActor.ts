@@ -44,11 +44,6 @@ export function useActor() {
           return !query.queryKey.includes(ACTOR_QUERY_KEY);
         },
       });
-      queryClient.refetchQueries({
-        predicate: (query) => {
-          return !query.queryKey.includes(ACTOR_QUERY_KEY);
-        },
-      });
     }
   }, [actorQuery.data, queryClient]);
 

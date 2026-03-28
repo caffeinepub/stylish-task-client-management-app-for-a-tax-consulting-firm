@@ -122,42 +122,6 @@ export default function TasksPage() {
 
   // Log query states on mount and changes
   // biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only log
-  useEffect(() => {
-    console.log("[TasksPage] Component mounted", {
-      timestamp: new Date().toISOString(),
-      isAuthenticated,
-      query: {
-        isLoading: tasksQuery.isLoading,
-        isFetching: tasksQuery.isFetching,
-        isError: tasksQuery.isError,
-        error: tasksQuery.error,
-        dataLength: tasksQuery.data?.length,
-      },
-    });
-  }, []);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional debug log, not all deps needed
-  useEffect(() => {
-    console.log("[TasksPage] Query state changed", {
-      timestamp: new Date().toISOString(),
-      isAuthenticated,
-      query: {
-        isLoading: tasksQuery.isLoading,
-        isFetching: tasksQuery.isFetching,
-        isError: tasksQuery.isError,
-        error: tasksQuery.error?.message,
-        dataLength: tasksQuery.data?.length,
-        status: tasksQuery.status,
-        fetchStatus: tasksQuery.fetchStatus,
-      },
-    });
-  }, [
-    isAuthenticated,
-    tasksQuery.isLoading,
-    tasksQuery.isFetching,
-    tasksQuery.isError,
-    tasksQuery.data,
-  ]);
 
   const tasksWithCaptain = tasksQuery.data || [];
   const isLoading = tasksQuery.isLoading;
@@ -338,10 +302,10 @@ export default function TasksPage() {
     const tasks = result.map((t) => t.task);
     const sortedTasks = sortTasks(tasks, sortField, sortDirection);
 
-    return sortedTasks.map((task) => {
-      const original = tasksWithCaptain.find((t) => t.task.id === task.id);
-      return original || { task, captainName: undefined };
-    });
+    const taskMap = new Map(tasksWithCaptain.map((t) => [t.task.id, t]));
+    return sortedTasks.map(
+      (task) => taskMap.get(task.id) || { task, captainName: undefined },
+    );
   }, [
     tasksWithCaptain,
     searchQuery,
@@ -423,7 +387,7 @@ export default function TasksPage() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await queryClient.invalidateQueries({ queryKey: ["tasksWithCaptain"] });
+      await queryClient.invalidateQueries({ queryKey: ["tasks"] });
       toast.success("Tasks refreshed successfully");
     } catch (_error) {
       toast.error("Failed to refresh tasks");
@@ -765,6 +729,24 @@ export default function TasksPage() {
               />
               Refresh
             </Button>
+            {selectedTaskIds.size > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    await exportTasksToExcel(selectedTasks);
+                    toast.success(`${selectedTasks.length} task(s) exported`);
+                  } catch (_error) {
+                    toast.error("Failed to export selected tasks");
+                  }
+                }}
+                data-ocid="tasks.export_selected.button"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export Selected ({selectedTaskIds.size})
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={handleExport}>
               <Download className="h-4 w-4 mr-2" />
               Export to Excel

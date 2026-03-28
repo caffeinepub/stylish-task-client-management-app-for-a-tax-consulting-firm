@@ -188,8 +188,11 @@ export function useUpdateTaskComment() {
       comment,
     }: { taskId: TaskId; comment: string }) => {
       if (!actor) throw new Error("Actor not available");
-      const task = await actor.getTask(taskId);
-      if (!task) throw new Error("Task not found");
+      const cached =
+        queryClient.getQueryData<TaskWithCaptain[]>(TASKS_QUERY_KEY);
+      const twc = cached?.find((t) => t.task.id === taskId);
+      if (!twc) throw new Error("Task not found in cache");
+      const task = twc.task;
 
       return actor.updateTask(
         taskId,
