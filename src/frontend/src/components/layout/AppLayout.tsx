@@ -13,6 +13,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   CheckSquare,
+  ClipboardList,
   FolderKanban,
   LayoutDashboard,
   ListTodo,
@@ -22,8 +23,9 @@ import {
   UserCog,
   Users,
 } from "lucide-react";
+import { Linkedin } from "lucide-react";
 import { useState } from "react";
-import { SiFacebook, SiLinkedin, SiX } from "react-icons/si";
+import { SiFacebook, SiX } from "react-icons/si";
 import { useGetCallerUserProfile } from "../../hooks/useCurrentUserProfile";
 import { useFirmSettings } from "../../hooks/useFirmSettings";
 import { useInternetIdentity } from "../../hooks/useInternetIdentity";
@@ -49,6 +51,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { to: "/" as const, label: "Dashboard", icon: LayoutDashboard },
     { to: "/clients" as const, label: "Clients", icon: Users },
     { to: "/tasks" as const, label: "Tasks", icon: CheckSquare },
+    { to: "/assignments" as const, label: "Assignments", icon: ClipboardList },
     { to: "/task-types" as const, label: "Task Types", icon: FolderKanban },
     { to: "/assignees" as const, label: "Assignees", icon: UserCog },
     { to: "/todos" as const, label: "Todos", icon: ListTodo },
@@ -256,7 +259,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <SiFacebook className="h-3.5 w-3.5" />
               </span>
               <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer">
-                <SiLinkedin className="h-3.5 w-3.5" />
+                <Linkedin className="h-3.5 w-3.5" />
               </span>
             </div>
           </div>

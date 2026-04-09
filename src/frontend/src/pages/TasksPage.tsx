@@ -120,9 +120,6 @@ export default function TasksPage() {
   // Enhanced logging for task queries
   const tasksQuery = useTasksWithCaptain();
 
-  // Log query states on mount and changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only log
-
   const tasksWithCaptain = tasksQuery.data || [];
   const isLoading = tasksQuery.isLoading;
   const isFetching = tasksQuery.isFetching;

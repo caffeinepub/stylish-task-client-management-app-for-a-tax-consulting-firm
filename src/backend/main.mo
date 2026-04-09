@@ -8,8 +8,8 @@ import Iter "mo:core/Iter";
 import Array "mo:core/Array";
 import Text "mo:core/Text";
 
-import MixinAuthorization "authorization/MixinAuthorization";
-import AccessControl "authorization/access-control";
+import MixinAuthorization "mo:caffeineai-authorization/MixinAuthorization";
+import AccessControl "mo:caffeineai-authorization/access-control";
 
 actor {
   let accessControlState = AccessControl.initState();

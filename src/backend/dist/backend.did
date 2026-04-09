@@ -1,0 +1,170 @@
+type UserRole = 
+ variant {
+   admin;
+   guest;
+   user;
+ };
+type UserProfile = record {name: text;};
+type TodoId = nat;
+type Todo = 
+ record {
+   completed: bool;
+   createdAt: int;
+   description: opt text;
+   dueDate: opt int;
+   id: TodoId;
+   priority: opt nat;
+   title: text;
+   updatedAt: int;
+ };
+type TaskWithCaptain = 
+ record {
+   captainName: opt text;
+   task: Task;
+ };
+type TaskTypeUpdate = 
+ record {
+   id: TaskTypeId;
+   name: opt text;
+   subtypes: opt vec text;
+ };
+type TaskTypeInput = 
+ record {
+   name: text;
+   subtypes: vec text;
+ };
+type TaskTypeId = nat;
+type TaskType = 
+ record {
+   id: TaskTypeId;
+   name: text;
+   subtypes: vec text;
+ };
+type TaskId = nat;
+type Task = 
+ record {
+   advanceReceived: opt float64;
+   assignedName: opt text;
+   assignmentDate: opt int;
+   bill: opt float64;
+   clientName: text;
+   comment: opt text;
+   completionDate: opt int;
+   createdAt: int;
+   dueDate: opt int;
+   id: TaskId;
+   outstandingAmount: opt float64;
+   paymentStatus: opt text;
+   status: opt text;
+   subCategory: text;
+   taskCategory: text;
+ };
+type PartialTodoInput = 
+ record {
+   completed: bool;
+   description: opt text;
+   dueDate: opt int;
+   priority: opt nat;
+   title: text;
+ };
+type PartialTaskUpdate = 
+ record {
+   advanceReceived: opt float64;
+   assignedName: opt text;
+   assignmentDate: opt int;
+   bill: opt float64;
+   clientName: opt text;
+   comment: opt text;
+   completionDate: opt int;
+   dueDate: opt int;
+   id: TaskId;
+   outstandingAmount: opt float64;
+   paymentStatus: opt text;
+   status: opt text;
+   subCategory: opt text;
+   taskCategory: opt text;
+ };
+type PartialClientInput = 
+ record {
+   gstin: opt text;
+   name: text;
+   notes: opt text;
+   pan: opt text;
+ };
+type PartialAssigneeInput = 
+ record {
+   captain: opt text;
+   name: text;
+ };
+type ClientId = nat;
+type Client = 
+ record {
+   gstin: opt text;
+   id: ClientId;
+   name: text;
+   notes: opt text;
+   pan: opt text;
+   timestamp: int;
+ };
+type AssigneeWithTaskCount = 
+ record {
+   assignee: Assignee;
+   taskCount: nat;
+ };
+type AssigneeId = nat;
+type Assignee = 
+ record {
+   captain: opt text;
+   id: AssigneeId;
+   name: text;
+ };
+service : {
+  _initializeAccessControl: () -> ();
+  assignCallerUserRole: (user: principal, role: UserRole) -> ();
+  bulkUpdateTasks: (updates: vec PartialTaskUpdate) -> ();
+  createAssignee: (assignee: PartialAssigneeInput) -> (AssigneeId);
+  createClient: (client: PartialClientInput) -> (ClientId);
+  createTask: (clientName: text, taskCategory: text, subCategory: text) ->
+   (TaskId);
+  createTaskType: (input: TaskTypeInput) -> (TaskTypeId);
+  createTodo: (todo: PartialTodoInput) -> (TodoId);
+  deleteAssignee: (assigneeId: AssigneeId) -> ();
+  deleteClient: (clientId: ClientId) -> ();
+  deleteTask: (taskId: TaskId) -> ();
+  deleteTaskTypes: (taskTypeIds: vec TaskTypeId) -> ();
+  deleteTodo: (todoId: TodoId) -> ();
+  getAggregatedAssignees: (searchString: text) ->
+   (vec AssigneeWithTaskCount) query;
+  getAllAssignees: () -> (vec Assignee) query;
+  getAllClients: () -> (vec Client) query;
+  getAllTaskTypes: () -> (vec TaskType) query;
+  getAllTasks: () -> (vec Task) query;
+  getAllTasksWithCaptain: () -> (vec TaskWithCaptain) query;
+  getAllTodos: () -> (vec Todo) query;
+  getAssignee: (assigneeId: AssigneeId) -> (opt Assignee) query;
+  getCallerUserProfile: () -> (opt UserProfile) query;
+  getCallerUserRole: () -> (UserRole) query;
+  getClient: (clientId: ClientId) -> (opt Client) query;
+  getDistinctSubtypesForTaskType: (parentTaskTypeId: TaskTypeId) ->
+   (vec text) query;
+  getDistinctSubtypesForTaskTypeAndPrefix: (parentTaskTypeId: TaskTypeId,
+   prefix: text) -> (vec text) query;
+  getTask: (taskId: TaskId) -> (opt Task) query;
+  getTaskType: (taskTypeId: TaskTypeId) -> (opt TaskType) query;
+  getTaskTypesByPrefix: (prefix: text) -> (vec TaskType) query;
+  getTasksByAssignee: (assigneeName: text) -> (vec Task) query;
+  getTodo: (todoId: TodoId) -> (opt Todo) query;
+  getUserProfile: (user: principal) -> (opt UserProfile) query;
+  isCallerAdmin: () -> (bool) query;
+  saveCallerUserProfile: (profile: UserProfile) -> ();
+  updateAssignee: (assigneeId: AssigneeId, assignee: PartialAssigneeInput) ->
+   ();
+  updateClient: (clientId: ClientId, client: PartialClientInput) -> ();
+  updateTask: (taskId: TaskId, clientName: text, taskCategory: text,
+   subCategory: text, status: opt text, comment: opt text, assignedName:
+   opt text, dueDate: opt int, assignmentDate: opt int, completionDate:
+   opt int, bill: opt float64, advanceReceived: opt float64,
+   outstandingAmount: opt float64, paymentStatus: opt text) -> ();
+  updateTaskType: (update: TaskTypeUpdate) -> ();
+  updateTodo: (todoId: TodoId, todo: PartialTodoInput) -> ();
+}

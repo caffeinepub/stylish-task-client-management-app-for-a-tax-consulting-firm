@@ -116,7 +116,7 @@ export const TaskTypeUpdate = IDL.Record({
 });
 
 export const idlService = IDL.Service({
-  '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+  '_initializeAccessControl' : IDL.Func([], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'bulkUpdateTasks' : IDL.Func([IDL.Vec(PartialTaskUpdate)], [], []),
   'createAssignee' : IDL.Func([PartialAssigneeInput], [AssigneeId], []),
@@ -307,7 +307,7 @@ export const idlFactory = ({ IDL }) => {
   });
   
   return IDL.Service({
-    '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+    '_initializeAccessControl' : IDL.Func([], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'bulkUpdateTasks' : IDL.Func([IDL.Vec(PartialTaskUpdate)], [], []),
     'createAssignee' : IDL.Func([PartialAssigneeInput], [AssigneeId], []),

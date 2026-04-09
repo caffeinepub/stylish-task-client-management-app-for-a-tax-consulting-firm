@@ -198,7 +198,7 @@ export enum UserRole {
     guest = "guest"
 }
 export interface backendInterface {
-    _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
+    _initializeAccessControl(): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     bulkUpdateTasks(updates: Array<PartialTaskUpdate>): Promise<void>;
     createAssignee(assignee: PartialAssigneeInput): Promise<AssigneeId>;
@@ -241,17 +241,17 @@ export interface backendInterface {
 import type { Assignee as _Assignee, AssigneeId as _AssigneeId, AssigneeWithTaskCount as _AssigneeWithTaskCount, Client as _Client, ClientId as _ClientId, PartialAssigneeInput as _PartialAssigneeInput, PartialClientInput as _PartialClientInput, PartialTaskUpdate as _PartialTaskUpdate, PartialTodoInput as _PartialTodoInput, Task as _Task, TaskId as _TaskId, TaskType as _TaskType, TaskTypeId as _TaskTypeId, TaskTypeUpdate as _TaskTypeUpdate, TaskWithCaptain as _TaskWithCaptain, Todo as _Todo, TodoId as _TodoId, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
-    async _initializeAccessControlWithSecret(arg0: string): Promise<void> {
+    async _initializeAccessControl(): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor._initializeAccessControlWithSecret(arg0);
+                const result = await this.actor._initializeAccessControl();
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor._initializeAccessControlWithSecret(arg0);
+            const result = await this.actor._initializeAccessControl();
             return result;
         }
     }

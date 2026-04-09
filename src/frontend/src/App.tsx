@@ -34,6 +34,7 @@ const PublicAssigneeSearchPage = lazy(
 const TaskTypesPage = lazy(() => import("./pages/TaskTypesPage"));
 const TasksPage = lazy(() => import("./pages/TasksPage"));
 const TodosPage = lazy(() => import("./pages/TodosPage"));
+const AssignmentsPage = lazy(() => import("./pages/AssignmentsPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -203,12 +204,19 @@ const todosRoute = createRoute({
   component: TodosPage,
 });
 
+const assignmentsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/assignments",
+  component: AssignmentsPage,
+});
+
 const routeTree = rootRoute.addChildren([
   publicSearchRoute,
   indexRoute,
   clientsRoute,
   clientDetailRoute,
   tasksRoute,
+  assignmentsRoute,
   taskTypesRoute,
   assigneesRoute,
   todosRoute,

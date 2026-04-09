@@ -1,0 +1,118 @@
+// Version: 1.0.0
+type AssigneeId__798429114 = Nat;
+type Assignee__843463516 =
+  {captain : ?Text; id : AssigneeId__798429114; name : Text};
+type ClientId__894050839 = Nat;
+type Client__171211559 =
+  {
+    gstin : ?Text;
+    id : ClientId__894050839;
+    name : Text;
+    notes : ?Text;
+    pan : ?Text;
+    timestamp : Int
+  };
+type Data__791452850<K, V> =
+  {var count : Nat__490723111; kvs : [var ?(K, V)]};
+type Internal__8484328<K, V> =
+  {children : [var ?Node__46230540<K, V>]; data : Data__791452850<K, V>};
+type Leaf__809889148<K, V> = {data : Data__791452850<K, V>};
+type Map__158565046<K, V> = Map__297112838<K, V>;
+type Map__297112838<K, V> =
+  {var root : Node__46230540<K, V>; var size : Nat__490723111};
+type Map__605269027<K, V> = Map__158565046<K, V>;
+type Nat__490723111 = Nat__920180692;
+type Nat__920180692 = Nat;
+type Node__46230540<K, V> =
+  {#internal : Internal__8484328<K, V>; #leaf : Leaf__809889148<K, V>};
+type TaskId__627915889 = Nat;
+type TaskTypeId__1053551845 = Nat;
+type TaskType__358157892 =
+  {id : TaskTypeId__1053551845; name : Text; subtypes : [Text]};
+type Task__972485619 =
+  {
+    advanceReceived : ?Float;
+    assignedName : ?Text;
+    assignmentDate : ?Int;
+    bill : ?Float;
+    clientName : Text;
+    comment : ?Text;
+    completionDate : ?Int;
+    createdAt : Int;
+    dueDate : ?Int;
+    id : TaskId__627915889;
+    outstandingAmount : ?Float;
+    paymentStatus : ?Text;
+    status : ?Text;
+    subCategory : Text;
+    taskCategory : Text
+  };
+type TodoId__232006903 = Nat;
+type Todo__525080597 =
+  {
+    completed : Bool;
+    createdAt : Int;
+    description : ?Text;
+    dueDate : ?Int;
+    id : TodoId__232006903;
+    priority : ?Nat;
+    title : Text;
+    updatedAt : Int
+  };
+type UserProfile__491224006 = {name : Text};
+type UserRole__1054455867 = {#admin; #guest; #user};
+actor {
+  stable accessControlState :
+    {
+      var adminAssigned : Bool;
+      userRoles : Map__605269027<Principal, UserRole__1054455867>
+    };
+  stable assignees :
+    {
+      var root :
+        Node__46230540<Principal,
+                        Map__605269027<AssigneeId__798429114,
+                                        Assignee__843463516>>;
+      var size : Nat__490723111
+    };
+  stable clients :
+    {
+      var root :
+        Node__46230540<Principal,
+                        Map__605269027<ClientId__894050839, Client__171211559>>;
+      var size : Nat__490723111
+    };
+  stable var nextAssigneeId : Nat;
+  stable var nextClientId : Nat;
+  stable var nextTaskId : Nat;
+  stable var nextTodoId : Nat;
+  stable taskTypeIdCounter :
+    {var root : Node__46230540<Principal, Nat>; var size : Nat__490723111};
+  stable taskTypes :
+    {
+      var root :
+        Node__46230540<Principal,
+                        Map__605269027<TaskTypeId__1053551845,
+                                        TaskType__358157892>>;
+      var size : Nat__490723111
+    };
+  stable tasks :
+    {
+      var root :
+        Node__46230540<Principal,
+                        Map__605269027<TaskId__627915889, Task__972485619>>;
+      var size : Nat__490723111
+    };
+  stable todos :
+    {
+      var root :
+        Node__46230540<Principal,
+                        Map__605269027<TodoId__232006903, Todo__525080597>>;
+      var size : Nat__490723111
+    };
+  stable userProfiles :
+    {
+      var root : Node__46230540<Principal, UserProfile__491224006>;
+      var size : Nat__490723111
+    }
+};
